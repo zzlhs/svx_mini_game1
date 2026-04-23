@@ -1,0 +1,443 @@
+import {
+  findHintSuggestion,
+  getCoveredCellCount,
+  isBoardSolved,
+  normalizeRect,
+  validatePlacement,
+} from './logic';
+import type { MessageDescriptor } from '../i18n';
+import type {
+  Cell,
+  GameEffects,
+  GameSnapshot,
+  HintSuggestion,
+  Level,
+  LevelRecordMap,
+  LevelRecord,
+  Placement,
+  PreviewState,
+} from './types';
+
+type Listener = (snapshot: GameSnapshot) => void;
+
+interface GameControllerOptions {
+  initialRecords?: LevelRecordMap;
+  onRecordsChange?: (records: LevelRecordMap) => void;
+}
+
+export class GameController {
+  private readonly levels: Level[];
+
+  private readonly listeners = new Set<Listener>();
+
+  private readonly onRecordsChange?: (records: LevelRecordMap) => void;
+
+  private levelIndex = 0;
+
+  private placements: Placement[] = [];
+
+  private history: Placement[][] = [];
+
+  private preview: PreviewState | null = null;
+
+  private hintSuggestion: HintSuggestion | null = null;
+
+  private hintMessage: MessageDescriptor | null = null;
+
+  private dragOrigin: Cell | null = null;
+
+  private records: LevelRecordMap;
+
+  private mode: 'play' | 'record' = 'play';
+
+  private effects: GameEffects = {
+    placement: null,
+    invalidId: 0,
+    celebrationId: 0,
+  };
+
+  private status: MessageDescriptor = { key: 'status.baseInstruction' };
+
+  private solved = false;
+
+  private placementSequence = 0;
+
+  private attemptStartedAt = Date.now();
+
+  constructor(levels: Level[], options: GameControllerOptions = {}) {
+    this.levels = levels;
+    this.records = options.initialRecords ? this.cloneRecords(options.initialRecords) : {};
+    this.onRecordsChange = options.onRecordsChange;
+  }
+
+  subscribe(listener: Listener): () => void {
+    this.listeners.add(listener);
+    listener(this.getSnapshot());
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  getSnapshot(): GameSnapshot {
+    return {
+      levelIndex: this.levelIndex,
+      level: this.level,
+      placements: [...this.placements],
+      preview: this.preview,
+      hintSuggestion: this.hintSuggestion,
+      hintMessage: this.hintMessage,
+      mode: this.mode,
+      currentRecord: this.records[this.level.id] ?? null,
+      records: this.records,
+      effects: this.effects,
+      status: this.status,
+      solved: this.solved,
+      canUndo: this.history.length > 0,
+      hasNextLevel: this.levelIndex < this.levels.length - 1,
+    };
+  }
+
+  startDrag(cell: Cell): void {
+    if (this.mode === 'record') {
+      return;
+    }
+
+    this.dragOrigin = cell;
+    this.clearHintSuggestion();
+    this.updateDrag(cell);
+  }
+
+  updateDrag(cell: Cell): void {
+    if (!this.dragOrigin || this.mode === 'record') {
+      return;
+    }
+
+    const rect = normalizeRect(this.dragOrigin, cell);
+    const validation = validatePlacement(this.level, this.placements, rect);
+    this.preview = {
+      start: this.dragOrigin,
+      end: cell,
+      rect,
+      validation,
+    };
+
+    if (validation.ok) {
+      this.status = { key: 'status.previewValid', values: { area: validation.area } };
+    } else {
+      this.status = validation.reason ?? { key: 'status.invalidGeneric' };
+    }
+
+    this.emit();
+  }
+
+  finishDrag(): void {
+    if (this.mode === 'record') {
+      return;
+    }
+
+    if (!this.preview) {
+      this.dragOrigin = null;
+      return;
+    }
+
+    if (this.preview.validation.ok && this.preview.validation.clue) {
+      this.history.push(this.clonePlacements(this.placements));
+      this.placements = [
+        ...this.placements,
+        {
+          id: `placement-${this.placementSequence}`,
+          rect: this.preview.rect,
+          clue: this.preview.validation.clue,
+          area: this.preview.validation.area,
+        },
+      ];
+      const latestPlacementId = `placement-${this.placementSequence}`;
+      this.placementSequence += 1;
+      this.effects = {
+        ...this.effects,
+        placement: {
+          id: this.effects.placement ? this.effects.placement.id + 1 : 1,
+          placementId: latestPlacementId,
+        },
+      };
+
+      const covered = getCoveredCellCount(this.level, this.placements);
+      this.solved = isBoardSolved(this.level, this.placements);
+      if (this.solved) {
+        const record = this.saveCompletionRecord();
+        this.effects = {
+          ...this.effects,
+          celebrationId: this.effects.celebrationId + 1,
+        };
+        this.status = {
+          key: 'status.solvedWithDuration',
+          values: { duration: this.formatDuration(record.durationMs) },
+        };
+      } else {
+        this.status = {
+          key: 'status.coveredProgress',
+          values: { covered, total: this.level.width * this.level.height },
+        };
+      }
+    } else {
+      this.effects = {
+        ...this.effects,
+        invalidId: this.effects.invalidId + 1,
+      };
+      this.status = this.preview.validation.reason ?? { key: 'status.invalidGeneric' };
+    }
+
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.emit();
+  }
+
+  cancelDrag(): void {
+    if (this.mode === 'record') {
+      return;
+    }
+
+    if (!this.dragOrigin && !this.preview) {
+      return;
+    }
+
+    this.dragOrigin = null;
+    this.preview = null;
+    this.clearHintSuggestion();
+    this.status = this.solved
+      ? { key: 'status.solvedBoardCovered' }
+      : { key: 'status.baseInstruction' };
+    this.emit();
+  }
+
+  undo(): void {
+    if (this.mode === 'record') {
+      return;
+    }
+
+    const previous = this.history.pop();
+    if (!previous) {
+      return;
+    }
+
+    this.placements = previous;
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.solved = isBoardSolved(this.level, this.placements);
+    this.status = this.solved ? { key: 'status.solvedBoardCovered' } : { key: 'status.undo' };
+    this.emit();
+  }
+
+  resetLevel(): void {
+    this.resetInternalState({ key: 'status.reset' });
+    this.emit();
+  }
+
+  requestHint(): void {
+    if (this.solved) {
+      this.hintSuggestion = null;
+      this.hintMessage = { key: 'hint.solved' };
+      this.status = { key: 'status.hintSolved' };
+      this.emit();
+      return;
+    }
+
+    this.preview = null;
+    this.dragOrigin = null;
+
+    const suggestion = findHintSuggestion(this.level, this.placements);
+    this.hintSuggestion = suggestion;
+
+    if (!suggestion) {
+      this.hintMessage = { key: 'hint.noHint' };
+      this.status = { key: 'status.noHint' };
+      this.emit();
+      return;
+    }
+
+    this.status =
+      suggestion.candidateCount === 1
+        ? { key: 'status.hintSingle', values: { value: suggestion.clue.value } }
+        : {
+            key: 'status.hintTryRect',
+            values: {
+              value: suggestion.clue.value,
+              width: suggestion.rect.width,
+              height: suggestion.rect.height,
+            },
+          };
+    this.hintMessage =
+      suggestion.candidateCount === 1
+        ? {
+            key: 'hint.single',
+            values: {
+              value: suggestion.clue.value,
+              rowStart: suggestion.rect.y + 1,
+              rowEnd: suggestion.rect.y + suggestion.rect.height,
+              colStart: suggestion.rect.x + 1,
+              colEnd: suggestion.rect.x + suggestion.rect.width,
+            },
+          }
+        : {
+            key: 'hint.tryRect',
+            values: {
+              value: suggestion.clue.value,
+              width: suggestion.rect.width,
+              height: suggestion.rect.height,
+              rowStart: suggestion.rect.y + 1,
+              rowEnd: suggestion.rect.y + suggestion.rect.height,
+              colStart: suggestion.rect.x + 1,
+              colEnd: suggestion.rect.x + suggestion.rect.width,
+            },
+          };
+    this.emit();
+  }
+
+  nextLevel(): void {
+    if (this.levelIndex >= this.levels.length - 1) {
+      this.status = { key: 'status.lastLevel' };
+      this.emit();
+      return;
+    }
+
+    this.levelIndex += 1;
+    this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
+    this.emit();
+  }
+
+  previousLevel(): void {
+    if (this.levelIndex <= 0) {
+      return;
+    }
+
+    this.levelIndex -= 1;
+    this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
+    this.emit();
+  }
+
+  setLevel(index: number): void {
+    if (index < 0 || index >= this.levels.length) {
+      return;
+    }
+
+    this.levelIndex = index;
+    this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
+    this.emit();
+  }
+
+  viewRecordedLevel(index: number): void {
+    if (index < 0 || index >= this.levels.length) {
+      return;
+    }
+
+    const targetLevel = this.levels[index];
+    const record = this.records[targetLevel.id];
+
+    if (!record) {
+      this.setLevel(index);
+      return;
+    }
+
+    this.levelIndex = index;
+    this.placements = this.clonePlacements(record.placements);
+    this.history = [];
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.mode = 'record';
+    this.solved = true;
+    this.status = {
+      key: 'status.viewingRecord',
+      values: { duration: this.formatDuration(record.durationMs) },
+    };
+    this.emit();
+  }
+
+  isInteractionLocked(): boolean {
+    return this.mode === 'record';
+  }
+
+  private get level(): Level {
+    return this.levels[this.levelIndex];
+  }
+
+  private emit(): void {
+    const snapshot = this.getSnapshot();
+    for (const listener of this.listeners) {
+      listener(snapshot);
+    }
+  }
+
+  private clonePlacements(placements: Placement[]): Placement[] {
+    return placements.map((placement) => ({
+      id: placement.id,
+      rect: { ...placement.rect },
+      clue: { ...placement.clue },
+      area: placement.area,
+    }));
+  }
+
+  private cloneRecords(records: LevelRecordMap): LevelRecordMap {
+    const cloned: LevelRecordMap = {};
+
+    for (const [levelId, record] of Object.entries(records)) {
+      cloned[levelId] = {
+        levelId: record.levelId,
+        completedAt: record.completedAt,
+        durationMs: record.durationMs,
+        placements: this.clonePlacements(record.placements),
+      };
+    }
+
+    return cloned;
+  }
+
+  private resetInternalState(status: MessageDescriptor): void {
+    this.placements = [];
+    this.history = [];
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.mode = 'play';
+    this.solved = false;
+    this.placementSequence = 0;
+    this.attemptStartedAt = Date.now();
+    this.effects = {
+      ...this.effects,
+      placement: null,
+    };
+    this.status = status;
+  }
+
+  private clearHintSuggestion(): void {
+    this.hintSuggestion = null;
+    this.hintMessage = null;
+  }
+
+  private saveCompletionRecord(): LevelRecord {
+    const record: LevelRecord = {
+      levelId: this.level.id,
+      completedAt: new Date().toISOString(),
+      durationMs: Math.max(0, Date.now() - this.attemptStartedAt),
+      placements: this.clonePlacements(this.placements),
+    };
+
+    this.records = {
+      ...this.records,
+      [record.levelId]: record,
+    };
+
+    this.onRecordsChange?.(this.cloneRecords(this.records));
+    return record;
+  }
+
+  private formatDuration(durationMs: number): string {
+    const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+}

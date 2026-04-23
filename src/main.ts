@@ -1,0 +1,480 @@
+import './style.css';
+
+import { FeedbackAudio } from './audio/FeedbackAudio';
+import { GameController } from './game/GameController';
+import { levels } from './game/levels';
+import { getCoveredCellCount } from './game/logic';
+import { loadLevelRecords, saveLevelRecords } from './game/storage';
+import type { GameSnapshot, LevelRecord } from './game/types';
+import {
+  detectLocale,
+  formatLevelName,
+  formatLocaleDate,
+  getSupportedLocales,
+  loadLocale,
+  saveLocale,
+  t,
+  tm,
+  type Locale,
+} from './i18n';
+import { PointerController } from './input/PointerController';
+import { CanvasRenderer } from './render/CanvasRenderer';
+
+const app = document.querySelector<HTMLDivElement>('#app');
+
+if (!app) {
+  throw new Error('App root not found');
+}
+
+app.innerHTML = `
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow" id="app-eyebrow"></p>
+        <h1 id="app-title"></h1>
+        <p class="hero-copy" id="app-hero-copy"></p>
+      </div>
+      <div class="hero-side">
+        <label class="locale-switcher">
+          <span id="locale-label"></span>
+          <select id="locale-select"></select>
+        </label>
+        <div class="status-chip" id="status-chip"></div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="board-panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-label" id="level-progress"></p>
+            <h2 id="level-name"></h2>
+          </div>
+          <p class="panel-meta" id="board-meta"></p>
+        </div>
+
+        <div class="canvas-stage">
+          <canvas id="game-canvas" aria-label="Patch Grid game board"></canvas>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="info-card">
+          <h3 id="section-levels"></h3>
+          <p id="level-collection-meta"></p>
+          <div id="level-grid" class="level-grid"></div>
+        </section>
+
+        <section class="info-card">
+          <h3 id="section-hints"></h3>
+          <p id="level-hint"></p>
+        </section>
+
+        <section class="info-card">
+          <h3 id="section-record"></h3>
+          <p id="record-summary"></p>
+          <p id="record-detail" class="status-text"></p>
+        </section>
+
+        <section class="info-card">
+          <h3 id="section-progress"></h3>
+          <p id="coverage-text"></p>
+          <p id="status-text" class="status-text"></p>
+        </section>
+
+        <section class="info-card controls-card">
+          <h3 id="section-actions"></h3>
+          <div class="controls">
+            <button id="undo-button" type="button"></button>
+            <button id="restart-button" type="button"></button>
+            <button id="hint-button" type="button"></button>
+            <button id="next-button" type="button"></button>
+          </div>
+        </section>
+
+        <section class="info-card compact-card">
+          <h3 id="section-rules"></h3>
+          <ul class="rules-list">
+            <li id="rule-area"></li>
+            <li id="rule-single"></li>
+            <li id="rule-cover"></li>
+            <li id="rule-input"></li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+`;
+
+const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
+const appEyebrow = document.querySelector<HTMLParagraphElement>('#app-eyebrow');
+const appTitle = document.querySelector<HTMLHeadingElement>('#app-title');
+const appHeroCopy = document.querySelector<HTMLParagraphElement>('#app-hero-copy');
+const localeLabel = document.querySelector<HTMLSpanElement>('#locale-label');
+const localeSelect = document.querySelector<HTMLSelectElement>('#locale-select');
+const statusChip = document.querySelector<HTMLDivElement>('#status-chip');
+const sectionLevels = document.querySelector<HTMLHeadingElement>('#section-levels');
+const sectionHints = document.querySelector<HTMLHeadingElement>('#section-hints');
+const sectionRecord = document.querySelector<HTMLHeadingElement>('#section-record');
+const sectionProgress = document.querySelector<HTMLHeadingElement>('#section-progress');
+const sectionActions = document.querySelector<HTMLHeadingElement>('#section-actions');
+const sectionRules = document.querySelector<HTMLHeadingElement>('#section-rules');
+const ruleArea = document.querySelector<HTMLLIElement>('#rule-area');
+const ruleSingle = document.querySelector<HTMLLIElement>('#rule-single');
+const ruleCover = document.querySelector<HTMLLIElement>('#rule-cover');
+const ruleInput = document.querySelector<HTMLLIElement>('#rule-input');
+const levelProgress = document.querySelector<HTMLParagraphElement>('#level-progress');
+const levelName = document.querySelector<HTMLHeadingElement>('#level-name');
+const boardMeta = document.querySelector<HTMLParagraphElement>('#board-meta');
+const levelHint = document.querySelector<HTMLParagraphElement>('#level-hint');
+const levelCollectionMeta = document.querySelector<HTMLParagraphElement>('#level-collection-meta');
+const levelGrid = document.querySelector<HTMLDivElement>('#level-grid');
+const recordSummary = document.querySelector<HTMLParagraphElement>('#record-summary');
+const recordDetail = document.querySelector<HTMLParagraphElement>('#record-detail');
+const coverageText = document.querySelector<HTMLParagraphElement>('#coverage-text');
+const statusText = document.querySelector<HTMLParagraphElement>('#status-text');
+const undoButton = document.querySelector<HTMLButtonElement>('#undo-button');
+const restartButton = document.querySelector<HTMLButtonElement>('#restart-button');
+const hintButton = document.querySelector<HTMLButtonElement>('#hint-button');
+const nextButton = document.querySelector<HTMLButtonElement>('#next-button');
+
+if (
+  !canvas ||
+  !appEyebrow ||
+  !appTitle ||
+  !appHeroCopy ||
+  !localeLabel ||
+  !localeSelect ||
+  !statusChip ||
+  !sectionLevels ||
+  !sectionHints ||
+  !sectionRecord ||
+  !sectionProgress ||
+  !sectionActions ||
+  !sectionRules ||
+  !ruleArea ||
+  !ruleSingle ||
+  !ruleCover ||
+  !ruleInput ||
+  !levelProgress ||
+  !levelName ||
+  !boardMeta ||
+  !levelHint ||
+  !levelCollectionMeta ||
+  !levelGrid ||
+  !recordSummary ||
+  !recordDetail ||
+  !coverageText ||
+  !statusText ||
+  !undoButton ||
+  !restartButton ||
+  !hintButton ||
+  !nextButton
+) {
+  throw new Error('UI bootstrapping failed');
+}
+
+let locale: Locale = loadLocale() ?? detectLocale();
+const initialRecords = loadLevelRecords(levels);
+const game = new GameController(levels, {
+  initialRecords,
+  onRecordsChange: (records) => {
+    saveLevelRecords(records);
+  },
+});
+const renderer = new CanvasRenderer(canvas);
+const audio = new FeedbackAudio();
+new PointerController(canvas, renderer, game);
+
+let currentSnapshot = game.getSnapshot();
+let animationFrameId = 0;
+let lastPlacementEffectId = 0;
+let lastInvalidEffectId = 0;
+let lastCelebrationEffectId = 0;
+
+localeSelect.innerHTML = '';
+for (const supportedLocale of getSupportedLocales()) {
+  const option = document.createElement('option');
+  option.value = supportedLocale;
+  option.textContent = t(locale, `locale.name.${supportedLocale}`);
+  localeSelect.append(option);
+}
+localeSelect.value = locale;
+
+const levelButtons = levels.map((level, index) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'level-tile';
+  button.dataset.levelIndex = String(index);
+
+  const number = document.createElement('span');
+  number.className = 'level-tile__number';
+  number.textContent = String(index + 1);
+
+  const mark = document.createElement('span');
+  mark.className = 'level-tile__mark';
+  mark.textContent = '';
+
+  button.append(number, mark);
+  button.addEventListener('click', () => {
+    const snapshot = game.getSnapshot();
+    if (snapshot.records[level.id]) {
+      game.viewRecordedLevel(index);
+      return;
+    }
+
+    game.setLevel(index);
+  });
+
+  levelGrid.append(button);
+  return button;
+});
+
+const placeholderCount = Math.max(0, 36 - levels.length);
+for (let index = 0; index < placeholderCount; index += 1) {
+  const placeholder = document.createElement('div');
+  placeholder.className = 'level-tile level-tile--placeholder';
+  placeholder.setAttribute('aria-hidden', 'true');
+  levelGrid.append(placeholder);
+}
+
+function formatDuration(durationMs: number): string {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatCompletedAt(isoString: string): string {
+  return formatLocaleDate(locale, isoString) ?? t(locale, 'fallback.unknownTime');
+}
+
+function renderRecord(record: LevelRecord | null, mode: GameSnapshot['mode']): void {
+  const recordSummaryElement = recordSummary!;
+  const recordDetailElement = recordDetail!;
+
+  if (!record) {
+    recordSummaryElement.textContent = t(locale, 'record.noneSummary');
+    recordDetailElement.textContent = t(locale, 'record.noneDetail');
+    return;
+  }
+
+  recordSummaryElement.textContent = t(locale, 'record.summary', {
+    duration: formatDuration(record.durationMs),
+  });
+  recordDetailElement.textContent = t(
+    locale,
+    mode === 'record' ? 'record.detailViewing' : 'record.detailSaved',
+    {
+      count: record.placements.length,
+      completedAt: formatCompletedAt(record.completedAt),
+    },
+  );
+}
+
+function renderStaticUi(): void {
+  appEyebrow!.textContent = t(locale, 'app.eyebrow');
+  appTitle!.textContent = t(locale, 'app.title');
+  appHeroCopy!.textContent = t(locale, 'app.heroCopy');
+  localeLabel!.textContent = t(locale, 'locale.label');
+  sectionLevels!.textContent = t(locale, 'section.levels');
+  sectionHints!.textContent = t(locale, 'section.hints');
+  sectionRecord!.textContent = t(locale, 'section.record');
+  sectionProgress!.textContent = t(locale, 'section.progress');
+  sectionActions!.textContent = t(locale, 'section.actions');
+  sectionRules!.textContent = t(locale, 'section.rules');
+  ruleArea!.textContent = t(locale, 'rule.area');
+  ruleSingle!.textContent = t(locale, 'rule.singleClue');
+  ruleCover!.textContent = t(locale, 'rule.cover');
+  ruleInput!.textContent = t(locale, 'rule.input');
+
+  Array.from(localeSelect!.options).forEach((option) => {
+    const supportedLocale = option.value as Locale;
+    option.textContent = t(locale, `locale.name.${supportedLocale}`);
+  });
+}
+
+const renderUi = (snapshot: GameSnapshot): void => {
+  renderStaticUi();
+  const completedCount = Object.keys(snapshot.records).length;
+  levelProgress.textContent = t(locale, 'level.progress', {
+    current: snapshot.levelIndex + 1,
+    total: levels.length,
+  });
+  levelName.textContent = formatLevelName(locale, snapshot.level.number, snapshot.level.titleKey);
+  boardMeta.textContent = t(locale, 'board.meta', {
+    width: snapshot.level.width,
+    height: snapshot.level.height,
+    clues: snapshot.level.clues.length,
+  });
+  levelHint.textContent = snapshot.hintMessage ? tm(locale, snapshot.hintMessage) : t(locale, 'hint.placeholder');
+  levelCollectionMeta.textContent = t(locale, 'level.collectionMeta', {
+    completed: completedCount,
+    total: levels.length,
+  });
+  renderRecord(snapshot.currentRecord, snapshot.mode);
+
+  const covered = getCoveredCellCount(snapshot.level, snapshot.placements);
+  const total = snapshot.level.width * snapshot.level.height;
+  coverageText.textContent = t(
+    locale,
+    snapshot.mode === 'record' ? 'coverage.record' : 'coverage.play',
+    { covered, total },
+  );
+  statusText.textContent = tm(locale, snapshot.status);
+  statusChip.textContent =
+    snapshot.mode === 'record'
+      ? t(locale, 'chip.record')
+      : snapshot.solved
+        ? t(locale, 'chip.solved')
+        : snapshot.preview?.validation.ok
+          ? t(locale, 'chip.ready')
+          : t(locale, 'chip.active');
+  statusChip.dataset.state =
+    snapshot.mode === 'record'
+      ? 'view'
+      : snapshot.solved
+        ? 'solved'
+        : snapshot.preview?.validation.ok
+          ? 'ready'
+          : 'active';
+
+  undoButton.disabled = !snapshot.canUndo || snapshot.mode === 'record';
+  undoButton.textContent = t(locale, 'button.undo');
+  restartButton.textContent = t(locale, snapshot.mode === 'record' ? 'button.retry' : 'button.restart');
+  hintButton.textContent = t(locale, 'button.hint');
+  nextButton.textContent = t(locale, 'button.next');
+  hintButton.disabled = snapshot.solved || snapshot.mode === 'record';
+  nextButton.disabled = !snapshot.hasNextLevel;
+
+  levelButtons.forEach((button, index) => {
+    const level = levels[index];
+    const record = snapshot.records[level.id];
+    const mark = button.querySelector<HTMLSpanElement>('.level-tile__mark');
+    const localizedLevelName = formatLevelName(locale, level.number, level.titleKey);
+
+    button.dataset.current = String(snapshot.levelIndex === index);
+    button.dataset.completed = String(Boolean(record));
+    button.dataset.viewing = String(snapshot.levelIndex === index && snapshot.mode === 'record');
+    button.title = record
+      ? t(locale, 'tile.completed', {
+          levelName: localizedLevelName,
+          duration: formatDuration(record.durationMs),
+        })
+      : t(locale, 'tile.incomplete', {
+          levelName: localizedLevelName,
+        });
+
+    if (mark) {
+      mark.textContent = record ? '✓' : '';
+    }
+  });
+};
+
+const render = (snapshot: GameSnapshot): void => {
+  currentSnapshot = snapshot;
+  renderUi(snapshot);
+  renderer.render(snapshot, {
+    solvedBadge: t(locale, 'renderer.badgeSolved'),
+    recordBadge: t(locale, 'renderer.badgeRecord'),
+  });
+  syncFeedbackAudio(snapshot);
+  ensureAnimationLoop();
+};
+
+function syncFeedbackAudio(snapshot: GameSnapshot): void {
+  const placementEffectId = snapshot.effects.placement?.id ?? 0;
+  if (placementEffectId !== lastPlacementEffectId) {
+    lastPlacementEffectId = placementEffectId;
+    if (placementEffectId > 0) {
+      audio.playPlacement();
+    }
+  }
+
+  if (snapshot.effects.invalidId !== lastInvalidEffectId) {
+    lastInvalidEffectId = snapshot.effects.invalidId;
+    if (snapshot.effects.invalidId > 0) {
+      audio.playInvalid();
+    }
+  }
+
+  if (snapshot.effects.celebrationId !== lastCelebrationEffectId) {
+    lastCelebrationEffectId = snapshot.effects.celebrationId;
+    if (snapshot.effects.celebrationId > 0) {
+      audio.playCelebration();
+    }
+  }
+}
+
+function ensureAnimationLoop(): void {
+  if (animationFrameId !== 0 || !renderer.hasActiveEffects()) {
+    return;
+  }
+
+  animationFrameId = window.requestAnimationFrame(tickAnimationFrame);
+}
+
+function tickAnimationFrame(): void {
+  animationFrameId = 0;
+  renderer.render(currentSnapshot, {
+    solvedBadge: t(locale, 'renderer.badgeSolved'),
+    recordBadge: t(locale, 'renderer.badgeRecord'),
+  });
+
+  if (renderer.hasActiveEffects()) {
+    animationFrameId = window.requestAnimationFrame(tickAnimationFrame);
+  }
+}
+
+game.subscribe(render);
+
+undoButton.addEventListener('click', () => {
+  game.undo();
+});
+
+restartButton.addEventListener('click', () => {
+  game.resetLevel();
+});
+
+hintButton.addEventListener('click', () => {
+  game.requestHint();
+});
+
+nextButton.addEventListener('click', () => {
+  game.nextLevel();
+});
+
+localeSelect.addEventListener('change', () => {
+  const nextLocale = localeSelect.value as Locale;
+  locale = nextLocale;
+  saveLocale(locale);
+  render(currentSnapshot);
+});
+
+window.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+    event.preventDefault();
+    game.undo();
+  }
+});
+
+window.addEventListener('resize', () => {
+  currentSnapshot = game.getSnapshot();
+  renderer.render(currentSnapshot, {
+    solvedBadge: t(locale, 'renderer.badgeSolved'),
+    recordBadge: t(locale, 'renderer.badgeRecord'),
+  });
+  ensureAnimationLoop();
+});
+
+if ('ResizeObserver' in window) {
+  const observer = new ResizeObserver(() => {
+    currentSnapshot = game.getSnapshot();
+    renderer.render(currentSnapshot, {
+      solvedBadge: t(locale, 'renderer.badgeSolved'),
+      recordBadge: t(locale, 'renderer.badgeRecord'),
+    });
+    ensureAnimationLoop();
+  });
+  observer.observe(canvas);
+}
