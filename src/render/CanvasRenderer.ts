@@ -1,11 +1,13 @@
 import type {
   Cell,
+  Clue,
   GameSnapshot,
   GridRect,
   Level,
   Placement,
   PlacementEffectEvent,
 } from '../game/types';
+import type { CanvasSurface } from './CanvasSurface';
 
 interface BoardMetrics {
   cellSize: number;
@@ -35,6 +37,25 @@ interface RenderLabels {
   recordBadge: string;
 }
 
+interface RenderInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+interface RenderOptions {
+  labels: RenderLabels;
+  insets?: Partial<RenderInsets>;
+}
+
+interface SurfaceRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const PLACEMENT_COLORS = [
   '#f2c572',
   '#9fd0c7',
@@ -45,8 +66,14 @@ const PLACEMENT_COLORS = [
   '#cce4a7',
 ];
 
+function getNow(): number {
+  return typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+}
+
 export class CanvasRenderer {
-  private readonly canvas: HTMLCanvasElement;
+  private readonly surface: CanvasSurface;
 
   private readonly context: CanvasRenderingContext2D;
 
@@ -72,26 +99,34 @@ export class CanvasRenderer {
 
   private lastCelebrationEffectId = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('2D context is not available');
-    }
+  private insets: RenderInsets = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  };
 
-    this.canvas = canvas;
-    this.context = context;
+  constructor(surface: CanvasSurface) {
+    this.surface = surface;
+    this.context = surface.getContext2D();
   }
 
-  render(snapshot: GameSnapshot, labels: RenderLabels): void {
-    const now = performance.now();
-    this.syncCanvas(snapshot.level);
+  render(snapshot: GameSnapshot, options: RenderOptions): void {
+    const now = getNow();
+    const surfaceSize = this.surface.syncSize();
+    this.insets = {
+      top: options.insets?.top ?? 0,
+      right: options.insets?.right ?? 0,
+      bottom: options.insets?.bottom ?? 0,
+      left: options.insets?.left ?? 0,
+    };
+    this.metrics = this.computeMetrics(snapshot.level, surfaceSize.width, surfaceSize.height);
     this.consumeEffects(snapshot.effects, now);
     this.pruneEffects(now);
 
-    const { level, mode, placements, preview, solved, hintSuggestion } = snapshot;
+    const { level, mode, placements, preview, solved, hintSuggestion, selectedPlacementId } = snapshot;
     const { context } = this;
-    const width = this.canvas.clientWidth;
-    const height = this.canvas.clientHeight;
+    const { width, height } = surfaceSize;
 
     context.clearRect(0, 0, width, height);
 
@@ -108,15 +143,22 @@ export class CanvasRenderer {
     }
 
     if (preview) {
-      this.drawPreview(preview.rect, preview.validation.ok);
+      this.drawPreview(preview.rect, preview.validation.ok, preview.validation.clue);
     }
 
     this.drawGrid(level);
     this.drawClues(level, placements);
+
+    const selectedPlacement = placements.find((placement) => placement.id === selectedPlacementId) ?? null;
+    if (selectedPlacement) {
+      this.drawSelectedPlacement(selectedPlacement);
+    }
     context.restore();
 
     if (solved) {
-      this.drawSolvedBadge(mode === 'record' ? labels.recordBadge : labels.solvedBadge);
+      this.drawSolvedBadge(
+        mode === 'record' ? options.labels.recordBadge : options.labels.solvedBadge,
+      );
     }
 
     this.drawCelebration(now);
@@ -130,11 +172,9 @@ export class CanvasRenderer {
     );
   }
 
-  getCellFromClientPoint(clientX: number, clientY: number, clamp = false): Cell | null {
-    const rect = this.canvas.getBoundingClientRect();
-    const localX = clientX - rect.left;
-    const localY = clientY - rect.top;
-
+  getCellFromSurfacePoint(point: { x: number; y: number }, clamp = false): Cell | null {
+    const localX = point.x;
+    const localY = point.y;
     if (this.metrics.cellSize <= 0) {
       return null;
     }
@@ -169,34 +209,34 @@ export class CanvasRenderer {
     };
   }
 
-  private syncCanvas(level: Level): void {
-    const dpr = window.devicePixelRatio || 1;
-    const width = Math.max(1, Math.round(this.canvas.clientWidth));
-    const height = Math.max(1, Math.round(this.canvas.clientHeight));
-    const displayWidth = Math.round(width * dpr);
-    const displayHeight = Math.round(height * dpr);
-
-    if (this.canvas.width !== displayWidth || this.canvas.height !== displayHeight) {
-      this.canvas.width = displayWidth;
-      this.canvas.height = displayHeight;
-    }
-
-    this.context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.metrics = this.computeMetrics(level, width, height);
+  isPlacementDeleteBadgeHit(point: { x: number; y: number }, placement: Placement): boolean {
+    const badgeRect = this.getPlacementDeleteBadgeRect(placement);
+    return (
+      point.x >= badgeRect.x &&
+      point.x <= badgeRect.x + badgeRect.width &&
+      point.y >= badgeRect.y &&
+      point.y <= badgeRect.y + badgeRect.height
+    );
   }
 
   private computeMetrics(level: Level, width: number, height: number): BoardMetrics {
-    const padding = Math.max(18, Math.min(width, height) * 0.05);
-    const usableWidth = width - padding * 2;
-    const usableHeight = height - padding * 2;
+    const basePadding = Math.max(18, Math.min(width, height) * 0.05);
+    const availableLeft = basePadding + this.insets.left;
+    const availableRight = width - basePadding - this.insets.right;
+    const availableTop = basePadding + this.insets.top;
+    const availableBottom = height - basePadding - this.insets.bottom;
+    const usableWidth = availableRight - availableLeft;
+    const usableHeight = availableBottom - availableTop;
     const cellSize = Math.max(24, Math.floor(Math.min(usableWidth / level.width, usableHeight / level.height)));
     const boardWidth = cellSize * level.width;
     const boardHeight = cellSize * level.height;
+    const originWidth = Math.max(availableLeft, availableLeft + (usableWidth - boardWidth) / 2);
+    const originHeight = Math.max(availableTop, availableTop + (usableHeight - boardHeight) / 2);
 
     return {
       cellSize,
-      offsetX: Math.floor((width - boardWidth) / 2),
-      offsetY: Math.floor((height - boardHeight) / 2),
+      offsetX: Math.floor(originWidth),
+      offsetY: Math.floor(originHeight),
       boardWidth,
       boardHeight,
     };
@@ -213,20 +253,21 @@ export class CanvasRenderer {
 
   private drawBoardSurface(): void {
     const { context, metrics } = this;
+    const frameInset = 14;
 
     context.save();
     context.fillStyle = '#fffaf1';
     context.strokeStyle = '#d4c8b6';
-    context.lineWidth = 2;
+    context.lineWidth = 2.5;
     context.shadowColor = 'rgba(53, 41, 25, 0.12)';
     context.shadowBlur = 18;
     context.shadowOffsetY = 8;
     this.roundRect(
-      metrics.offsetX - 10,
-      metrics.offsetY - 10,
-      metrics.boardWidth + 20,
-      metrics.boardHeight + 20,
-      18,
+      metrics.offsetX - frameInset,
+      metrics.offsetY - frameInset,
+      metrics.boardWidth + frameInset * 2,
+      metrics.boardHeight + frameInset * 2,
+      20,
     );
     context.fill();
     context.shadowColor = 'transparent';
@@ -290,14 +331,44 @@ export class CanvasRenderer {
     });
   }
 
-  private drawPreview(rect: GridRect, valid: boolean): void {
+  private drawPreview(rect: GridRect, valid: boolean, clue: Clue | null): void {
     const fillColor = valid ? '#6eb59b' : '#d9735c';
     const strokeColor = valid ? '#2f7d61' : '#8f4334';
     this.fillRect(rect, fillColor, strokeColor, 0.45, [10, 6]);
+    this.drawPreviewAccent(rect, strokeColor);
+    this.drawPreviewCorners(rect, strokeColor);
+    if (clue) {
+      this.drawPreviewClueHighlight(clue, strokeColor);
+    }
   }
 
   private drawHint(rect: GridRect): void {
     this.fillRect(rect, '#79aee3', '#2f5f93', 0.24, [8, 6]);
+  }
+
+  private drawSelectedPlacement(placement: Placement): void {
+    const badgeRect = this.getPlacementDeleteBadgeRect(placement);
+    const { context } = this;
+
+    this.drawPreviewAccent(placement.rect, '#8f4a22');
+    this.drawPreviewCorners(placement.rect, '#8f4a22');
+
+    context.save();
+    context.fillStyle = '#fff6f3';
+    context.strokeStyle = '#c65443';
+    context.lineWidth = 2;
+    this.roundRect(badgeRect.x, badgeRect.y, badgeRect.width, badgeRect.height, 11);
+    context.fill();
+    context.stroke();
+    context.strokeStyle = '#c65443';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.moveTo(badgeRect.x + 7, badgeRect.y + 7);
+    context.lineTo(badgeRect.x + badgeRect.width - 7, badgeRect.y + badgeRect.height - 7);
+    context.moveTo(badgeRect.x + badgeRect.width - 7, badgeRect.y + 7);
+    context.lineTo(badgeRect.x + 7, badgeRect.y + badgeRect.height - 7);
+    context.stroke();
+    context.restore();
   }
 
   private fillRect(
@@ -348,6 +419,90 @@ export class CanvasRenderer {
     context.translate(-centerX, -centerY);
     this.fillRect(rect, fillColor, strokeColor, alpha);
     context.restore();
+  }
+
+  private drawPreviewAccent(rect: GridRect, strokeColor: string): void {
+    const { context, metrics } = this;
+    const x = metrics.offsetX + rect.x * metrics.cellSize;
+    const y = metrics.offsetY + rect.y * metrics.cellSize;
+    const width = rect.width * metrics.cellSize;
+    const height = rect.height * metrics.cellSize;
+
+    context.save();
+    context.strokeStyle = strokeColor;
+    context.lineWidth = 2;
+    context.shadowColor = strokeColor;
+    context.shadowBlur = 14;
+    context.strokeRect(x + 3, y + 3, width - 6, height - 6);
+    context.restore();
+  }
+
+  private drawPreviewCorners(rect: GridRect, strokeColor: string): void {
+    const { context, metrics } = this;
+    const x = metrics.offsetX + rect.x * metrics.cellSize;
+    const y = metrics.offsetY + rect.y * metrics.cellSize;
+    const width = rect.width * metrics.cellSize;
+    const height = rect.height * metrics.cellSize;
+    const length = Math.max(8, Math.min(16, metrics.cellSize * 0.28));
+
+    context.save();
+    context.strokeStyle = strokeColor;
+    context.lineWidth = 3;
+    context.setLineDash([]);
+    context.beginPath();
+    context.moveTo(x + 3, y + length);
+    context.lineTo(x + 3, y + 3);
+    context.lineTo(x + length, y + 3);
+    context.moveTo(x + width - length, y + 3);
+    context.lineTo(x + width - 3, y + 3);
+    context.lineTo(x + width - 3, y + length);
+    context.moveTo(x + 3, y + height - length);
+    context.lineTo(x + 3, y + height - 3);
+    context.lineTo(x + length, y + height - 3);
+    context.moveTo(x + width - length, y + height - 3);
+    context.lineTo(x + width - 3, y + height - 3);
+    context.lineTo(x + width - 3, y + height - length);
+    context.stroke();
+    context.restore();
+  }
+
+  private drawPreviewClueHighlight(clue: Clue, strokeColor: string): void {
+    const { context, metrics } = this;
+    const centerX = metrics.offsetX + (clue.x + 0.5) * metrics.cellSize;
+    const centerY = metrics.offsetY + (clue.y + 0.5) * metrics.cellSize;
+
+    context.save();
+    context.fillStyle = 'rgba(255, 255, 255, 0.36)';
+    context.strokeStyle = strokeColor;
+    context.lineWidth = 2;
+    context.shadowColor = strokeColor;
+    context.shadowBlur = 12;
+    context.beginPath();
+    context.arc(centerX, centerY, metrics.cellSize * 0.34, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+
+  private getPlacementDeleteBadgeRect(placement: Placement): SurfaceRect {
+    const surfaceRect = this.getSurfaceRect(placement.rect);
+    const size = Math.max(22, Math.min(28, this.metrics.cellSize * 0.55));
+
+    return {
+      x: surfaceRect.x + surfaceRect.width - size - 4,
+      y: surfaceRect.y + 4,
+      width: size,
+      height: size,
+    };
+  }
+
+  private getSurfaceRect(rect: GridRect): SurfaceRect {
+    return {
+      x: this.metrics.offsetX + rect.x * this.metrics.cellSize,
+      y: this.metrics.offsetY + rect.y * this.metrics.cellSize,
+      width: rect.width * this.metrics.cellSize,
+      height: rect.height * this.metrics.cellSize,
+    };
   }
 
   private drawGrid(level: Level): void {

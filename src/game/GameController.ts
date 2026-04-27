@@ -16,13 +16,16 @@ import type {
   LevelRecord,
   Placement,
   PreviewState,
+  SavedProgress,
 } from './types';
 
 type Listener = (snapshot: GameSnapshot) => void;
 
 interface GameControllerOptions {
   initialRecords?: LevelRecordMap;
+  initialProgress?: SavedProgress | null;
   onRecordsChange?: (records: LevelRecordMap) => void;
+  onProgressChange?: (progress: SavedProgress | null) => void;
 }
 
 export class GameController {
@@ -32,9 +35,13 @@ export class GameController {
 
   private readonly onRecordsChange?: (records: LevelRecordMap) => void;
 
+  private readonly onProgressChange?: (progress: SavedProgress | null) => void;
+
   private levelIndex = 0;
 
   private placements: Placement[] = [];
+
+  private selectedPlacementId: string | null = null;
 
   private history: Placement[][] = [];
 
@@ -68,6 +75,8 @@ export class GameController {
     this.levels = levels;
     this.records = options.initialRecords ? this.cloneRecords(options.initialRecords) : {};
     this.onRecordsChange = options.onRecordsChange;
+    this.onProgressChange = options.onProgressChange;
+    this.restoreInitialProgress(options.initialProgress ?? null);
   }
 
   subscribe(listener: Listener): () => void {
@@ -84,6 +93,7 @@ export class GameController {
       levelIndex: this.levelIndex,
       level: this.level,
       placements: [...this.placements],
+      selectedPlacementId: this.selectedPlacementId,
       preview: this.preview,
       hintSuggestion: this.hintSuggestion,
       hintMessage: this.hintMessage,
@@ -103,6 +113,7 @@ export class GameController {
       return;
     }
 
+    this.selectedPlacementId = null;
     this.dragOrigin = cell;
     this.clearHintSuggestion();
     this.updateDrag(cell);
@@ -129,6 +140,7 @@ export class GameController {
     }
 
     this.emit();
+    this.persistProgress();
   }
 
   finishDrag(): void {
@@ -192,6 +204,7 @@ export class GameController {
     this.dragOrigin = null;
     this.clearHintSuggestion();
     this.emit();
+    this.persistProgress();
   }
 
   cancelDrag(): void {
@@ -223,17 +236,91 @@ export class GameController {
     }
 
     this.placements = previous;
+    this.selectedPlacementId = null;
     this.preview = null;
     this.dragOrigin = null;
     this.clearHintSuggestion();
     this.solved = isBoardSolved(this.level, this.placements);
     this.status = this.solved ? { key: 'status.solvedBoardCovered' } : { key: 'status.undo' };
     this.emit();
+    this.persistProgress();
   }
 
   resetLevel(): void {
     this.resetInternalState({ key: 'status.reset' });
     this.emit();
+    this.persistProgress();
+  }
+
+  getPlacementAtCell(cell: Cell): Placement | null {
+    for (let index = this.placements.length - 1; index >= 0; index -= 1) {
+      const placement = this.placements[index];
+      const { rect } = placement;
+      if (
+        cell.x >= rect.x &&
+        cell.x < rect.x + rect.width &&
+        cell.y >= rect.y &&
+        cell.y < rect.y + rect.height
+      ) {
+        return placement;
+      }
+    }
+
+    return null;
+  }
+
+  selectPlacement(placementId: string): void {
+    if (this.mode === 'record') {
+      return;
+    }
+
+    if (!this.placements.some((placement) => placement.id === placementId)) {
+      return;
+    }
+
+    if (this.selectedPlacementId === placementId) {
+      return;
+    }
+
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.selectedPlacementId = placementId;
+    this.emit();
+  }
+
+  clearSelectedPlacement(): void {
+    if (!this.selectedPlacementId) {
+      return;
+    }
+
+    this.selectedPlacementId = null;
+    this.emit();
+  }
+
+  removeSelectedPlacement(): void {
+    if (this.mode === 'record' || !this.selectedPlacementId) {
+      return;
+    }
+
+    const selectedIndex = this.placements.findIndex(
+      (placement) => placement.id === this.selectedPlacementId,
+    );
+    if (selectedIndex < 0) {
+      this.selectedPlacementId = null;
+      return;
+    }
+
+    this.history.push(this.clonePlacements(this.placements));
+    this.placements = this.placements.filter((placement) => placement.id !== this.selectedPlacementId);
+    this.selectedPlacementId = null;
+    this.preview = null;
+    this.dragOrigin = null;
+    this.clearHintSuggestion();
+    this.solved = isBoardSolved(this.level, this.placements);
+    this.status = { key: 'status.removedPlacement' };
+    this.emit();
+    this.persistProgress();
   }
 
   requestHint(): void {
@@ -247,6 +334,7 @@ export class GameController {
 
     this.preview = null;
     this.dragOrigin = null;
+    this.selectedPlacementId = null;
 
     const suggestion = findHintSuggestion(this.level, this.placements);
     this.hintSuggestion = suggestion;
@@ -306,6 +394,7 @@ export class GameController {
     this.levelIndex += 1;
     this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
     this.emit();
+    this.persistProgress();
   }
 
   previousLevel(): void {
@@ -316,6 +405,7 @@ export class GameController {
     this.levelIndex -= 1;
     this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
     this.emit();
+    this.persistProgress();
   }
 
   setLevel(index: number): void {
@@ -326,6 +416,7 @@ export class GameController {
     this.levelIndex = index;
     this.resetInternalState({ key: 'status.enteredLevel', values: { levelNumber: this.level.number } });
     this.emit();
+    this.persistProgress();
   }
 
   viewRecordedLevel(index: number): void {
@@ -343,6 +434,7 @@ export class GameController {
 
     this.levelIndex = index;
     this.placements = this.clonePlacements(record.placements);
+    this.selectedPlacementId = null;
     this.history = [];
     this.preview = null;
     this.dragOrigin = null;
@@ -397,6 +489,7 @@ export class GameController {
 
   private resetInternalState(status: MessageDescriptor): void {
     this.placements = [];
+    this.selectedPlacementId = null;
     this.history = [];
     this.preview = null;
     this.dragOrigin = null;
@@ -432,6 +525,58 @@ export class GameController {
 
     this.onRecordsChange?.(this.cloneRecords(this.records));
     return record;
+  }
+
+  private restoreInitialProgress(progress: SavedProgress | null): void {
+    if (!progress) {
+      return;
+    }
+
+    const restoredLevelIndex = this.levels.findIndex((level) => level.id === progress.levelId);
+    if (restoredLevelIndex < 0) {
+      return;
+    }
+
+    this.levelIndex = restoredLevelIndex;
+    this.placements = this.clonePlacements(progress.placements);
+    this.selectedPlacementId = null;
+    this.history = progress.history.map((snapshot) => this.clonePlacements(snapshot));
+    this.preview = null;
+    this.dragOrigin = null;
+    this.hintSuggestion = null;
+    this.hintMessage = null;
+    this.mode = 'play';
+    this.placementSequence = progress.placementSequence;
+    this.attemptStartedAt = progress.attemptStartedAt;
+    this.solved = isBoardSolved(this.level, this.placements);
+
+    const covered = getCoveredCellCount(this.level, this.placements);
+    this.status = this.solved
+      ? { key: 'status.solvedBoardCovered' }
+      : covered > 0
+        ? {
+            key: 'status.coveredProgress',
+            values: { covered, total: this.level.width * this.level.height },
+          }
+        : { key: 'status.baseInstruction' };
+  }
+
+  private buildSavedProgress(): SavedProgress {
+    return {
+      levelId: this.level.id,
+      placements: this.clonePlacements(this.placements),
+      history: this.history.map((snapshot) => this.clonePlacements(snapshot)),
+      placementSequence: this.placementSequence,
+      attemptStartedAt: this.attemptStartedAt,
+    };
+  }
+
+  private persistProgress(): void {
+    if (this.mode !== 'play') {
+      return;
+    }
+
+    this.onProgressChange?.(this.buildSavedProgress());
   }
 
   private formatDuration(durationMs: number): string {

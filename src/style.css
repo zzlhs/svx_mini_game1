@@ -104,6 +104,10 @@ button:disabled {
   color: var(--accent);
 }
 
+.eyebrow:empty {
+  display: none;
+}
+
 .hero h1 {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3.6rem);
@@ -222,7 +226,7 @@ button:disabled {
   min-height: 360px;
   border-radius: 22px;
   overflow: hidden;
-  border: 1px solid var(--canvas-border);
+  border: 2px solid var(--canvas-border);
   background: rgba(255, 249, 240, 0.78);
 }
 
@@ -328,6 +332,10 @@ button:disabled {
 
 .rules-list li + li {
   margin-top: 0.45rem;
+}
+
+.compact-card {
+  min-height: 150px;
 }
 
 @media (max-width: 920px) {

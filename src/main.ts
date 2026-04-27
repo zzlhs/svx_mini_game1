@@ -4,7 +4,6 @@ import { FeedbackAudio } from './audio/FeedbackAudio';
 import { GameController } from './game/GameController';
 import { levels } from './game/levels';
 import { getCoveredCellCount } from './game/logic';
-import { loadLevelRecords, saveLevelRecords } from './game/storage';
 import type { GameSnapshot, LevelRecord } from './game/types';
 import {
   detectLocale,
@@ -17,8 +16,12 @@ import {
   tm,
   type Locale,
 } from './i18n';
+import { BrowserPointerInputSource } from './input/BrowserPointerInputSource';
 import { PointerController } from './input/PointerController';
+import { BrowserCanvasSurface } from './render/BrowserCanvasSurface';
 import { CanvasRenderer } from './render/CanvasRenderer';
+import { BrowserGameStorage } from './storage/BrowserGameStorage';
+import { BrowserLocalStorageAdapter } from './storage/BrowserLocalStorageAdapter';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 
@@ -54,7 +57,7 @@ app.innerHTML = `
         </div>
 
         <div class="canvas-stage">
-          <canvas id="game-canvas" aria-label="Patch Grid game board"></canvas>
+          <canvas id="game-canvas" aria-label="Fill Grid game board"></canvas>
         </div>
       </section>
 
@@ -175,22 +178,35 @@ if (
 }
 
 let locale: Locale = loadLocale() ?? detectLocale();
-const initialRecords = loadLevelRecords(levels);
+const gameStorage = new BrowserGameStorage(new BrowserLocalStorageAdapter());
+const savedGameState = gameStorage.load(levels);
 const game = new GameController(levels, {
-  initialRecords,
+  initialRecords: savedGameState.records,
+  initialProgress: savedGameState.progress,
   onRecordsChange: (records) => {
-    saveLevelRecords(records);
+    gameStorage.saveRecords(records);
+  },
+  onProgressChange: (progress) => {
+    gameStorage.saveProgress(progress);
   },
 });
-const renderer = new CanvasRenderer(canvas);
+const surface = new BrowserCanvasSurface(canvas);
+const renderer = new CanvasRenderer(surface);
 const audio = new FeedbackAudio();
-new PointerController(canvas, renderer, game);
+const pointerInputSource = new BrowserPointerInputSource(canvas);
+new PointerController(pointerInputSource, surface, renderer, game);
+
+const primeAudio = (): void => {
+  audio.prime();
+};
 
 let currentSnapshot = game.getSnapshot();
 let animationFrameId = 0;
 let lastPlacementEffectId = 0;
 let lastInvalidEffectId = 0;
 let lastCelebrationEffectId = 0;
+let autoAdvanceTimeoutId = 0;
+let lastAutoAdvanceCelebrationId = 0;
 
 localeSelect.innerHTML = '';
 for (const supportedLocale of getSupportedLocales()) {
@@ -375,10 +391,13 @@ const render = (snapshot: GameSnapshot): void => {
   currentSnapshot = snapshot;
   renderUi(snapshot);
   renderer.render(snapshot, {
-    solvedBadge: t(locale, 'renderer.badgeSolved'),
-    recordBadge: t(locale, 'renderer.badgeRecord'),
+    labels: {
+      solvedBadge: t(locale, 'renderer.badgeSolved'),
+      recordBadge: t(locale, 'renderer.badgeRecord'),
+    },
   });
   syncFeedbackAudio(snapshot);
+  scheduleAutoAdvance(snapshot);
   ensureAnimationLoop();
 };
 
@@ -406,6 +425,32 @@ function syncFeedbackAudio(snapshot: GameSnapshot): void {
   }
 }
 
+function scheduleAutoAdvance(snapshot: GameSnapshot): void {
+  if (
+    snapshot.mode !== 'play' ||
+    !snapshot.solved ||
+    !snapshot.hasNextLevel ||
+    snapshot.effects.celebrationId === 0 ||
+    snapshot.effects.celebrationId === lastAutoAdvanceCelebrationId
+  ) {
+    return;
+  }
+
+  if (autoAdvanceTimeoutId !== 0) {
+    window.clearTimeout(autoAdvanceTimeoutId);
+    autoAdvanceTimeoutId = 0;
+  }
+
+  lastAutoAdvanceCelebrationId = snapshot.effects.celebrationId;
+  autoAdvanceTimeoutId = window.setTimeout(() => {
+    autoAdvanceTimeoutId = 0;
+    const latest = game.getSnapshot();
+    if (latest.mode === 'play' && latest.solved && latest.hasNextLevel) {
+      game.nextLevel();
+    }
+  }, 1200);
+}
+
 function ensureAnimationLoop(): void {
   if (animationFrameId !== 0 || !renderer.hasActiveEffects()) {
     return;
@@ -417,8 +462,10 @@ function ensureAnimationLoop(): void {
 function tickAnimationFrame(): void {
   animationFrameId = 0;
   renderer.render(currentSnapshot, {
-    solvedBadge: t(locale, 'renderer.badgeSolved'),
-    recordBadge: t(locale, 'renderer.badgeRecord'),
+    labels: {
+      solvedBadge: t(locale, 'renderer.badgeSolved'),
+      recordBadge: t(locale, 'renderer.badgeRecord'),
+    },
   });
 
   if (renderer.hasActiveEffects()) {
@@ -429,20 +476,30 @@ function tickAnimationFrame(): void {
 game.subscribe(render);
 
 undoButton.addEventListener('click', () => {
+  primeAudio();
   game.undo();
 });
 
 restartButton.addEventListener('click', () => {
+  primeAudio();
   game.resetLevel();
 });
 
 hintButton.addEventListener('click', () => {
+  primeAudio();
   game.requestHint();
 });
 
 nextButton.addEventListener('click', () => {
+  primeAudio();
   game.nextLevel();
 });
+
+canvas.addEventListener('pointerdown', primeAudio, { passive: true });
+undoButton.addEventListener('pointerdown', primeAudio, { passive: true });
+restartButton.addEventListener('pointerdown', primeAudio, { passive: true });
+hintButton.addEventListener('pointerdown', primeAudio, { passive: true });
+nextButton.addEventListener('pointerdown', primeAudio, { passive: true });
 
 localeSelect.addEventListener('change', () => {
   const nextLocale = localeSelect.value as Locale;
@@ -452,6 +509,7 @@ localeSelect.addEventListener('change', () => {
 });
 
 window.addEventListener('keydown', (event) => {
+  primeAudio();
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
     event.preventDefault();
     game.undo();
@@ -461,8 +519,10 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('resize', () => {
   currentSnapshot = game.getSnapshot();
   renderer.render(currentSnapshot, {
-    solvedBadge: t(locale, 'renderer.badgeSolved'),
-    recordBadge: t(locale, 'renderer.badgeRecord'),
+    labels: {
+      solvedBadge: t(locale, 'renderer.badgeSolved'),
+      recordBadge: t(locale, 'renderer.badgeRecord'),
+    },
   });
   ensureAnimationLoop();
 });
@@ -471,8 +531,10 @@ if ('ResizeObserver' in window) {
   const observer = new ResizeObserver(() => {
     currentSnapshot = game.getSnapshot();
     renderer.render(currentSnapshot, {
-      solvedBadge: t(locale, 'renderer.badgeSolved'),
-      recordBadge: t(locale, 'renderer.badgeRecord'),
+      labels: {
+        solvedBadge: t(locale, 'renderer.badgeSolved'),
+        recordBadge: t(locale, 'renderer.badgeRecord'),
+      },
     });
     ensureAnimationLoop();
   });

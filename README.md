@@ -1,4 +1,4 @@
-# Patch Grid Prototype
+# 填充格子原型
 
 一个使用 `TypeScript + Vite + Canvas` 搭建的逻辑益智游戏原型，玩法接近 Play Patches，后续方便迁移到微信小游戏。
 

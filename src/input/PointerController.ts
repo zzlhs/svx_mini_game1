@@ -1,94 +1,142 @@
 import type { GameController } from '../game/GameController';
+import type { PointerInputSource } from './PointerInputSource';
+import type { PointerSample } from './PointerInputSource';
+import type { CanvasSurface } from '../render/CanvasSurface';
 import type { CanvasRenderer } from '../render/CanvasRenderer';
 
 export class PointerController {
-  private readonly canvas: HTMLCanvasElement;
-
   private readonly renderer: CanvasRenderer;
 
   private readonly game: GameController;
 
+  private readonly surface: CanvasSurface;
+
+  private readonly shouldIgnoreInput: () => boolean;
+
   private activePointerId: number | null = null;
 
-  constructor(canvas: HTMLCanvasElement, renderer: CanvasRenderer, game: GameController) {
-    this.canvas = canvas;
+  constructor(
+    inputSource: PointerInputSource,
+    surface: CanvasSurface,
+    renderer: CanvasRenderer,
+    game: GameController,
+    options: { shouldIgnoreInput?: () => boolean } = {},
+  ) {
+    this.surface = surface;
     this.renderer = renderer;
     this.game = game;
+    this.shouldIgnoreInput = options.shouldIgnoreInput ?? (() => false);
 
-    this.bindEvents();
+    inputSource.bind({
+      onPointerStart: this.handlePointerStart,
+      onPointerMove: this.handlePointerMove,
+      onPointerEnd: this.handlePointerEnd,
+      onPointerCancel: this.handlePointerCancel,
+    });
   }
 
-  private bindEvents(): void {
-    this.canvas.addEventListener('pointerdown', this.handlePointerDown);
-    this.canvas.addEventListener('pointermove', this.handlePointerMove);
-    this.canvas.addEventListener('pointerup', this.handlePointerUp);
-    this.canvas.addEventListener('pointercancel', this.handlePointerCancel);
-    this.canvas.addEventListener('lostpointercapture', this.handlePointerCancel);
+  private toSurfacePoint(clientX: number, clientY: number): { x: number; y: number } | null {
+    return this.surface.clientToSurfacePoint(clientX, clientY);
   }
 
-  private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (this.game.isInteractionLocked()) {
+  private readonly handlePointerStart = (sample: PointerSample): void => {
+    if (this.game.isInteractionLocked() || this.shouldIgnoreInput()) {
       return;
     }
 
-    if (!event.isPrimary) {
+    if (!sample.isPrimary) {
       return;
     }
 
-    if (event.pointerType === 'mouse' && event.button !== 0) {
+    if (sample.pointerType === 'mouse' && sample.button !== 0) {
       return;
     }
 
-    const cell = this.renderer.getCellFromClientPoint(event.clientX, event.clientY);
+    const point = this.toSurfacePoint(sample.clientX, sample.clientY);
+    if (!point) {
+      return;
+    }
+
+    const cell = this.renderer.getCellFromSurfacePoint(point);
     if (!cell) {
+      this.game.clearSelectedPlacement();
       return;
     }
 
-    this.activePointerId = event.pointerId;
-    this.canvas.setPointerCapture(event.pointerId);
+    const snapshot = this.game.getSnapshot();
+    const selectedPlacement = snapshot.selectedPlacementId
+      ? snapshot.placements.find((placement) => placement.id === snapshot.selectedPlacementId) ?? null
+      : null;
+    if (selectedPlacement && this.renderer.isPlacementDeleteBadgeHit(point, selectedPlacement)) {
+      this.game.removeSelectedPlacement();
+      return;
+    }
+
+    const placement = this.game.getPlacementAtCell(cell);
+    if (placement) {
+      this.game.selectPlacement(placement.id);
+      return;
+    }
+
+    this.activePointerId = sample.pointerId;
     this.game.startDrag(cell);
-    event.preventDefault();
   };
 
-  private readonly handlePointerMove = (event: PointerEvent): void => {
-    if (event.pointerId !== this.activePointerId) {
+  private readonly handlePointerMove = (sample: PointerSample): void => {
+    if (this.shouldIgnoreInput()) {
       return;
     }
 
-    const cell = this.renderer.getCellFromClientPoint(event.clientX, event.clientY, true);
+    if (sample.pointerId !== this.activePointerId) {
+      const point = this.toSurfacePoint(sample.clientX, sample.clientY);
+      if (!point) {
+        this.game.clearSelectedPlacement();
+        return;
+      }
+
+      const cell = this.renderer.getCellFromSurfacePoint(point);
+      if (!cell) {
+        this.game.clearSelectedPlacement();
+        return;
+      }
+
+      const placement = this.game.getPlacementAtCell(cell);
+      if (placement) {
+        this.game.selectPlacement(placement.id);
+      } else {
+        this.game.clearSelectedPlacement();
+      }
+      return;
+    }
+
+    const point = this.toSurfacePoint(sample.clientX, sample.clientY);
+    if (!point) {
+      return;
+    }
+
+    const cell = this.renderer.getCellFromSurfacePoint(point, true);
     if (!cell) {
       return;
     }
 
     this.game.updateDrag(cell);
-    event.preventDefault();
   };
 
-  private readonly handlePointerUp = (event: PointerEvent): void => {
-    if (event.pointerId !== this.activePointerId) {
+  private readonly handlePointerEnd = (sample: PointerSample): void => {
+    if (sample.pointerId !== this.activePointerId) {
       return;
     }
 
     this.activePointerId = null;
     this.game.finishDrag();
-
-    if (this.canvas.hasPointerCapture(event.pointerId)) {
-      this.canvas.releasePointerCapture(event.pointerId);
-    }
-
-    event.preventDefault();
   };
 
-  private readonly handlePointerCancel = (event: PointerEvent): void => {
-    if (event.pointerId !== this.activePointerId) {
+  private readonly handlePointerCancel = (sample: PointerSample): void => {
+    if (sample.pointerId !== this.activePointerId) {
       return;
     }
 
     this.activePointerId = null;
     this.game.cancelDrag();
-
-    if (this.canvas.hasPointerCapture(event.pointerId)) {
-      this.canvas.releasePointerCapture(event.pointerId);
-    }
   };
 }

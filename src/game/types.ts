@@ -47,6 +47,14 @@ export interface LevelRecord {
   placements: Placement[];
 }
 
+export interface SavedProgress {
+  levelId: string;
+  placements: Placement[];
+  history: Placement[][];
+  placementSequence: number;
+  attemptStartedAt: number;
+}
+
 export interface PlacementEffectEvent {
   id: number;
   placementId: string;
@@ -80,6 +88,7 @@ export interface GameSnapshot {
   levelIndex: number;
   level: Level;
   placements: Placement[];
+  selectedPlacementId: string | null;
   preview: PreviewState | null;
   hintSuggestion: HintSuggestion | null;
   hintMessage: MessageDescriptor | null;
