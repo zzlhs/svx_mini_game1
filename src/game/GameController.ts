@@ -448,6 +448,18 @@ export class GameController {
     this.emit();
   }
 
+  resetCampaign(): void {
+    this.records = {};
+    this.levelIndex = 0;
+    this.resetInternalState({
+      key: 'status.enteredLevel',
+      values: { levelNumber: this.level.number },
+    });
+    this.onRecordsChange?.({});
+    this.emit();
+    this.persistProgress();
+  }
+
   isInteractionLocked(): boolean {
     return this.mode === 'record';
   }

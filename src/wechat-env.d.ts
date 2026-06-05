@@ -49,6 +49,15 @@ declare interface WechatCanvas {
   width: number;
   height: number;
   getContext(type: '2d'): CanvasRenderingContext2D | null;
+  createImage?(): WechatImage;
+}
+
+declare interface WechatImage {
+  src: string;
+  onload: (() => void) | null;
+  onerror: ((error?: unknown) => void) | null;
+  width?: number;
+  height?: number;
 }
 
 declare interface WechatInnerAudioContext {
@@ -68,11 +77,13 @@ declare interface WechatApi {
   getStorageSync(key: string): unknown;
   setStorageSync(key: string, data: string): void;
   removeStorageSync(key: string): void;
+  vibrateShort?(options?: { type?: 'light' | 'medium' | 'heavy' }): void;
   onTouchStart(callback: (event: WechatTouchEvent) => void): void;
   onTouchMove(callback: (event: WechatTouchEvent) => void): void;
   onTouchEnd(callback: (event: WechatTouchEvent) => void): void;
   onTouchCancel(callback: (event: WechatTouchEvent) => void): void;
   createCanvas(): WechatCanvas;
+  createImage?(): WechatImage;
   createInnerAudioContext?(): WechatInnerAudioContext;
   getWindowInfo?(): WechatWindowInfo;
   getSystemInfoSync(): WechatSystemInfo;

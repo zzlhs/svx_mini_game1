@@ -1,136 +1,351 @@
 # Agent Notes
 
-## Project
+## 项目概览
 
-- Name: `填充格子`
-- Stack: `TypeScript + Vite + Canvas`
-- Targets:
-  - Browser web build
-  - WeChat Mini Game build
+- 项目名称：`填充格子`
+- 类型：逻辑益智小游戏
+- 技术栈：`TypeScript + Vite + Canvas`
+- 目标平台：
+  - 浏览器 Web
+  - 微信小游戏
 
-## Core Gameplay
+项目最初目标是做一个类似 Play Patches 的逻辑益智游戏原型，后续逐步扩展为可在微信小游戏环境中直接验证的版本。
 
-- Grid-based logic puzzle.
-- Some cells contain clue numbers.
-- Player drags to create rectangles.
-- Each rectangle must:
-  - contain exactly one clue
-  - have area equal to that clue
-- The full board must be covered with no overlap and no gaps.
+## 核心玩法
 
-## Current Implemented Scope
+- 游戏基于网格棋盘进行。
+- 棋盘上部分格子带有数字提示。
+- 玩家通过拖拽生成矩形区域。
+- 每个矩形必须满足：
+  - 只包含一个数字提示。
+  - 矩形面积等于该数字的值。
+- 全部矩形最终必须完整覆盖棋盘。
+- 不允许重叠，也不允许遗漏空格。
+- 满足条件后即可通关并进入下一关。
 
-- Vite + TypeScript project bootstrap
-- Canvas board rendering
-- Mouse and touch drag interaction
-- Placement validation
-- Win detection
-- 30 levels with progression
-- Hint system
-- Undo / restart / next level
-- Local save:
-  - cleared level records
-  - current progress
-- i18n:
-  - `zh-CN`
-  - `en-US`
-- Lightweight animation and audio
-- WeChat Mini Game adaptation
+## 已完成的主要能力
 
-## WeChat Mini Game Status
+### 1. 原型基础能力
 
-- Root import for WeChat DevTools is supported.
-- `game.js` and `game.json` are generated at repo root.
-- Canvas-only mini game UI is implemented.
-- Safe-area-aware top layout is in place.
-- Current WeChat UI includes:
-  - home / entry screen
-  - HUD-style top info
-  - floating toolbar
-  - level selection panel
-  - clear banner before auto-advance
+- 使用 `Vite + TypeScript` 初始化项目。
+- 使用 `Canvas` 进行棋盘和界面渲染。
+- 支持桌面鼠标和移动端触摸输入。
+- 实现基础棋盘渲染。
+- 实现拖拽创建矩形。
+- 实现矩形合法性校验。
+- 实现通关判定。
+- 提供示例关卡。
 
-## Recent Collaboration Summary
+### 2. 关卡与进度系统
 
-The user requested a Play Patches-like logic puzzle prototype and later expanded the scope toward a WeChat Mini Game-ready experience.
+- 扩展到 `30` 个关卡，难度逐步增加。
+- 关卡列表使用固定 `6 × 6` 小格布局。
+- 前 `30` 格为真实关卡，后 `6` 格为占位符，避免显示错乱。
+- 支持：
+  - 撤销
+  - 重开
+  - 下一关
+  - 已完成关卡回看
+- 每关可记录：
+  - 是否通关
+  - 通关用时
+  - 通关时间
+  - 当时的完成解法
+- 点击已完成关卡可直接查看历史完成解法。
 
-Main collaborative milestones:
+### 3. 提示系统
 
-1. Built the playable prototype with:
-   - board rendering
-   - drag placement
-   - validation
-   - win check
-   - sample levels
+- 每关可点击“提示”按钮。
+- 提示不会自动完成整关。
+- 提示基于当前局面动态计算。
+- 只会推荐一个当前可放置的合法矩形。
+- 默认不主动显示提示内容，必须点击后才显示。
+- 棋盘上会对提示矩形做高亮显示。
 
-2. Added progression and utility systems:
-   - 30 levels
-   - level record grid
-   - level completion time
-   - saved solutions
-   - undo / restart / next
-   - hint system
+### 4. 存档系统
 
-3. Added polish features:
-   - lightweight animation
-   - placement / invalid / celebration audio
-   - i18n
-   - local persistence
+- 浏览器环境使用 `localStorage`。
+- 已封装抽象存储接口，便于迁移到微信小游戏存储 API。
+- 当前支持记录：
+  - 已通关关卡
+  - 当前关卡进度
+  - 当前局面放置结果
+  - 周排行榜数据
 
-4. Refactored for WeChat Mini Game portability:
-   - input abstraction
-   - storage abstraction
-   - canvas surface abstraction
-   - dedicated WeChat entry
+### 5. 国际化
 
-5. Fixed WeChat import and preview issues:
-   - missing `game.json`
-   - invalid `showStatusBar`
-   - root-level mini game bundle output
-   - startup / canvas compatibility fixes
+- 支持 `zh-CN`
+- 支持 `en-US`
+- 包含：
+  - 按钮文案
+  - 规则说明
+  - 提示信息
+  - 关卡标题
+  - 记录说明
+  - 首页文案
+  - 设置文案
+  - 排行榜文案
 
-6. Iterated heavily on WeChat UI:
-   - moved from a simple validation shell to a fuller mini game layout
-   - adjusted safe area behavior
-   - reorganized HUD and toolbar
-   - added home screen
-   - unified theme colors and border language
-   - reduced excessive bubble frames
-   - kept rules text inside a dedicated bordered area
+### 6. 动效与音效
 
-7. Updated branding:
-   - game name changed from `Patch Grid` to `填充格子` / `Fill Grid`
+- 放置合法矩形时有轻量淡入与缩放反馈。
+- 非法操作时有轻微抖动反馈。
+- 通关时有简洁庆祝效果。
+- 已补齐网页版和微信小游戏版音效。
+- 音效风格从早期简单提示音升级为更轻快、更有节奏感的版本。
+- 微信小游戏环境增加了音频初始化与兼容处理。
 
-8. Latest interaction change:
-   - placed rectangles can now be removed with a red `X`
-   - desktop behavior:
-     - moving the mouse onto an existing rectangle shows the red `X`
-     - clicking the red `X` removes that rectangle
-   - touch behavior:
-     - tap rectangle to reveal delete affordance
-     - tap red `X` to remove
+### 7. 删除已放置矩形
 
-## Important Current Behavior
+- 已放置矩形支持删除。
+- 当前交互逻辑：
+  - 桌面端：鼠标移动到矩形上时显示红叉，可直接点击删除。
+  - 触摸端：轻触矩形显示删除红叉，再点红叉删除。
 
-- After solving a level, the game shows a short celebration banner and then auto-advances to the next level.
-- Browser and WeChat builds both compile successfully.
-- Rules text must remain inside a bordered area.
-- Page text/border styling has been unified through a theme layer in `src/wechat/main.ts`.
+## 微信小游戏适配过程总结
 
-## Key Files
+### 1. 架构层适配准备
 
-- Browser entry: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/main.ts`
-- WeChat entry: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/wechat/main.ts`
-- Game state: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/GameController.ts`
-- Rules logic: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/logic.ts`
-- Shared types: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/types.ts`
-- Renderer: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/render/CanvasRenderer.ts`
-- Input controller: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/input/PointerController.ts`
-- i18n: `/Users/zhengyuan/ideaProjects/svx_mini_game1/src/i18n.ts`
+为了方便从浏览器迁移到微信小游戏，项目做了平台解耦：
 
-## Next Suggested Directions
+- 输入层抽象
+- 存储层抽象
+- Canvas Surface 抽象
+- 微信小游戏专用入口
+- 微信小游戏专用输入源
+- 微信小游戏专用存储适配器
+- 微信小游戏专用 Canvas 宿主
 
-- Continue refining deletion UX so touch and mouse feel equally natural.
-- Add a more polished start / transition flow for mini game launch.
-- Add final visual cleanup for HUD, level panel, and toolbar consistency.
-- If needed, add a dedicated tutorial / onboarding first level.
+对应文档：
+
+- [docs/wechat-minigame-adaptation.md](/Users/zhengyuan/ideaProjects/svx_mini_game1/docs/wechat-minigame-adaptation.md)
+
+### 2. 微信小游戏启动与构建问题修复
+
+曾处理过这些典型问题：
+
+- `game.json` 缺失
+- `showStatusBar` 字段格式错误
+- 根目录导入后黑屏
+- 入口只显示 `loading mini game`
+- 画布实例不一致导致内容没真正绘制到前台
+- TypeScript 配置兼容性问题
+- 包体过大，超过微信预览上限
+
+为解决这些问题，后续做了这些调整：
+
+- 根目录直接输出 `game.js` 与 `game.json`
+- 调整小游戏启动入口为真实游戏入口
+- 优化微信 `canvas` 获取逻辑
+- 压缩首页资源体积
+- 清理构建残留
+
+### 3. 微信小游戏首页
+
+微信小游戏当前会先进入首页，而不是直接进入游戏。
+
+首页特性：
+
+- 背景使用外部美术资源 `bg.jpg`
+- 中下方两个大按钮：
+  - `新游戏`
+  - `排行榜`
+- 点击 `新游戏`：
+  - 重置本轮关卡进度
+  - 清空当前局面
+  - 从第一关重新开始
+- 点击 `排行榜`：
+  - 打开本周排行榜
+
+首页左上角增加了两个按钮图标：
+
+- `对勾`：显示通关目标说明
+- `问号`：显示玩法说明
+
+这些按钮和白色胶囊背景后来做过多轮迭代：
+
+- 调整到左上角
+- 放大按钮图标
+- 放大白色背景胶囊
+- 让两个图标分别在左右区域中居中
+- 调整弹窗尺寸与底部按钮位置
+- 避免“我知道了”按钮遮挡文字内容
+
+### 4. 微信小游戏排行榜系统
+
+当前排行榜是“本机本周排行榜”。
+
+规则如下：
+
+- 记录的是玩家从第一关开始连续通关全部关卡的总用时。
+- 用时越短，排名越高。
+- 仅保留本周记录。
+- 当前不依赖服务器，先用于本机验证。
+- 点击首页排行榜按钮可查看排行榜。
+- 游戏中点击左上角排行榜图标，也会打开同一个排行榜弹窗。
+
+### 5. 微信小游戏设置系统
+
+游戏页左上角增加了设置图标。
+
+点击后打开设置弹窗，支持：
+
+- `声音` 开关
+- `震动` 开关
+- `回到主页`
+- `继续游戏`
+
+设置面板的样式参考了用户提供的示例图，后续又做了多轮位置和尺寸优化，避免挡住关卡信息区。
+
+## 微信小游戏界面迭代纪要
+
+这一阶段是整个项目迭代最密集的一段，主要集中在 `src/wechat/main.ts`。
+
+### 1. 页面布局
+
+- 顶部标题避让摄像头/安全区。
+- `提示 / 本关记录 / 当前进度` 移到主游戏区域上方。
+- 页面整体更紧凑，顶部和底部向中间收拢。
+- 规则文字强制放到规则边框内部。
+- 页面中带文字的内容不再显示省略号。
+- 页面中气泡边框的下边距加大，避免文字贴底。
+
+### 2. HUD 与工具栏
+
+- 顶部信息区从卡片式改为更轻的 HUD 风格。
+- 底部按钮改造成更像小游戏的悬浮工具栏。
+- 底部工具栏增加图标语义：
+  - 关卡
+  - 撤销
+  - 重开
+  - 提示
+  - 下一关
+- 工具栏增加按钮按下态反馈。
+
+### 3. 关卡选择面板
+
+- 关卡面板支持 `6 × 6` 排列。
+- 已完成关卡有更明显的完成状态。
+- 当前关卡有更强的高亮强调。
+- 查看记录状态有额外标识。
+
+### 4. 通关反馈
+
+- 通关后先显示短暂横幅。
+- 再自动进入下一关。
+- 全部关卡完成时会显示完整完成提示。
+
+### 5. 视觉统一
+
+页面经历过一次大风格重做，参考了用户提供的天空糖果风美术图。
+
+重做内容包括：
+
+- 背景改成粉橙到蓝色的天空渐变风格
+- 增加云朵、小星点等装饰元素
+- 卡片改成更柔和的奶白磨砂感
+- 棋盘矩形颜色统一为糖果色系
+- 工具栏、通关横幅、弹窗统一同一套主题语言
+
+后续又补充了：
+
+- 页面中的文字和对应边框统一风格
+- 去掉多余的气泡边框
+- 规则区保留明确边框包裹
+- 标题副文案“逻辑益智游戏”被移除
+- 棋盘外框加大
+- 规则区外框高度加大
+
+## 棋盘与渲染相关迭代
+
+- 棋盘初始小格线条颜色做过多轮调整：
+  - 粉白
+  - 橙白
+  - 浅蓝
+  - 蓝色
+  - 深蓝
+- 目的是让初始方格白框更明显，同时保持整体风格统一。
+- 拖拽预览增加更明显的吸附边框与数字命中高亮。
+
+## 首页与弹窗系统迭代
+
+### 首页说明弹窗
+
+用户特别关注过首页问号按钮弹窗的布局，因此这里单独记录：
+
+- 按钮“我知道了”先做过下移
+- 随后要求弹窗整体变大
+- 再要求按钮放在弹窗底部
+- 最后继续优化，避免按钮组件挡住说明文字
+
+当前目标状态：
+
+- 正文内容完整可见
+- 辅助功能说明与规则说明分层展示
+- `我知道了` 按钮固定在底部
+
+### 排行榜弹窗
+
+- 排行榜弹窗增加居中的底部返回说明
+- “点击空白处返回”现在位于弹窗底部中间位置
+
+## 用户提出过的文案描述需求
+
+在对话过程中，还额外产出了几段用于产品说明的描述内容：
+
+- 一段用于介绍游戏玩法的通用描述
+- 一段用于介绍排行榜系统的说明
+- 一段用于介绍设置系统的说明
+- 一段用于介绍首页问号按钮功能的说明
+
+这些内容主要作为产品说明、页面介绍或提审材料的候选文案。
+
+## 重要功能行为约束
+
+- 通关后自动进入下一关。
+- 规则文字必须放在规则边框内部。
+- 首页说明弹窗中，底部按钮不能遮挡正文。
+- 排行榜展示的是本机本周榜，不是全服榜。
+- 微信小游戏左上角图标位置必须尽量避开安全区和关卡信息区。
+- 桌面端与移动端删除矩形交互允许不同，但都要自然可用。
+
+## 当前关键文件
+
+- 浏览器入口：
+  - [src/main.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/main.ts)
+- 微信小游戏入口：
+  - [src/wechat/main.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/wechat/main.ts)
+- 游戏状态控制：
+  - [src/game/GameController.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/GameController.ts)
+- 规则逻辑：
+  - [src/game/logic.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/logic.ts)
+- 关卡定义：
+  - [src/game/levels.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/game/levels.ts)
+- 渲染器：
+  - [src/render/CanvasRenderer.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/render/CanvasRenderer.ts)
+- 输入控制：
+  - [src/input/PointerController.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/input/PointerController.ts)
+- 国际化：
+  - [src/i18n.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/i18n.ts)
+- 音效：
+  - [src/audio/FeedbackAudio.ts](/Users/zhengyuan/ideaProjects/svx_mini_game1/src/audio/FeedbackAudio.ts)
+- 微信小游戏适配说明：
+  - [docs/wechat-minigame-adaptation.md](/Users/zhengyuan/ideaProjects/svx_mini_game1/docs/wechat-minigame-adaptation.md)
+
+## 最近状态
+
+- 浏览器构建可用
+- 微信小游戏构建可用
+- 首页、排行榜、设置、说明弹窗都已具备基础可用形态
+- 当前仍处于视觉与交互细节持续打磨阶段
+
+## 后续建议方向
+
+- 继续收尾首页与游戏页弹窗的排版细节
+- 进一步统一首页图标、设置图标、排行榜图标的视觉语言
+- 如果要上线正式小游戏，可继续接入：
+  - 云端排行榜
+  - 新手引导
+  - 更多关卡
+  - 资源化音效与音乐
+  - 更完整的首页/关卡过场动画

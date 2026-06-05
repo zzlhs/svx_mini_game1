@@ -1,4 +1,6 @@
-type ToneType = 'sine' | 'triangle';
+type ToneType = 'sine' | 'triangle' | 'square';
+
+type ToneTimbre = 'softPluck' | 'glass' | 'warmPulse';
 
 type AudioContextLike = AudioContext;
 
@@ -8,6 +10,10 @@ interface ToneStep {
   volume: number;
   type: ToneType;
   delaySeconds?: number;
+  timbre?: ToneTimbre;
+  attackSeconds?: number;
+  releaseSeconds?: number;
+  glideFromRatio?: number;
 }
 
 interface InnerAudioContextLike {
@@ -35,18 +41,119 @@ interface AudioBackend {
 }
 
 const SAMPLE_RATE = 22_050;
-const MASTER_VOLUME = 0.82;
+const MASTER_VOLUME = 0.7;
 const PLACEMENT_STEPS: ToneStep[] = [
-  { frequency: 493.88, durationSeconds: 0.06, volume: 0.32, type: 'triangle' },
-  { frequency: 659.25, durationSeconds: 0.07, volume: 0.26, type: 'triangle', delaySeconds: 0.04 },
+  {
+    frequency: 659.25,
+    durationSeconds: 0.07,
+    volume: 0.2,
+    type: 'triangle',
+    timbre: 'glass',
+    attackSeconds: 0.012,
+    releaseSeconds: 0.045,
+    glideFromRatio: 1.018,
+  },
+  {
+    frequency: 783.99,
+    durationSeconds: 0.08,
+    volume: 0.17,
+    type: 'triangle',
+    timbre: 'glass',
+    delaySeconds: 0.05,
+    attackSeconds: 0.012,
+    releaseSeconds: 0.05,
+    glideFromRatio: 1.014,
+  },
+  {
+    frequency: 987.77,
+    durationSeconds: 0.11,
+    volume: 0.13,
+    type: 'triangle',
+    timbre: 'glass',
+    delaySeconds: 0.108,
+    attackSeconds: 0.014,
+    releaseSeconds: 0.06,
+    glideFromRatio: 1.01,
+  },
 ];
 const INVALID_STEPS: ToneStep[] = [
-  { frequency: 220, durationSeconds: 0.09, volume: 0.34, type: 'sine' },
+  {
+    frequency: 293.66,
+    durationSeconds: 0.08,
+    volume: 0.13,
+    type: 'sine',
+    timbre: 'warmPulse',
+    attackSeconds: 0.01,
+    releaseSeconds: 0.055,
+    glideFromRatio: 0.995,
+  },
+  {
+    frequency: 246.94,
+    durationSeconds: 0.12,
+    volume: 0.13,
+    type: 'sine',
+    timbre: 'warmPulse',
+    delaySeconds: 0.055,
+    attackSeconds: 0.01,
+    releaseSeconds: 0.07,
+    glideFromRatio: 0.99,
+  },
 ];
 const CELEBRATION_STEPS: ToneStep[] = [
-  { frequency: 523.25, durationSeconds: 0.16, volume: 0.22, type: 'triangle' },
-  { frequency: 659.25, durationSeconds: 0.16, volume: 0.22, type: 'triangle', delaySeconds: 0.08 },
-  { frequency: 783.99, durationSeconds: 0.16, volume: 0.22, type: 'triangle', delaySeconds: 0.16 },
+  {
+    frequency: 523.25,
+    durationSeconds: 0.11,
+    volume: 0.16,
+    type: 'triangle',
+    timbre: 'softPluck',
+    attackSeconds: 0.01,
+    releaseSeconds: 0.06,
+    glideFromRatio: 1.012,
+  },
+  {
+    frequency: 659.25,
+    durationSeconds: 0.11,
+    volume: 0.16,
+    type: 'triangle',
+    timbre: 'softPluck',
+    delaySeconds: 0.055,
+    attackSeconds: 0.01,
+    releaseSeconds: 0.06,
+    glideFromRatio: 1.01,
+  },
+  {
+    frequency: 783.99,
+    durationSeconds: 0.11,
+    volume: 0.16,
+    type: 'triangle',
+    timbre: 'softPluck',
+    delaySeconds: 0.11,
+    attackSeconds: 0.01,
+    releaseSeconds: 0.06,
+    glideFromRatio: 1.008,
+  },
+  {
+    frequency: 1046.5,
+    durationSeconds: 0.16,
+    volume: 0.15,
+    type: 'triangle',
+    timbre: 'glass',
+    delaySeconds: 0.19,
+    attackSeconds: 0.012,
+    releaseSeconds: 0.08,
+    glideFromRatio: 1.015,
+  },
+  {
+    frequency: 1318.51,
+    durationSeconds: 0.18,
+    volume: 0.11,
+    type: 'triangle',
+    timbre: 'glass',
+    delaySeconds: 0.28,
+    attackSeconds: 0.012,
+    releaseSeconds: 0.09,
+    glideFromRatio: 1.01,
+  },
 ];
 
 function getAudioContextConstructor():
@@ -96,7 +203,51 @@ function toneAmplitude(type: ToneType, phase: number): number {
     return Math.sin(phase * Math.PI * 2);
   }
 
+  if (type === 'square') {
+    return Math.sign(Math.sin(phase * Math.PI * 2));
+  }
+
   return 2 * Math.asin(Math.sin(phase * Math.PI * 2)) / Math.PI;
+}
+
+function timbreAmplitude(step: ToneStep, phase: number): number {
+  const timbre = step.timbre ?? 'softPluck';
+  const base = toneAmplitude(step.type, phase);
+
+  switch (timbre) {
+    case 'glass':
+      return (
+        base * 0.76 +
+        toneAmplitude('sine', phase * 2) * 0.18 +
+        toneAmplitude('sine', phase * 3) * 0.08 +
+        toneAmplitude('triangle', phase * 4) * 0.05
+      );
+    case 'warmPulse':
+      return (
+        toneAmplitude('sine', phase) * 0.82 +
+        toneAmplitude('triangle', phase * 2) * 0.16 +
+        toneAmplitude('square', phase * 3) * 0.03
+      );
+    case 'softPluck':
+    default:
+      return (
+        base * 0.8 +
+        toneAmplitude('sine', phase * 2) * 0.16 +
+        toneAmplitude('triangle', phase * 3) * 0.06
+      );
+  }
+}
+
+function getHarmonicProfile(timbre: ToneTimbre): number[] {
+  switch (timbre) {
+    case 'glass':
+      return [0, 0.82, 0.22, 0.1, 0.05];
+    case 'warmPulse':
+      return [0, 0.88, 0.18, 0.05, 0.02];
+    case 'softPluck':
+    default:
+      return [0, 0.86, 0.16, 0.08, 0.03];
+  }
 }
 
 function buildToneClipDataUri(steps: ToneStep[]): string {
@@ -116,8 +267,15 @@ function buildToneClipDataUri(steps: ToneStep[]): string {
   for (const step of steps) {
     const startFrame = Math.max(0, Math.floor((step.delaySeconds ?? 0) * SAMPLE_RATE));
     const durationFrames = Math.max(1, Math.floor(step.durationSeconds * SAMPLE_RATE));
-    const attackFrames = Math.max(1, Math.floor(Math.min(0.02, step.durationSeconds * 0.35) * SAMPLE_RATE));
-    const releaseFrames = Math.max(1, Math.floor(Math.min(0.05, step.durationSeconds * 0.45) * SAMPLE_RATE));
+    const attackFrames = Math.max(
+      1,
+      Math.floor((step.attackSeconds ?? Math.min(0.018, step.durationSeconds * 0.3)) * SAMPLE_RATE),
+    );
+    const releaseFrames = Math.max(
+      1,
+      Math.floor((step.releaseSeconds ?? Math.min(0.06, step.durationSeconds * 0.45)) * SAMPLE_RATE),
+    );
+    const glideFromRatio = step.glideFromRatio ?? 1;
 
     for (let frame = 0; frame < durationFrames; frame += 1) {
       const sampleIndex = startFrame + frame;
@@ -125,7 +283,9 @@ function buildToneClipDataUri(steps: ToneStep[]): string {
         break;
       }
 
-      const phase = (frame * step.frequency) / SAMPLE_RATE;
+      const progress = durationFrames <= 1 ? 1 : frame / (durationFrames - 1);
+      const glideRatio = glideFromRatio + (1 - glideFromRatio) * progress;
+      const phase = (frame * step.frequency * glideRatio) / SAMPLE_RATE;
       let envelope = 1;
       if (frame < attackFrames) {
         envelope = frame / attackFrames;
@@ -134,7 +294,7 @@ function buildToneClipDataUri(steps: ToneStep[]): string {
       }
 
       samples[sampleIndex] +=
-        toneAmplitude(step.type, phase) * step.volume * envelope * MASTER_VOLUME;
+        timbreAmplitude(step, phase) * step.volume * envelope * MASTER_VOLUME;
     }
   }
 
@@ -181,6 +341,8 @@ class WebAudioBackend implements AudioBackend {
 
   private masterGain: GainNode | null = null;
 
+  private periodicWaveCache = new Map<ToneTimbre, PeriodicWave>();
+
   prime(): void {
     const context = this.ensureContext();
     if (!context || context.state !== 'suspended') {
@@ -222,20 +384,55 @@ class WebAudioBackend implements AudioBackend {
       const startTime = baseTime + (step.delaySeconds ?? 0);
       const endTime = startTime + step.durationSeconds;
       const oscillator = context.createOscillator();
+      const overtoneOscillator = context.createOscillator();
       const gainNode = context.createGain();
+      const shimmerGain = context.createGain();
+      const attackSeconds = step.attackSeconds ?? Math.min(0.018, step.durationSeconds * 0.3);
+      const releaseSeconds = step.releaseSeconds ?? Math.min(0.06, step.durationSeconds * 0.45);
+      const glideFromRatio = step.glideFromRatio ?? 1;
+      const timbre = step.timbre ?? 'softPluck';
 
-      oscillator.type = step.type;
-      oscillator.frequency.setValueAtTime(step.frequency, startTime);
+      oscillator.setPeriodicWave(this.getPeriodicWave(context, timbre));
+      overtoneOscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(step.frequency * glideFromRatio, startTime);
+      oscillator.frequency.exponentialRampToValueAtTime(step.frequency, startTime + step.durationSeconds);
+      overtoneOscillator.frequency.setValueAtTime(step.frequency * 2, startTime);
 
       gainNode.gain.setValueAtTime(0.0001, startTime);
-      gainNode.gain.exponentialRampToValueAtTime(step.volume, startTime + 0.02);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, endTime);
+      gainNode.gain.exponentialRampToValueAtTime(step.volume, startTime + attackSeconds);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, endTime + releaseSeconds * 0.35);
+
+      shimmerGain.gain.setValueAtTime(0.0001, startTime);
+      shimmerGain.gain.exponentialRampToValueAtTime(step.volume * 0.14, startTime + attackSeconds * 1.2);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, endTime);
 
       oscillator.connect(gainNode);
+      overtoneOscillator.connect(shimmerGain);
       gainNode.connect(masterGain);
+      shimmerGain.connect(masterGain);
       oscillator.start(startTime);
-      oscillator.stop(endTime + 0.02);
+      overtoneOscillator.start(startTime);
+      oscillator.stop(endTime + releaseSeconds);
+      overtoneOscillator.stop(endTime + releaseSeconds * 0.75);
     }
+  }
+
+  private getPeriodicWave(context: AudioContextLike, timbre: ToneTimbre): PeriodicWave {
+    const cached = this.periodicWaveCache.get(timbre);
+    if (cached) {
+      return cached;
+    }
+
+    const profile = getHarmonicProfile(timbre);
+    const real = new Float32Array(profile.length);
+    const imag = new Float32Array(profile.length);
+    for (let index = 1; index < profile.length; index += 1) {
+      imag[index] = profile[index];
+    }
+
+    const wave = context.createPeriodicWave(real, imag);
+    this.periodicWaveCache.set(timbre, wave);
+    return wave;
   }
 
   private ensureContext(): AudioContextLike | null {
@@ -348,19 +545,37 @@ function createAudioBackend(): AudioBackend {
 export class FeedbackAudio {
   private readonly backend = createAudioBackend();
 
+  private enabled = true;
+
   prime(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.backend.prime();
   }
 
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
+
   playPlacement(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.backend.playPlacement();
   }
 
   playInvalid(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.backend.playInvalid();
   }
 
   playCelebration(): void {
+    if (!this.enabled) {
+      return;
+    }
     this.backend.playCelebration();
   }
 }

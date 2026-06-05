@@ -6,18 +6,119 @@
 
   // src/audio/FeedbackAudio.ts
   var SAMPLE_RATE = 22050;
-  var MASTER_VOLUME = 0.82;
+  var MASTER_VOLUME = 0.7;
   var PLACEMENT_STEPS = [
-    { frequency: 493.88, durationSeconds: 0.06, volume: 0.32, type: "triangle" },
-    { frequency: 659.25, durationSeconds: 0.07, volume: 0.26, type: "triangle", delaySeconds: 0.04 }
+    {
+      frequency: 659.25,
+      durationSeconds: 0.07,
+      volume: 0.2,
+      type: "triangle",
+      timbre: "glass",
+      attackSeconds: 0.012,
+      releaseSeconds: 0.045,
+      glideFromRatio: 1.018
+    },
+    {
+      frequency: 783.99,
+      durationSeconds: 0.08,
+      volume: 0.17,
+      type: "triangle",
+      timbre: "glass",
+      delaySeconds: 0.05,
+      attackSeconds: 0.012,
+      releaseSeconds: 0.05,
+      glideFromRatio: 1.014
+    },
+    {
+      frequency: 987.77,
+      durationSeconds: 0.11,
+      volume: 0.13,
+      type: "triangle",
+      timbre: "glass",
+      delaySeconds: 0.108,
+      attackSeconds: 0.014,
+      releaseSeconds: 0.06,
+      glideFromRatio: 1.01
+    }
   ];
   var INVALID_STEPS = [
-    { frequency: 220, durationSeconds: 0.09, volume: 0.34, type: "sine" }
+    {
+      frequency: 293.66,
+      durationSeconds: 0.08,
+      volume: 0.13,
+      type: "sine",
+      timbre: "warmPulse",
+      attackSeconds: 0.01,
+      releaseSeconds: 0.055,
+      glideFromRatio: 0.995
+    },
+    {
+      frequency: 246.94,
+      durationSeconds: 0.12,
+      volume: 0.13,
+      type: "sine",
+      timbre: "warmPulse",
+      delaySeconds: 0.055,
+      attackSeconds: 0.01,
+      releaseSeconds: 0.07,
+      glideFromRatio: 0.99
+    }
   ];
   var CELEBRATION_STEPS = [
-    { frequency: 523.25, durationSeconds: 0.16, volume: 0.22, type: "triangle" },
-    { frequency: 659.25, durationSeconds: 0.16, volume: 0.22, type: "triangle", delaySeconds: 0.08 },
-    { frequency: 783.99, durationSeconds: 0.16, volume: 0.22, type: "triangle", delaySeconds: 0.16 }
+    {
+      frequency: 523.25,
+      durationSeconds: 0.11,
+      volume: 0.16,
+      type: "triangle",
+      timbre: "softPluck",
+      attackSeconds: 0.01,
+      releaseSeconds: 0.06,
+      glideFromRatio: 1.012
+    },
+    {
+      frequency: 659.25,
+      durationSeconds: 0.11,
+      volume: 0.16,
+      type: "triangle",
+      timbre: "softPluck",
+      delaySeconds: 0.055,
+      attackSeconds: 0.01,
+      releaseSeconds: 0.06,
+      glideFromRatio: 1.01
+    },
+    {
+      frequency: 783.99,
+      durationSeconds: 0.11,
+      volume: 0.16,
+      type: "triangle",
+      timbre: "softPluck",
+      delaySeconds: 0.11,
+      attackSeconds: 0.01,
+      releaseSeconds: 0.06,
+      glideFromRatio: 1.008
+    },
+    {
+      frequency: 1046.5,
+      durationSeconds: 0.16,
+      volume: 0.15,
+      type: "triangle",
+      timbre: "glass",
+      delaySeconds: 0.19,
+      attackSeconds: 0.012,
+      releaseSeconds: 0.08,
+      glideFromRatio: 1.015
+    },
+    {
+      frequency: 1318.51,
+      durationSeconds: 0.18,
+      volume: 0.11,
+      type: "triangle",
+      timbre: "glass",
+      delaySeconds: 0.28,
+      attackSeconds: 0.012,
+      releaseSeconds: 0.09,
+      glideFromRatio: 1.01
+    }
   ];
   function getAudioContextConstructor() {
     var _a;
@@ -55,10 +156,38 @@
     if (type === "sine") {
       return Math.sin(phase * Math.PI * 2);
     }
+    if (type === "square") {
+      return Math.sign(Math.sin(phase * Math.PI * 2));
+    }
     return 2 * Math.asin(Math.sin(phase * Math.PI * 2)) / Math.PI;
   }
+  function timbreAmplitude(step, phase) {
+    var _a;
+    const timbre = (_a = step.timbre) != null ? _a : "softPluck";
+    const base = toneAmplitude(step.type, phase);
+    switch (timbre) {
+      case "glass":
+        return base * 0.76 + toneAmplitude("sine", phase * 2) * 0.18 + toneAmplitude("sine", phase * 3) * 0.08 + toneAmplitude("triangle", phase * 4) * 0.05;
+      case "warmPulse":
+        return toneAmplitude("sine", phase) * 0.82 + toneAmplitude("triangle", phase * 2) * 0.16 + toneAmplitude("square", phase * 3) * 0.03;
+      case "softPluck":
+      default:
+        return base * 0.8 + toneAmplitude("sine", phase * 2) * 0.16 + toneAmplitude("triangle", phase * 3) * 0.06;
+    }
+  }
+  function getHarmonicProfile(timbre) {
+    switch (timbre) {
+      case "glass":
+        return [0, 0.82, 0.22, 0.1, 0.05];
+      case "warmPulse":
+        return [0, 0.88, 0.18, 0.05, 0.02];
+      case "softPluck":
+      default:
+        return [0, 0.86, 0.16, 0.08, 0.03];
+    }
+  }
   function buildToneClipDataUri(steps) {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     const releaseSeconds = 0.05;
     let clipLengthSeconds = releaseSeconds;
     for (const step of steps) {
@@ -73,21 +202,30 @@
     for (const step of steps) {
       const startFrame = Math.max(0, Math.floor(((_b = step.delaySeconds) != null ? _b : 0) * SAMPLE_RATE));
       const durationFrames = Math.max(1, Math.floor(step.durationSeconds * SAMPLE_RATE));
-      const attackFrames = Math.max(1, Math.floor(Math.min(0.02, step.durationSeconds * 0.35) * SAMPLE_RATE));
-      const releaseFrames = Math.max(1, Math.floor(Math.min(0.05, step.durationSeconds * 0.45) * SAMPLE_RATE));
+      const attackFrames = Math.max(
+        1,
+        Math.floor(((_c = step.attackSeconds) != null ? _c : Math.min(0.018, step.durationSeconds * 0.3)) * SAMPLE_RATE)
+      );
+      const releaseFrames = Math.max(
+        1,
+        Math.floor(((_d = step.releaseSeconds) != null ? _d : Math.min(0.06, step.durationSeconds * 0.45)) * SAMPLE_RATE)
+      );
+      const glideFromRatio = (_e = step.glideFromRatio) != null ? _e : 1;
       for (let frame = 0; frame < durationFrames; frame += 1) {
         const sampleIndex = startFrame + frame;
         if (sampleIndex >= frameCount) {
           break;
         }
-        const phase = frame * step.frequency / SAMPLE_RATE;
+        const progress = durationFrames <= 1 ? 1 : frame / (durationFrames - 1);
+        const glideRatio = glideFromRatio + (1 - glideFromRatio) * progress;
+        const phase = frame * step.frequency * glideRatio / SAMPLE_RATE;
         let envelope = 1;
         if (frame < attackFrames) {
           envelope = frame / attackFrames;
         } else if (frame > durationFrames - releaseFrames) {
           envelope = Math.max(0, (durationFrames - frame) / releaseFrames);
         }
-        samples[sampleIndex] += toneAmplitude(step.type, phase) * step.volume * envelope * MASTER_VOLUME;
+        samples[sampleIndex] += timbreAmplitude(step, phase) * step.volume * envelope * MASTER_VOLUME;
       }
     }
     const bytesPerSample = 2;
@@ -128,6 +266,7 @@
     constructor() {
       __publicField(this, "context", null);
       __publicField(this, "masterGain", null);
+      __publicField(this, "periodicWaveCache", /* @__PURE__ */ new Map());
     }
     prime() {
       const context = this.ensureContext();
@@ -146,7 +285,7 @@
       this.playSteps(CELEBRATION_STEPS);
     }
     playSteps(steps) {
-      var _a;
+      var _a, _b, _c, _d, _e;
       const context = this.ensureContext();
       if (!context) {
         return;
@@ -163,17 +302,48 @@
         const startTime = baseTime + ((_a = step.delaySeconds) != null ? _a : 0);
         const endTime = startTime + step.durationSeconds;
         const oscillator = context.createOscillator();
+        const overtoneOscillator = context.createOscillator();
         const gainNode = context.createGain();
-        oscillator.type = step.type;
-        oscillator.frequency.setValueAtTime(step.frequency, startTime);
+        const shimmerGain = context.createGain();
+        const attackSeconds = (_b = step.attackSeconds) != null ? _b : Math.min(0.018, step.durationSeconds * 0.3);
+        const releaseSeconds = (_c = step.releaseSeconds) != null ? _c : Math.min(0.06, step.durationSeconds * 0.45);
+        const glideFromRatio = (_d = step.glideFromRatio) != null ? _d : 1;
+        const timbre = (_e = step.timbre) != null ? _e : "softPluck";
+        oscillator.setPeriodicWave(this.getPeriodicWave(context, timbre));
+        overtoneOscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(step.frequency * glideFromRatio, startTime);
+        oscillator.frequency.exponentialRampToValueAtTime(step.frequency, startTime + step.durationSeconds);
+        overtoneOscillator.frequency.setValueAtTime(step.frequency * 2, startTime);
         gainNode.gain.setValueAtTime(1e-4, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(step.volume, startTime + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(1e-4, endTime);
+        gainNode.gain.exponentialRampToValueAtTime(step.volume, startTime + attackSeconds);
+        gainNode.gain.exponentialRampToValueAtTime(1e-4, endTime + releaseSeconds * 0.35);
+        shimmerGain.gain.setValueAtTime(1e-4, startTime);
+        shimmerGain.gain.exponentialRampToValueAtTime(step.volume * 0.14, startTime + attackSeconds * 1.2);
+        shimmerGain.gain.exponentialRampToValueAtTime(1e-4, endTime);
         oscillator.connect(gainNode);
+        overtoneOscillator.connect(shimmerGain);
         gainNode.connect(masterGain);
+        shimmerGain.connect(masterGain);
         oscillator.start(startTime);
-        oscillator.stop(endTime + 0.02);
+        overtoneOscillator.start(startTime);
+        oscillator.stop(endTime + releaseSeconds);
+        overtoneOscillator.stop(endTime + releaseSeconds * 0.75);
       }
+    }
+    getPeriodicWave(context, timbre) {
+      const cached = this.periodicWaveCache.get(timbre);
+      if (cached) {
+        return cached;
+      }
+      const profile = getHarmonicProfile(timbre);
+      const real = new Float32Array(profile.length);
+      const imag = new Float32Array(profile.length);
+      for (let index = 1; index < profile.length; index += 1) {
+        imag[index] = profile[index];
+      }
+      const wave = context.createPeriodicWave(real, imag);
+      this.periodicWaveCache.set(timbre, wave);
+      return wave;
     }
     ensureContext() {
       const AudioContextConstructor = getAudioContextConstructor();
@@ -270,17 +440,33 @@
   var FeedbackAudio = class {
     constructor() {
       __publicField(this, "backend", createAudioBackend());
+      __publicField(this, "enabled", true);
     }
     prime() {
+      if (!this.enabled) {
+        return;
+      }
       this.backend.prime();
     }
+    setEnabled(enabled) {
+      this.enabled = enabled;
+    }
     playPlacement() {
+      if (!this.enabled) {
+        return;
+      }
       this.backend.playPlacement();
     }
     playInvalid() {
+      if (!this.enabled) {
+        return;
+      }
       this.backend.playInvalid();
     }
     playCelebration() {
+      if (!this.enabled) {
+        return;
+      }
       this.backend.playCelebration();
     }
   };
@@ -861,6 +1047,18 @@
       };
       this.emit();
     }
+    resetCampaign() {
+      var _a;
+      this.records = {};
+      this.levelIndex = 0;
+      this.resetInternalState({
+        key: "status.enteredLevel",
+        values: { levelNumber: this.level.number }
+      });
+      (_a = this.onRecordsChange) == null ? void 0 : _a.call(this, {});
+      this.emit();
+      this.persistProgress();
+    }
     isInteractionLocked() {
       return this.mode === "record";
     }
@@ -1219,7 +1417,7 @@
       "locale.name.zh-CN": "中文",
       "locale.name.en-US": "English",
       "app.eyebrow": "",
-      "app.title": "填充格子",
+      "app.title": "填满格子",
       "app.heroCopy": "拖拽生成矩形，让每个矩形只包含一个数字，并且面积等于该数字。",
       "home.subtitle": "把棋盘完整填满，让每个数字恰好对应一个矩形。",
       "home.progress": "已完成 {completed} / {total} 关",
@@ -1228,6 +1426,33 @@
       "home.start": "从第一关开始",
       "home.resumeTip": "会恢复你上次的局面，并保留已通关记录。",
       "home.freshTip": "会从第 1 关重新开始当前进度，已通关记录会保留。",
+      "landing.weeklyLeaderboard": "本周排行榜",
+      "landing.localWeeklyNote": "当前展示的是本机本周通关总用时排行。",
+      "landing.emptyLeaderboard": "本周还没有完整通关记录，先开始一局吧。",
+      "landing.bestTime": "总用时 {duration}",
+      "landing.completedAt": "完成于 {completedAt}",
+      "landing.close": "点击空白处返回",
+      "landing.helpTitle": "玩法说明",
+      "landing.goalTitle": "通关目标",
+      "landing.ruleSection": "基本规则",
+      "landing.goalSection": "目标说明",
+      "landing.toolSection": "辅助功能",
+      "landing.helpRule1": "在棋盘上拖拽生成一个矩形区域。",
+      "landing.helpRule2": "每个矩形必须恰好包含一个数字提示。",
+      "landing.helpRule3": "矩形面积必须等于它所包含数字的值。",
+      "landing.helpRule4": "所有格子都要被完整覆盖，不能重叠，也不能遗漏。",
+      "landing.goalRule1": "每一关都要用合法矩形完整填满棋盘才算通关。",
+      "landing.goalRule2": "从第 1 关开始连续完成全部关卡后，才会记录本次总用时。",
+      "landing.goalRule3": "本周排行榜按完整通关总用时排序，用时越短排名越靠前。",
+      "landing.toolHint": "提示：推荐当前局面中的一个可放置合法矩形。",
+      "landing.toolUndo": "撤销：回退上一步操作，方便重新推理。",
+      "landing.toolRestart": "重开：清空当前关卡并重新开始挑战。",
+      "landing.gotIt": "我知道了",
+      "settings.title": "设置",
+      "settings.sound": "声音",
+      "settings.vibration": "震动",
+      "settings.backHome": "回到主页",
+      "settings.continue": "继续游戏",
       "section.levels": "关卡",
       "section.hints": "提示",
       "section.record": "本关记录",
@@ -1326,6 +1551,33 @@
       "home.start": "Start From 1",
       "home.resumeTip": "Resume your previous board and keep all cleared records.",
       "home.freshTip": "Restart the current run from level 1 while keeping cleared records.",
+      "landing.weeklyLeaderboard": "Weekly Leaderboard",
+      "landing.localWeeklyNote": "This leaderboard currently shows this device's weekly total clear times.",
+      "landing.emptyLeaderboard": "No full clear has been recorded this week yet. Start a new run first.",
+      "landing.bestTime": "Total time {duration}",
+      "landing.completedAt": "Completed at {completedAt}",
+      "landing.close": "Tap outside to return",
+      "landing.helpTitle": "How To Play",
+      "landing.goalTitle": "Goals",
+      "landing.ruleSection": "Basic Rules",
+      "landing.goalSection": "Clear Goals",
+      "landing.toolSection": "Support Tools",
+      "landing.helpRule1": "Drag on the board to create a rectangle.",
+      "landing.helpRule2": "Each rectangle must contain exactly one clue number.",
+      "landing.helpRule3": "The rectangle area must equal the value of that clue.",
+      "landing.helpRule4": "Cover the whole board with no overlap and no empty cells.",
+      "landing.goalRule1": "You clear a level only after the whole board is covered legally.",
+      "landing.goalRule2": "A full run is recorded only after you finish every level from level 1 onward.",
+      "landing.goalRule3": "The weekly leaderboard ranks full-run total times. Shorter time ranks higher.",
+      "landing.toolHint": "Hint: suggests one legal rectangle for the current position.",
+      "landing.toolUndo": "Undo: step back one move and rethink the board.",
+      "landing.toolRestart": "Restart: clear the current level and begin it again.",
+      "landing.gotIt": "Got it",
+      "settings.title": "Settings",
+      "settings.sound": "Sound",
+      "settings.vibration": "Vibration",
+      "settings.backHome": "Back Home",
+      "settings.continue": "Continue",
       "section.levels": "Levels",
       "section.hints": "Hint",
       "section.record": "Level Record",
@@ -1616,13 +1868,13 @@
 
   // src/render/CanvasRenderer.ts
   var PLACEMENT_COLORS = [
-    "#f2c572",
-    "#9fd0c7",
-    "#f4a076",
-    "#b5c9f6",
-    "#d9b8f3",
-    "#f6c3d7",
-    "#cce4a7"
+    "#ffb9cc",
+    "#ffc89f",
+    "#ffe76b",
+    "#a9efcc",
+    "#8fd8ff",
+    "#cbc4ff",
+    "#ffd1ea"
   ];
   function getNow() {
     return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
@@ -1751,21 +2003,35 @@
     }
     drawBackdrop(width, height) {
       const gradient = this.context.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, "#fcf8ef");
-      gradient.addColorStop(1, "#efe4d3");
+      gradient.addColorStop(0, "#ff968f");
+      gradient.addColorStop(0.48, "#f29ac8");
+      gradient.addColorStop(1, "#a9e7ff");
       this.context.fillStyle = gradient;
       this.context.fillRect(0, 0, width, height);
+      this.drawCloudCluster(width * 0.18, height * 0.15, 0.85);
+      this.drawCloudCluster(width * 0.87, height * 0.12, 0.7);
+      this.drawCloudCluster(width * 0.12, height * 0.92, 1.1);
+      this.drawCloudCluster(width * 0.82, height * 0.95, 0.95);
+      this.drawSkySparkles(width, height);
     }
     drawBoardSurface() {
       const { context, metrics } = this;
       const frameInset = 14;
       context.save();
-      context.fillStyle = "#fffaf1";
-      context.strokeStyle = "#d4c8b6";
-      context.lineWidth = 2.5;
-      context.shadowColor = "rgba(53, 41, 25, 0.12)";
-      context.shadowBlur = 18;
-      context.shadowOffsetY = 8;
+      const gradient = context.createLinearGradient(
+        metrics.offsetX,
+        metrics.offsetY - frameInset,
+        metrics.offsetX,
+        metrics.offsetY + metrics.boardHeight + frameInset
+      );
+      gradient.addColorStop(0, "rgba(255,255,255,0.95)");
+      gradient.addColorStop(1, "rgba(234, 249, 255, 0.86)");
+      context.fillStyle = gradient;
+      context.strokeStyle = "rgba(255,255,255,0.88)";
+      context.lineWidth = 2.8;
+      context.shadowColor = "rgba(167, 123, 165, 0.24)";
+      context.shadowBlur = 24;
+      context.shadowOffsetY = 10;
       this.roundRect(
         metrics.offsetX - frameInset,
         metrics.offsetY - frameInset,
@@ -1823,8 +2089,8 @@
       });
     }
     drawPreview(rect, valid, clue) {
-      const fillColor = valid ? "#6eb59b" : "#d9735c";
-      const strokeColor = valid ? "#2f7d61" : "#8f4334";
+      const fillColor = valid ? "#8fe8c2" : "#ffab99";
+      const strokeColor = valid ? "#53c793" : "#f26f5b";
       this.fillRect(rect, fillColor, strokeColor, 0.45, [10, 6]);
       this.drawPreviewAccent(rect, strokeColor);
       this.drawPreviewCorners(rect, strokeColor);
@@ -1833,21 +2099,21 @@
       }
     }
     drawHint(rect) {
-      this.fillRect(rect, "#79aee3", "#2f5f93", 0.24, [8, 6]);
+      this.fillRect(rect, "#8fd8ff", "#4ba8e6", 0.24, [8, 6]);
     }
     drawSelectedPlacement(placement) {
       const badgeRect = this.getPlacementDeleteBadgeRect(placement);
       const { context } = this;
-      this.drawPreviewAccent(placement.rect, "#8f4a22");
-      this.drawPreviewCorners(placement.rect, "#8f4a22");
+      this.drawPreviewAccent(placement.rect, "#ffb627");
+      this.drawPreviewCorners(placement.rect, "#ffb627");
       context.save();
-      context.fillStyle = "#fff6f3";
-      context.strokeStyle = "#c65443";
+      context.fillStyle = "#fff8fb";
+      context.strokeStyle = "#f16673";
       context.lineWidth = 2;
       this.roundRect(badgeRect.x, badgeRect.y, badgeRect.width, badgeRect.height, 11);
       context.fill();
       context.stroke();
-      context.strokeStyle = "#c65443";
+      context.strokeStyle = "#f16673";
       context.lineWidth = 2.5;
       context.beginPath();
       context.moveTo(badgeRect.x + 7, badgeRect.y + 7);
@@ -1866,13 +2132,19 @@
       context.save();
       context.globalAlpha = alpha;
       context.fillStyle = fillColor;
-      context.fillRect(x + 2, y + 2, width - 4, height - 4);
+      this.roundRect(x + 2, y + 2, width - 4, height - 4, Math.max(8, metrics.cellSize * 0.18));
+      context.fill();
       context.restore();
       context.save();
       context.strokeStyle = strokeColor;
-      context.lineWidth = 3;
+      context.lineWidth = 2.6;
       context.setLineDash(dash);
-      context.strokeRect(x + 1.5, y + 1.5, width - 3, height - 3);
+      this.roundRect(x + 1.5, y + 1.5, width - 3, height - 3, Math.max(9, metrics.cellSize * 0.2));
+      context.stroke();
+      context.setLineDash([]);
+      context.fillStyle = "rgba(255,255,255,0.18)";
+      this.roundRect(x + 4, y + 4, Math.max(10, width * 0.18), Math.max(8, height * 0.12), 8);
+      context.fill();
       context.restore();
     }
     fillRectAnimated(rect, fillColor, strokeColor, alpha, scale) {
@@ -1968,8 +2240,10 @@
     drawGrid(level) {
       const { context, metrics } = this;
       context.save();
-      context.strokeStyle = "#c7bba9";
-      context.lineWidth = 1;
+      context.strokeStyle = "rgba(255, 244, 252, 0.98)";
+      context.shadowColor = "rgba(47, 118, 214, 0.38)";
+      context.shadowBlur = 4;
+      context.lineWidth = 1.4;
       for (let x = 0; x <= level.width; x += 1) {
         const lineX = metrics.offsetX + x * metrics.cellSize + 0.5;
         context.beginPath();
@@ -1996,15 +2270,15 @@
         const centerX = this.metrics.offsetX + (clue.x + 0.5) * this.metrics.cellSize;
         const centerY = this.metrics.offsetY + (clue.y + 0.5) * this.metrics.cellSize;
         const covered = coveredClues.has(`${clue.x},${clue.y}`);
-        this.context.fillStyle = covered ? "#22333f" : "#334f62";
+        this.context.fillStyle = covered ? "#6b4258" : "#7a5c69";
         this.context.beginPath();
         this.context.arc(centerX, centerY, this.metrics.cellSize * 0.24, 0, Math.PI * 2);
-        this.context.fillStyle = covered ? "rgba(255, 250, 241, 0.92)" : "rgba(255, 255, 255, 0.96)";
+        this.context.fillStyle = covered ? "rgba(255, 250, 252, 0.96)" : "rgba(255, 255, 255, 0.94)";
         this.context.fill();
-        this.context.strokeStyle = covered ? "#22333f" : "#7995a8";
+        this.context.strokeStyle = covered ? "#d997b6" : "#ffe17a";
         this.context.lineWidth = 2;
         this.context.stroke();
-        this.context.fillStyle = covered ? "#22333f" : "#334f62";
+        this.context.fillStyle = covered ? "#6b4258" : "#6a4f5d";
         this.context.fillText(String(clue.value), centerX, centerY + 1);
       }
       this.context.restore();
@@ -2016,7 +2290,10 @@
       const x = metrics.offsetX + metrics.boardWidth - badgeWidth;
       const y = Math.max(16, metrics.offsetY - 52);
       context.save();
-      context.fillStyle = "#2f8f62";
+      const gradient = context.createLinearGradient(x, y, x, y + badgeHeight);
+      gradient.addColorStop(0, "#a9ef77");
+      gradient.addColorStop(1, "#64c949");
+      context.fillStyle = gradient;
       this.roundRect(x, y, badgeWidth, badgeHeight, 16);
       context.fill();
       context.fillStyle = "#ffffff";
@@ -2066,7 +2343,7 @@
       this.celebrationStartedAt = now;
       const centerX = this.metrics.offsetX + this.metrics.boardWidth / 2;
       const topY = this.metrics.offsetY + 24;
-      const colors = ["#f2c572", "#9fd0c7", "#f4a076", "#b5c9f6", "#cce4a7"];
+      const colors = ["#ffd766", "#8fd8ff", "#ffb9cc", "#a9efcc", "#cbc4ff"];
       this.celebrationParticles = Array.from({ length: 18 }, (_, index) => ({
         x: centerX + (index - 9) * 10,
         y: topY + index % 3 * 10,
@@ -2085,6 +2362,51 @@
       this.context.arcTo(x, y + height, x, y, radius);
       this.context.arcTo(x, y, x + width, y, radius);
       this.context.closePath();
+    }
+    drawCloudCluster(centerX, centerY, scale) {
+      const puffs = [
+        { x: -38, y: 14, r: 22 },
+        { x: -10, y: 2, r: 28 },
+        { x: 20, y: 8, r: 24 },
+        { x: 48, y: 18, r: 18 }
+      ];
+      this.context.save();
+      this.context.fillStyle = "rgba(255,255,255,0.54)";
+      this.context.shadowColor = "rgba(255,255,255,0.24)";
+      this.context.shadowBlur = 16;
+      for (const puff of puffs) {
+        this.context.beginPath();
+        this.context.arc(
+          centerX + puff.x * scale,
+          centerY + puff.y * scale,
+          puff.r * scale,
+          0,
+          Math.PI * 2
+        );
+        this.context.fill();
+      }
+      this.context.restore();
+    }
+    drawSkySparkles(width, height) {
+      const sparkles = [
+        { x: width * 0.26, y: height * 0.24, size: 4 },
+        { x: width * 0.78, y: height * 0.3, size: 5 },
+        { x: width * 0.18, y: height * 0.74, size: 4 },
+        { x: width * 0.86, y: height * 0.84, size: 5 }
+      ];
+      this.context.save();
+      this.context.strokeStyle = "rgba(255,255,255,0.68)";
+      this.context.lineWidth = 1.4;
+      this.context.lineCap = "round";
+      for (const sparkle of sparkles) {
+        this.context.beginPath();
+        this.context.moveTo(sparkle.x - sparkle.size, sparkle.y);
+        this.context.lineTo(sparkle.x + sparkle.size, sparkle.y);
+        this.context.moveTo(sparkle.x, sparkle.y - sparkle.size);
+        this.context.lineTo(sparkle.x, sparkle.y + sparkle.size);
+        this.context.stroke();
+      }
+      this.context.restore();
     }
   };
 
@@ -2134,6 +2456,19 @@
   // src/storage/BrowserGameStorage.ts
   var RECORDS_KEY = "patch-grid-records-v2";
   var PROGRESS_KEY = "patch-grid-progress-v2";
+  var CAMPAIGN_KEY = "patch-grid-campaign-v1";
+  var WEEKLY_LEADERBOARD_KEY = "patch-grid-weekly-leaderboard-v1";
+  function getWeeklyBucketKey(timestamp = Date.now()) {
+    const date = new Date(timestamp);
+    const weekday = (date.getDay() + 6) % 7;
+    const monday = new Date(date);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(date.getDate() - weekday);
+    const year = monday.getFullYear();
+    const month = String(monday.getMonth() + 1).padStart(2, "0");
+    const day = String(monday.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   function isPlacementLike(value) {
     var _a, _b, _c, _d, _e, _f, _g;
     if (!value || typeof value !== "object") {
@@ -2159,6 +2494,20 @@
     const candidate = value;
     return typeof candidate.levelId === "string" && Array.isArray(candidate.placements) && candidate.placements.every(isPlacementLike) && isPlacementHistoryLike(candidate.history) && typeof candidate.placementSequence === "number" && typeof candidate.attemptStartedAt === "number";
   }
+  function isCampaignRunStateLike(value) {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.startedAt === "number" && typeof candidate.weekKey === "string";
+  }
+  function isWeeklyLeaderboardEntryLike(value) {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.id === "string" && typeof candidate.weekKey === "string" && typeof candidate.durationMs === "number" && typeof candidate.completedAt === "string";
+  }
   var BrowserGameStorage = class {
     constructor(adapter) {
       this.adapter = adapter;
@@ -2179,6 +2528,67 @@
         return;
       }
       this.adapter.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    }
+    loadCampaignState() {
+      const raw = this.adapter.getItem(CAMPAIGN_KEY);
+      if (!raw) {
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!isCampaignRunStateLike(parsed)) {
+          return null;
+        }
+        return parsed.weekKey === getWeeklyBucketKey() ? parsed : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    saveCampaignState(state) {
+      if (!state) {
+        this.adapter.removeItem(CAMPAIGN_KEY);
+        return;
+      }
+      this.adapter.setItem(CAMPAIGN_KEY, JSON.stringify(state));
+    }
+    loadWeeklyLeaderboard() {
+      const raw = this.adapter.getItem(WEEKLY_LEADERBOARD_KEY);
+      if (!raw) {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          return [];
+        }
+        const currentWeekKey = getWeeklyBucketKey();
+        return parsed.filter(isWeeklyLeaderboardEntryLike).filter((entry) => entry.weekKey === currentWeekKey).sort((left, right) => left.durationMs - right.durationMs).slice(0, 20);
+      } catch (e) {
+        return [];
+      }
+    }
+    saveWeeklyLeaderboard(entries) {
+      this.adapter.setItem(WEEKLY_LEADERBOARD_KEY, JSON.stringify(entries));
+    }
+    resetGameData() {
+      this.adapter.removeItem(RECORDS_KEY);
+      this.adapter.removeItem(PROGRESS_KEY);
+      this.adapter.removeItem(CAMPAIGN_KEY);
+    }
+    recordWeeklyLeaderboardEntry(durationMs, completedAt) {
+      const weekKey = getWeeklyBucketKey(Date.parse(completedAt));
+      const entries = this.loadWeeklyLeaderboard();
+      const nextEntries = [
+        ...entries.filter((entry) => entry.weekKey === weekKey),
+        {
+          id: `${weekKey}-${completedAt}-${Math.round(durationMs)}`,
+          weekKey,
+          durationMs,
+          completedAt
+        }
+      ].sort((left, right) => left.durationMs - right.durationMs).slice(0, 20);
+      this.saveWeeklyLeaderboard(nextEntries);
+      return nextEntries;
     }
     loadRecords(allowedIds) {
       const raw = this.adapter.getItem(RECORDS_KEY);
@@ -2242,32 +2652,47 @@
 
   // src/wechat/main.ts
   var THEME = {
-    backgroundStart: "#fcf8ef",
-    backgroundEnd: "#efe4d3",
-    surfaceStrong: "rgba(255, 250, 242, 0.98)",
-    surface: "rgba(255, 250, 242, 0.90)",
-    surfaceSoft: "rgba(255, 250, 242, 0.78)",
-    surfaceMuted: "rgba(239, 231, 219, 0.82)",
-    border: "rgba(94, 77, 52, 0.10)",
-    borderSoft: "rgba(94, 77, 52, 0.08)",
-    borderAccent: "rgba(143, 91, 43, 0.14)",
-    shadow: "rgba(53, 41, 25, 0.12)",
-    overlay: "rgba(33, 27, 20, 0.24)",
-    textPrimary: "#24313b",
-    textSecondary: "#667785",
-    textMuted: "#7b6a57",
-    accent: "#8f5b2b",
-    accentStrong: "#8f4a22",
-    accentSoft: "#fff0df",
-    accentFill: "#e5a15b",
-    success: "#2f8f62",
-    successSoft: "#e9f8ef",
-    info: "#31507f",
-    infoSoft: "#e7f0ff",
-    white: "#fffaf1",
-    disabledText: "#9a8b76"
+    backgroundStart: "#ff958f",
+    backgroundMid: "#f39ac9",
+    backgroundEnd: "#aae6ff",
+    surfaceStrong: "rgba(255, 255, 255, 0.92)",
+    surface: "rgba(255, 255, 255, 0.84)",
+    surfaceSoft: "rgba(255, 255, 255, 0.76)",
+    surfaceMuted: "rgba(255, 255, 255, 0.46)",
+    border: "rgba(255, 255, 255, 0.82)",
+    borderSoft: "rgba(255, 255, 255, 0.58)",
+    borderAccent: "rgba(255, 214, 74, 0.95)",
+    shadow: "rgba(182, 110, 137, 0.24)",
+    overlay: "rgba(123, 95, 124, 0.20)",
+    textPrimary: "#684355",
+    textSecondary: "#8d7080",
+    textMuted: "#a18899",
+    accent: "#ffab27",
+    accentStrong: "#ff8315",
+    accentSoft: "#fff1b9",
+    accentFill: "#ffd54b",
+    success: "#7cc95d",
+    successSoft: "#ecffd8",
+    info: "#55a7e3",
+    infoSoft: "#dcf5ff",
+    white: "#fffefe",
+    disabledText: "#cbbbc4",
+    candyPink: "#ffb9cc",
+    candyPeach: "#ffc392",
+    candyYellow: "#ffe369",
+    candyMint: "#8fe8c2",
+    candyBlue: "#7cc8ff",
+    candyLavender: "#cbc4ff"
   };
   var cachedCanvas = null;
+  var WECHAT_ASSET_PATHS = {
+    background: "assets/wechat/bg.jpg",
+    newGameButton: "assets/wechat/new_game2.png",
+    leaderboardButton: "assets/wechat/rank_cutout.png",
+    checkIcon: "assets/wechat/check_icon.png",
+    helpIcon: "assets/wechat/help_icon.png"
+  };
+  var SETTINGS_STORAGE_KEY = "patch-grid-wechat-settings-v1";
   function isWechatCanvasLike(value) {
     return typeof value === "object" && value !== null && "getContext" in value && typeof value.getContext === "function";
   }
@@ -2284,6 +2709,27 @@
       return globalThis.requestAnimationFrame(() => callback());
     }
     return setTimeout(callback, 16);
+  }
+  function createWechatImage(canvas) {
+    const canvasWithImage = canvas;
+    if (typeof canvasWithImage.createImage === "function") {
+      return canvasWithImage.createImage();
+    }
+    if (typeof wx.createImage === "function") {
+      return wx.createImage();
+    }
+    return null;
+  }
+  function loadWechatImage(canvas, source) {
+    const image = createWechatImage(canvas);
+    if (!image) {
+      return Promise.resolve(null);
+    }
+    return new Promise((resolve) => {
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = source;
+    });
   }
   function resolveLocale() {
     var _a;
@@ -2322,6 +2768,30 @@
     var _a;
     return (_a = formatLocaleDate(locale, isoString)) != null ? _a : t(locale, "fallback.unknownTime");
   }
+  function loadUserSettings(adapter) {
+    try {
+      const raw = adapter.getItem(SETTINGS_STORAGE_KEY);
+      if (!raw) {
+        return {
+          soundEnabled: true,
+          vibrationEnabled: true
+        };
+      }
+      const parsed = JSON.parse(raw);
+      return {
+        soundEnabled: parsed.soundEnabled !== false,
+        vibrationEnabled: parsed.vibrationEnabled !== false
+      };
+    } catch (e) {
+      return {
+        soundEnabled: true,
+        vibrationEnabled: true
+      };
+    }
+  }
+  function saveUserSettings(adapter, settings) {
+    adapter.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  }
   function wrapLinesByLength(text, maxLength) {
     if (text.length <= maxLength) {
       return [text];
@@ -2345,6 +2815,7 @@
       context.setTransform(metrics.dpr, 0, 0, metrics.dpr, 0, 0);
       const gradient = context.createLinearGradient(0, 0, metrics.width, metrics.height);
       gradient.addColorStop(0, THEME.backgroundStart);
+      gradient.addColorStop(0.5, THEME.backgroundMid);
       gradient.addColorStop(1, THEME.backgroundEnd);
       context.fillStyle = gradient;
       context.fillRect(0, 0, metrics.width, metrics.height);
@@ -2352,7 +2823,7 @@
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.font = "700 26px sans-serif";
-      context.fillText("填充格子", metrics.width / 2, metrics.height / 2 - 16);
+      context.fillText("填满格子", metrics.width / 2, metrics.height / 2 - 16);
       context.font = "500 14px sans-serif";
       context.fillStyle = THEME.textSecondary;
       context.fillText("Loading mini game...", metrics.width / 2, metrics.height / 2 + 18);
@@ -2376,7 +2847,7 @@
       context.textAlign = "left";
       context.textBaseline = "top";
       context.font = "700 20px sans-serif";
-      context.fillText("填充格子", 20, 24);
+      context.fillText("填满格子", 20, 24);
       context.font = "500 14px sans-serif";
       context.fillStyle = THEME.accentStrong;
       context.fillText("Mini game bootstrap failed.", 20, 58);
@@ -2477,31 +2948,48 @@
   }
   function drawCardShell(context, rect) {
     context.save();
-    context.fillStyle = THEME.surface;
-    context.strokeStyle = THEME.borderSoft;
-    context.lineWidth = 1;
+    const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    gradient.addColorStop(0, THEME.surfaceStrong);
+    gradient.addColorStop(1, THEME.surfaceSoft);
+    context.fillStyle = gradient;
+    context.strokeStyle = THEME.border;
+    context.lineWidth = 1.2;
+    context.shadowColor = THEME.shadow;
+    context.shadowBlur = 18;
+    context.shadowOffsetY = 8;
     roundRect(context, rect, 14);
     context.fill();
+    context.shadowColor = "transparent";
     context.stroke();
     context.restore();
   }
   function drawHudShell(context, rect) {
     context.save();
-    context.fillStyle = THEME.surfaceSoft;
-    context.strokeStyle = THEME.borderSoft;
-    context.lineWidth = 1;
+    const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0.72)");
+    context.fillStyle = gradient;
+    context.strokeStyle = THEME.border;
+    context.lineWidth = 1.1;
+    context.shadowColor = THEME.shadow;
+    context.shadowBlur = 14;
+    context.shadowOffsetY = 5;
     roundRect(context, rect, 18);
     context.fill();
+    context.shadowColor = "transparent";
     context.stroke();
     context.restore();
   }
   function drawToolbarShell(context, rect) {
     context.save();
-    context.fillStyle = THEME.surface;
-    context.strokeStyle = THEME.borderSoft;
+    const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.96)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0.82)");
+    context.fillStyle = gradient;
+    context.strokeStyle = THEME.border;
     context.shadowColor = THEME.shadow;
-    context.shadowBlur = 18;
-    context.shadowOffsetY = 8;
+    context.shadowBlur = 22;
+    context.shadowOffsetY = 10;
     roundRect(context, rect, 22);
     context.fill();
     context.shadowColor = "transparent";
@@ -2511,18 +2999,274 @@
   function drawTextFrame(context, rect, options = {}) {
     var _a, _b, _c;
     context.save();
-    context.fillStyle = (_a = options.fill) != null ? _a : "rgba(255, 250, 242, 0.52)";
+    context.fillStyle = (_a = options.fill) != null ? _a : "rgba(255, 255, 255, 0.56)";
     context.strokeStyle = (_b = options.stroke) != null ? _b : THEME.borderSoft;
-    context.lineWidth = 1;
+    context.lineWidth = 1.1;
     roundRect(context, rect, (_c = options.radius) != null ? _c : 10);
     context.fill();
     context.stroke();
     context.restore();
   }
-  function drawToolbarIcon(context, button) {
+  function drawImageCover(context, image, rect) {
+    var _a, _b;
+    const sourceWidth = (_a = image.width) != null ? _a : rect.width;
+    const sourceHeight = (_b = image.height) != null ? _b : rect.height;
+    if (sourceWidth <= 0 || sourceHeight <= 0) {
+      return;
+    }
+    const sourceRatio = sourceWidth / sourceHeight;
+    const targetRatio = rect.width / rect.height;
+    let sx = 0;
+    let sy = 0;
+    let sw = sourceWidth;
+    let sh = sourceHeight;
+    if (sourceRatio > targetRatio) {
+      sw = sourceHeight * targetRatio;
+      sx = (sourceWidth - sw) / 2;
+    } else {
+      sh = sourceWidth / targetRatio;
+      sy = (sourceHeight - sh) / 2;
+    }
+    context.drawImage(
+      image,
+      sx,
+      sy,
+      sw,
+      sh,
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height
+    );
+  }
+  function drawImageFit(context, image, rect) {
+    context.drawImage(
+      image,
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height
+    );
+  }
+  function drawLandingTopIconBar(context, metrics, assets, buttons, pressedId) {
+    const barRect = {
+      x: 16,
+      y: metrics.safeTop + 6,
+      width: 148,
+      height: 62
+    };
+    context.save();
+    context.fillStyle = "rgba(255,255,255,0.96)";
+    context.strokeStyle = "rgba(255,255,255,0.98)";
+    context.lineWidth = 1.2;
+    context.shadowColor = "rgba(144, 118, 153, 0.22)";
+    context.shadowBlur = 18;
+    context.shadowOffsetY = 6;
+    roundRect(context, barRect, 19);
+    context.fill();
+    context.shadowColor = "transparent";
+    context.stroke();
+    context.strokeStyle = "rgba(238, 230, 241, 0.82)";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(barRect.x + barRect.width / 2, barRect.y + 8);
+    context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 8);
+    context.stroke();
+    buttons.forEach((button) => {
+      const isPressed = pressedId === `icon:${button.id}`;
+      const renderRect = {
+        ...button.rect,
+        y: button.rect.y + (isPressed ? 1.5 : 0)
+      };
+      const image = button.id === "goal" ? assets.checkIcon : assets.helpIcon;
+      if (image) {
+        drawImageFit(context, image, renderRect);
+      }
+    });
+    context.restore();
+  }
+  function drawRoundTopIcon(context, rect, palette, icon, pressed) {
+    const renderRect = {
+      ...rect,
+      y: rect.y + (pressed ? 1.5 : 0)
+    };
+    const centerX = renderRect.x + renderRect.width / 2;
+    const centerY = renderRect.y + renderRect.height / 2;
+    const radius = renderRect.width / 2;
+    const gradient = context.createLinearGradient(
+      renderRect.x,
+      renderRect.y,
+      renderRect.x,
+      renderRect.y + renderRect.height
+    );
+    gradient.addColorStop(0, palette.start);
+    gradient.addColorStop(1, palette.end);
+    context.save();
+    context.fillStyle = gradient;
+    context.strokeStyle = "rgba(255,255,255,0.92)";
+    context.lineWidth = 1.2;
+    context.shadowColor = "rgba(147, 114, 163, 0.18)";
+    context.shadowBlur = 10;
+    context.shadowOffsetY = 4;
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    context.fill();
+    context.shadowColor = "transparent";
+    context.stroke();
+    context.strokeStyle = palette.outline;
+    context.fillStyle = palette.outline;
+    context.lineWidth = 1.8;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    if (icon === "gear") {
+      context.beginPath();
+      context.arc(centerX, centerY, 4.2, 0, Math.PI * 2);
+      context.stroke();
+      for (let index = 0; index < 8; index += 1) {
+        const angle = Math.PI * 2 * index / 8;
+        const inner = 6.3;
+        const outer = 8.4;
+        context.beginPath();
+        context.moveTo(centerX + Math.cos(angle) * inner, centerY + Math.sin(angle) * inner);
+        context.lineTo(centerX + Math.cos(angle) * outer, centerY + Math.sin(angle) * outer);
+        context.stroke();
+      }
+      context.beginPath();
+      context.arc(centerX, centerY, 1.4, 0, Math.PI * 2);
+      context.fill();
+    } else {
+      context.beginPath();
+      context.moveTo(centerX - 5.5, centerY - 6);
+      context.lineTo(centerX - 3.8, centerY + 1.5);
+      context.lineTo(centerX + 3.8, centerY + 1.5);
+      context.lineTo(centerX + 5.5, centerY - 6);
+      context.closePath();
+      context.stroke();
+      context.beginPath();
+      context.moveTo(centerX - 3, centerY + 1.5);
+      context.lineTo(centerX - 2.2, centerY + 5.4);
+      context.moveTo(centerX + 3, centerY + 1.5);
+      context.lineTo(centerX + 2.2, centerY + 5.4);
+      context.moveTo(centerX - 4.2, centerY + 6.6);
+      context.lineTo(centerX + 4.2, centerY + 6.6);
+      context.stroke();
+    }
+    context.restore();
+  }
+  function drawGameTopIconBar(context, metrics, buttons, pressedId) {
+    const barRect = {
+      x: 16,
+      y: Math.max(0, metrics.safeTop - 14),
+      width: 68,
+      height: 26
+    };
+    context.save();
+    const barGradient = context.createLinearGradient(barRect.x, barRect.y, barRect.x, barRect.y + barRect.height);
+    barGradient.addColorStop(0, "rgba(255,255,255,0.98)");
+    barGradient.addColorStop(1, "rgba(248,244,255,0.92)");
+    context.fillStyle = barGradient;
+    context.strokeStyle = "rgba(255,255,255,0.98)";
+    context.lineWidth = 1;
+    context.shadowColor = "rgba(144, 118, 153, 0.14)";
+    context.shadowBlur = 10;
+    context.shadowOffsetY = 3;
+    roundRect(context, barRect, 13);
+    context.fill();
+    context.shadowColor = "transparent";
+    context.stroke();
+    context.strokeStyle = "rgba(238, 230, 241, 0.82)";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(barRect.x + barRect.width / 2, barRect.y + 5);
+    context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 5);
+    context.stroke();
+    buttons.forEach((button) => {
+      const pressed = pressedId === `icon:${button.id}`;
+      if (button.id === "settings") {
+        drawRoundTopIcon(
+          context,
+          button.rect,
+          {
+            start: "#fff0ba",
+            end: "#ffc96a",
+            outline: "#de9229"
+          },
+          "gear",
+          pressed
+        );
+      } else {
+        drawRoundTopIcon(
+          context,
+          button.rect,
+          {
+            start: "#fff4c7",
+            end: "#ffd987",
+            outline: "#cc9a32"
+          },
+          "trophy",
+          pressed
+        );
+      }
+    });
+    context.restore();
+  }
+  function getToolbarButtonStyle(button) {
+    if (!button.enabled) {
+      return {
+        fillStart: "rgba(255, 255, 255, 0.78)",
+        fillEnd: "rgba(245, 238, 243, 0.68)",
+        textColor: THEME.disabledText,
+        iconColor: THEME.disabledText,
+        stroke: THEME.borderSoft
+      };
+    }
+    switch (button.id) {
+      case "levels":
+        return {
+          fillStart: "#ffe3bd",
+          fillEnd: "#ffd18a",
+          textColor: "#8d5c2f",
+          iconColor: "#e08d31",
+          stroke: "rgba(255,255,255,0.9)"
+        };
+      case "undo":
+        return {
+          fillStart: "#7dc6ff",
+          fillEnd: "#539cf4",
+          textColor: "#ffffff",
+          iconColor: "#ffffff",
+          stroke: "rgba(255,255,255,0.92)"
+        };
+      case "restart":
+        return {
+          fillStart: "#ffb04c",
+          fillEnd: "#ff7f19",
+          textColor: "#ffffff",
+          iconColor: "#ffffff",
+          stroke: "rgba(255,255,255,0.92)"
+        };
+      case "hint":
+        return {
+          fillStart: "#ffc8e5",
+          fillEnd: "#f5a7d0",
+          textColor: "#ffffff",
+          iconColor: "#ffffff",
+          stroke: "rgba(255,255,255,0.92)"
+        };
+      case "next":
+        return {
+          fillStart: "#bdeea7",
+          fillEnd: "#7ed466",
+          textColor: "#ffffff",
+          iconColor: "#ffffff",
+          stroke: "rgba(255,255,255,0.92)"
+        };
+    }
+  }
+  function drawToolbarIcon(context, button, color) {
     const centerX = button.rect.x + button.rect.width / 2;
     const centerY = button.rect.y + 15;
-    const iconColor = button.enabled ? THEME.accent : THEME.disabledText;
+    const iconColor = color != null ? color : button.enabled ? THEME.accent : THEME.disabledText;
     context.save();
     context.strokeStyle = iconColor;
     context.fillStyle = iconColor;
@@ -2647,13 +3391,24 @@
       completedAt: formatCompletedAt(locale, record.completedAt)
     });
   }
-  function bootstrapWechatGame() {
+  async function bootstrapWechatGame() {
     const locale = resolveLocale();
     const canvas = resolveWechatCanvas();
+    const landingAssets = {
+      background: null,
+      newGameButton: null,
+      leaderboardButton: null,
+      checkIcon: null,
+      helpIcon: null
+    };
     const metrics = getWindowMetrics();
     const layout = computeLayout(metrics);
-    const storage = new BrowserGameStorage(new WechatStorageAdapter());
+    const storageAdapter = new WechatStorageAdapter();
+    const storage = new BrowserGameStorage(storageAdapter);
+    let userSettings = loadUserSettings(storageAdapter);
     const loadedGameState = storage.load(levels);
+    let campaignState = storage.loadCampaignState();
+    let weeklyLeaderboard = storage.loadWeeklyLeaderboard();
     const game = new GameController(levels, {
       initialRecords: loadedGameState.records,
       initialProgress: loadedGameState.progress,
@@ -2672,39 +3427,89 @@
     });
     const renderer = new CanvasRenderer(surface);
     const audio = new FeedbackAudio();
+    audio.setEnabled(userSettings.soundEnabled);
     const inputSource = new WechatPointerInputSource();
     const uiState = {
       levelPanelOpen: false,
       homeOpen: true,
+      leaderboardOpen: false,
+      helpOpen: false,
+      goalOpen: false,
+      settingsOpen: false,
       pressedUiId: null
     };
     new PointerController(inputSource, surface, renderer, game, {
-      shouldIgnoreInput: () => uiState.levelPanelOpen || uiState.homeOpen
+      shouldIgnoreInput: () => uiState.levelPanelOpen || uiState.homeOpen || uiState.leaderboardOpen || uiState.helpOpen || uiState.goalOpen || uiState.settingsOpen
     });
     let currentSnapshot = game.getSnapshot();
     let animationFrameId = 0;
     let buttons = [];
     let homeButtons = [];
+    let topIconButtons = [];
+    let gameTopButtons = [];
     let levelTiles = [];
+    let leaderboardPanelRect = null;
+    let infoDialogPanelRect = null;
+    let infoDialogButtonRect = null;
+    let settingsDialogPanelRect = null;
+    let settingsBackButtonRect = null;
+    let settingsContinueButtonRect = null;
+    let soundToggleRect = null;
+    let vibrationToggleRect = null;
     let lastPlacementEffectId = 0;
     let lastInvalidEffectId = 0;
     let lastCelebrationEffectId = 0;
     let autoAdvanceTimeoutId = 0;
     let lastAutoAdvanceCelebrationId = 0;
     let autoAdvanceBannerUntil = 0;
+    let lastCampaignCompletionCelebrationId = 0;
+    const [backgroundImage, newGameButtonImage, leaderboardButtonImage, checkIconImage, helpIconImage] = await Promise.all([
+      loadWechatImage(canvas, WECHAT_ASSET_PATHS.background),
+      loadWechatImage(canvas, WECHAT_ASSET_PATHS.newGameButton),
+      loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardButton),
+      loadWechatImage(canvas, WECHAT_ASSET_PATHS.checkIcon),
+      loadWechatImage(canvas, WECHAT_ASSET_PATHS.helpIcon)
+    ]);
+    landingAssets.background = backgroundImage;
+    landingAssets.newGameButton = newGameButtonImage;
+    landingAssets.leaderboardButton = leaderboardButtonImage;
+    landingAssets.checkIcon = checkIconImage;
+    landingAssets.helpIcon = helpIconImage;
     function drawHeader(snapshot) {
-      var _a, _b;
+      var _a, _b, _c;
       const context = surface.getContext2D();
+      const textStartX = layout.headerRect.x + 104;
       drawHudShell(context, layout.headerRect);
+      gameTopButtons = [
+        {
+          id: "settings",
+          rect: {
+            x: 22,
+            y: Math.max(1, metrics.safeTop - 11),
+            width: 18,
+            height: 18
+          }
+        },
+        {
+          id: "leaderboardTop",
+          rect: {
+            x: 46,
+            y: Math.max(1, metrics.safeTop - 11),
+            width: 18,
+            height: 18
+          }
+        }
+      ];
+      drawGameTopIconBar(context, metrics, gameTopButtons, uiState.pressedUiId);
       context.save();
       context.textAlign = "left";
       context.textBaseline = "top";
       context.fillStyle = THEME.accent;
       context.font = "600 10px sans-serif";
-      context.fillText(t(locale, "app.eyebrow"), layout.headerRect.x + 14, layout.headerRect.y + 7);
+      context.fillText(t(locale, "app.eyebrow"), textStartX, layout.headerRect.y + 7);
       context.fillStyle = THEME.textPrimary;
       context.font = "700 19px sans-serif";
-      context.fillText(t(locale, "app.title"), layout.headerRect.x + 14, layout.headerRect.y + 16);
+      context.fillText(t(locale, "app.title"), textStartX, layout.headerRect.y + 16);
       context.fillStyle = THEME.textSecondary;
       context.font = "600 10px sans-serif";
       context.fillText(
@@ -2712,7 +3517,7 @@
           current: snapshot.levelIndex + 1,
           total: levels.length
         }),
-        layout.headerRect.x + 14,
+        textStartX,
         layout.headerRect.y + 34
       );
       context.fillText(
@@ -2721,20 +3526,30 @@
           height: snapshot.level.height,
           clues: snapshot.level.clues.length
         }),
-        layout.headerRect.x + 102,
+        textStartX + 74,
         layout.headerRect.y + 34
       );
       context.fillStyle = THEME.textPrimary;
       context.font = "700 11px sans-serif";
       context.fillText(
         formatLevelName(locale, snapshot.level.number, snapshot.level.titleKey),
-        layout.headerRect.x + 14,
+        textStartX,
         layout.headerRect.y + 46
       );
       context.restore();
       context.save();
-      context.fillStyle = snapshot.mode === "record" ? THEME.infoSoft : snapshot.solved ? THEME.successSoft : ((_a = snapshot.preview) == null ? void 0 : _a.validation.ok) ? THEME.accentSoft : THEME.surfaceMuted;
-      context.strokeStyle = snapshot.mode === "record" ? THEME.borderSoft : snapshot.solved ? THEME.borderSoft : THEME.borderSoft;
+      const chipGradient = context.createLinearGradient(
+        layout.chipRect.x,
+        layout.chipRect.y,
+        layout.chipRect.x,
+        layout.chipRect.y + layout.chipRect.height
+      );
+      const chipStart = snapshot.mode === "record" ? "#dff5ff" : snapshot.solved ? "#e4ffd7" : ((_a = snapshot.preview) == null ? void 0 : _a.validation.ok) ? "#fff2bb" : "rgba(255,255,255,0.82)";
+      const chipEnd = snapshot.mode === "record" ? "#c8edff" : snapshot.solved ? "#c6ffb7" : ((_b = snapshot.preview) == null ? void 0 : _b.validation.ok) ? "#ffd96a" : "rgba(255,255,255,0.62)";
+      chipGradient.addColorStop(0, chipStart);
+      chipGradient.addColorStop(1, chipEnd);
+      context.fillStyle = chipGradient;
+      context.strokeStyle = THEME.border;
       roundRect(context, layout.chipRect, 13);
       context.fill();
       context.stroke();
@@ -2743,7 +3558,7 @@
       context.textBaseline = "middle";
       context.font = "700 12px sans-serif";
       context.fillText(
-        snapshot.mode === "record" ? t(locale, "chip.record") : snapshot.solved ? t(locale, "chip.solved") : ((_b = snapshot.preview) == null ? void 0 : _b.validation.ok) ? t(locale, "chip.ready") : t(locale, "chip.active"),
+        snapshot.mode === "record" ? t(locale, "chip.record") : snapshot.solved ? t(locale, "chip.solved") : ((_c = snapshot.preview) == null ? void 0 : _c.validation.ok) ? t(locale, "chip.ready") : t(locale, "chip.active"),
         layout.chipRect.x + layout.chipRect.width / 2,
         layout.chipRect.y + layout.chipRect.height / 2 + 0.5
       );
@@ -2933,14 +3748,25 @@
         const isPressed = uiState.pressedUiId === `toolbar:${button.id}`;
         const buttonY = isPressed ? button.rect.y + 1.5 : button.rect.y;
         const buttonRect = { ...button.rect, y: buttonY };
-        context.fillStyle = button.enabled ? THEME.surfaceStrong : THEME.surfaceMuted;
-        context.strokeStyle = button.enabled ? THEME.border : THEME.borderSoft;
-        context.lineWidth = 1;
+        const style = getToolbarButtonStyle(button);
+        const gradient = context.createLinearGradient(
+          buttonRect.x,
+          buttonRect.y,
+          buttonRect.x,
+          buttonRect.y + buttonRect.height
+        );
+        gradient.addColorStop(0, style.fillStart);
+        gradient.addColorStop(1, style.fillEnd);
+        context.fillStyle = gradient;
+        context.strokeStyle = style.stroke;
+        context.lineWidth = 1.2;
+        context.shadowColor = "rgba(255,255,255,0.28)";
+        context.shadowBlur = 0;
         roundRect(context, buttonRect, 14);
         context.fill();
         context.stroke();
-        drawToolbarIcon(context, { ...button, rect: buttonRect });
-        context.fillStyle = button.enabled ? THEME.textPrimary : THEME.disabledText;
+        drawToolbarIcon(context, { ...button, rect: buttonRect }, style.iconColor);
+        context.fillStyle = style.textColor;
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.font = "600 10px sans-serif";
@@ -2952,126 +3778,683 @@
       }
       context.restore();
     }
-    function drawHomeScreen(snapshot) {
-      const context = surface.getContext2D();
-      const panelWidth = Math.min(metrics.width - 36, 320);
-      const panelHeight = 300;
-      const panelRect = {
-        x: (metrics.width - panelWidth) / 2,
-        y: Math.max(layout.headerRect.y + 18, (metrics.height - panelHeight) / 2 - 18),
-        width: panelWidth,
-        height: panelHeight
-      };
-      const completed = Object.keys(snapshot.records).length;
-      const hasProgress = snapshot.levelIndex > 0 || snapshot.placements.length > 0;
-      const buttonWidth = panelWidth - 44;
-      const startButtonRect = {
-        x: panelRect.x + 22,
-        y: panelRect.y + panelRect.height - 74,
-        width: buttonWidth,
-        height: 44
-      };
-      const continueButtonRect = {
-        x: panelRect.x + 22,
-        y: startButtonRect.y - 54,
-        width: buttonWidth,
-        height: 44
-      };
-      homeButtons = [
-        {
-          id: "continue",
-          label: t(locale, "home.continue"),
-          rect: continueButtonRect,
-          primary: true
-        },
-        {
-          id: "start",
-          label: t(locale, "home.start"),
-          rect: startButtonRect,
-          primary: false
-        }
-      ];
+    function drawFallbackLandingButton(context, rect, label, palette) {
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      if (palette === "orange") {
+        gradient.addColorStop(0, "#ffd85f");
+        gradient.addColorStop(1, "#ff9f20");
+      } else {
+        gradient.addColorStop(0, "#dab7ff");
+        gradient.addColorStop(1, "#a96df0");
+      }
       context.save();
-      context.fillStyle = THEME.overlay;
-      context.fillRect(0, 0, metrics.width, metrics.height);
-      context.fillStyle = THEME.surfaceStrong;
-      context.strokeStyle = THEME.border;
-      context.lineWidth = 1;
-      context.shadowColor = THEME.shadow;
-      context.shadowBlur = 24;
-      context.shadowOffsetY = 10;
-      roundRect(context, panelRect, 26);
+      context.fillStyle = gradient;
+      context.strokeStyle = "rgba(255,255,255,0.92)";
+      context.lineWidth = 2;
+      context.shadowColor = "rgba(255, 220, 140, 0.42)";
+      context.shadowBlur = 28;
+      roundRect(context, rect, 24);
       context.fill();
       context.shadowColor = "transparent";
       context.stroke();
-      context.textAlign = "left";
-      context.textBaseline = "top";
-      context.fillStyle = THEME.accent;
-      context.font = "700 11px sans-serif";
-      context.fillText(t(locale, "app.eyebrow"), panelRect.x + 22, panelRect.y + 20);
-      context.fillStyle = THEME.textPrimary;
-      context.font = "700 28px sans-serif";
-      context.fillText(t(locale, "app.title"), panelRect.x + 22, panelRect.y + 38);
-      drawWrappedText(
-        context,
-        t(locale, "home.subtitle"),
+      context.fillStyle = "#ffffff";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "700 26px sans-serif";
+      context.fillText(label, rect.x + rect.width / 2, rect.y + rect.height / 2 + 2);
+      context.restore();
+    }
+    function drawLandingScreen() {
+      const context = surface.getContext2D();
+      const buttonSize = Math.min(metrics.width * 0.72, 280);
+      const firstButtonTop = metrics.height * 0.58;
+      const secondButtonTop = firstButtonTop + buttonSize * 0.52;
+      const iconBarY = metrics.safeTop + 6;
+      const iconBarX = 16;
+      const iconBarWidth = 148;
+      const iconBarHeight = 62;
+      const iconSize = 48;
+      const leftCenterX = iconBarX + iconBarWidth * 0.25;
+      const rightCenterX = iconBarX + iconBarWidth * 0.75;
+      const iconTop = iconBarY + (iconBarHeight - iconSize) / 2;
+      homeButtons = [
         {
-          x: panelRect.x + 22,
-          y: panelRect.y + 78,
-          width: panelRect.width - 44,
-          height: 44
+          id: "newGame",
+          rect: {
+            x: (metrics.width - buttonSize) / 2,
+            y: firstButtonTop,
+            width: buttonSize,
+            height: buttonSize
+          }
         },
         {
-          font: "12px sans-serif",
-          color: THEME.textSecondary,
-          lineHeight: 16,
-          maxLines: 2
+          id: "leaderboard",
+          rect: {
+            x: (metrics.width - buttonSize) / 2,
+            y: secondButtonTop,
+            width: buttonSize,
+            height: buttonSize
+          }
         }
+      ];
+      topIconButtons = [
+        {
+          id: "goal",
+          rect: {
+            x: leftCenterX - iconSize / 2,
+            y: iconTop,
+            width: iconSize,
+            height: iconSize
+          }
+        },
+        {
+          id: "help",
+          rect: {
+            x: rightCenterX - iconSize / 2,
+            y: iconTop,
+            width: iconSize,
+            height: iconSize
+          }
+        }
+      ];
+      context.save();
+      context.clearRect(0, 0, metrics.width, metrics.height);
+      if (landingAssets.background) {
+        drawImageCover(context, landingAssets.background, {
+          x: 0,
+          y: 0,
+          width: metrics.width,
+          height: metrics.height
+        });
+      } else {
+        const gradient = context.createLinearGradient(0, 0, 0, metrics.height);
+        gradient.addColorStop(0, THEME.backgroundStart);
+        gradient.addColorStop(0.5, THEME.backgroundMid);
+        gradient.addColorStop(1, THEME.backgroundEnd);
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, metrics.width, metrics.height);
+      }
+      const newGameRect = homeButtons[0].rect;
+      const leaderboardRect = homeButtons[1].rect;
+      const newGamePressed = uiState.pressedUiId === "home:newGame";
+      const leaderboardPressed = uiState.pressedUiId === "home:leaderboard";
+      const newGameRenderRect = {
+        ...newGameRect,
+        y: newGameRect.y + (newGamePressed ? 3 : 0)
+      };
+      const leaderboardRenderRect = {
+        ...leaderboardRect,
+        y: leaderboardRect.y + (leaderboardPressed ? 3 : 0)
+      };
+      if (landingAssets.newGameButton) {
+        drawImageFit(context, landingAssets.newGameButton, newGameRenderRect);
+      } else {
+        drawFallbackLandingButton(context, newGameRenderRect, t(locale, "home.start"), "orange");
+      }
+      if (landingAssets.leaderboardButton) {
+        drawImageFit(context, landingAssets.leaderboardButton, leaderboardRenderRect);
+      } else {
+        drawFallbackLandingButton(
+          context,
+          leaderboardRenderRect,
+          t(locale, "landing.weeklyLeaderboard"),
+          "purple"
+        );
+      }
+      drawLandingTopIconBar(context, metrics, landingAssets, topIconButtons, uiState.pressedUiId);
+      context.restore();
+    }
+    function drawInfoDialog(mode) {
+      const context = surface.getContext2D();
+      const panelWidth = Math.min(metrics.width - 40, 336);
+      const panelHeight = mode === "help" ? 490 : 398;
+      const panelRect = {
+        x: (metrics.width - panelWidth) / 2,
+        y: Math.max(metrics.safeTop + 54, (metrics.height - panelHeight) / 2),
+        width: panelWidth,
+        height: panelHeight
+      };
+      const actionRect = {
+        x: panelRect.x + 84,
+        y: panelRect.y + panelRect.height - 58,
+        width: panelRect.width - 168,
+        height: 42
+      };
+      infoDialogPanelRect = panelRect;
+      infoDialogButtonRect = actionRect;
+      context.save();
+      context.fillStyle = "rgba(83, 62, 95, 0.22)";
+      context.fillRect(0, 0, metrics.width, metrics.height);
+      const panelGradient = context.createLinearGradient(
+        panelRect.x,
+        panelRect.y,
+        panelRect.x,
+        panelRect.y + panelRect.height
       );
-      drawHudShell(context, {
-        x: panelRect.x + 22,
-        y: panelRect.y + 126,
-        width: panelRect.width - 44,
-        height: 68
+      panelGradient.addColorStop(0, "rgba(255,255,255,0.98)");
+      panelGradient.addColorStop(1, "rgba(252,247,255,0.96)");
+      context.fillStyle = panelGradient;
+      context.strokeStyle = "rgba(255,255,255,0.96)";
+      context.lineWidth = 1.2;
+      context.shadowColor = "rgba(123, 97, 147, 0.22)";
+      context.shadowBlur = 24;
+      context.shadowOffsetY = 10;
+      roundRect(context, panelRect, 22);
+      context.fill();
+      context.shadowColor = "transparent";
+      context.stroke();
+      const titleChipRect = {
+        x: panelRect.x + 68,
+        y: panelRect.y + 18,
+        width: panelRect.width - 136,
+        height: 38
+      };
+      const titleChipGradient = context.createLinearGradient(
+        titleChipRect.x,
+        titleChipRect.y,
+        titleChipRect.x,
+        titleChipRect.y + titleChipRect.height
+      );
+      titleChipGradient.addColorStop(0, "#fff4fa");
+      titleChipGradient.addColorStop(1, "#ffe3ef");
+      context.fillStyle = titleChipGradient;
+      context.strokeStyle = "rgba(255,255,255,0.95)";
+      context.lineWidth = 1;
+      roundRect(context, titleChipRect, 18);
+      context.fill();
+      context.stroke();
+      context.textAlign = "center";
+      context.textBaseline = "top";
+      context.fillStyle = "#ff8e9c";
+      context.font = "700 24px sans-serif";
+      context.fillText(
+        mode === "help" ? t(locale, "landing.helpTitle") : t(locale, "landing.goalTitle"),
+        panelRect.x + panelRect.width / 2,
+        panelRect.y + 24
+      );
+      context.textAlign = "left";
+      context.fillStyle = "#4f63c6";
+      context.font = "700 18px sans-serif";
+      context.fillText(
+        mode === "help" ? t(locale, "landing.ruleSection") : t(locale, "landing.goalSection"),
+        panelRect.x + 20,
+        panelRect.y + 74
+      );
+      const bodyLines = mode === "help" ? [
+        t(locale, "landing.helpRule1"),
+        t(locale, "landing.helpRule2"),
+        t(locale, "landing.helpRule3"),
+        t(locale, "landing.helpRule4")
+      ] : [
+        t(locale, "landing.goalRule1"),
+        t(locale, "landing.goalRule2"),
+        t(locale, "landing.goalRule3")
+      ];
+      const ruleCardRect = {
+        x: panelRect.x + 18,
+        y: panelRect.y + 104,
+        width: panelRect.width - 36,
+        height: mode === "help" ? 152 : 132
+      };
+      drawTextFrame(context, ruleCardRect, {
+        radius: 16,
+        fill: "rgba(255,255,255,0.72)",
+        stroke: "rgba(236, 226, 246, 0.95)"
       });
-      context.fillStyle = THEME.accent;
-      context.font = "700 10px sans-serif";
-      context.fillText(
-        t(locale, "home.progress", { completed, total: levels.length }),
-        panelRect.x + 36,
-        panelRect.y + 140
-      );
       context.fillStyle = THEME.textPrimary;
-      context.font = "700 15px sans-serif";
-      context.fillText(
-        t(locale, "home.currentLevel", { level: snapshot.levelIndex + 1 }),
-        panelRect.x + 36,
-        panelRect.y + 158
+      context.font = "13px sans-serif";
+      bodyLines.forEach((line, index) => {
+        const rowY = ruleCardRect.y + 16 + index * 34;
+        context.fillStyle = "#7b8cff";
+        context.font = "700 13px sans-serif";
+        context.fillText(`${index + 1}.`, ruleCardRect.x + 14, rowY);
+        drawWrappedText(
+          context,
+          line,
+          {
+            x: ruleCardRect.x + 34,
+            y: rowY,
+            width: ruleCardRect.width - 50,
+            height: 28
+          },
+          {
+            font: "13px sans-serif",
+            color: THEME.textPrimary,
+            lineHeight: 17,
+            maxLines: 2
+          }
+        );
+      });
+      const toolsTop = ruleCardRect.y + ruleCardRect.height + 18;
+      if (mode === "help") {
+        context.fillStyle = "#4f63c6";
+        context.font = "700 18px sans-serif";
+        context.fillText(t(locale, "landing.toolSection"), panelRect.x + 20, toolsTop);
+        const toolCardRect = {
+          x: panelRect.x + 18,
+          y: toolsTop + 26,
+          width: panelRect.width - 36,
+          height: 102
+        };
+        drawTextFrame(context, toolCardRect, {
+          radius: 16,
+          fill: "rgba(255,255,255,0.72)",
+          stroke: "rgba(236, 226, 246, 0.95)"
+        });
+        const toolRows = [
+          { colorStart: "#7cc8ff", colorEnd: "#4ba4ea", text: t(locale, "landing.toolHint") },
+          { colorStart: "#ffc878", colorEnd: "#ff9e34", text: t(locale, "landing.toolUndo") },
+          { colorStart: "#ffb2d4", colorEnd: "#ef7bb0", text: t(locale, "landing.toolRestart") }
+        ];
+        toolRows.forEach((tool, index) => {
+          const iconRect = {
+            x: toolCardRect.x + 14,
+            y: toolCardRect.y + 14 + index * 28,
+            width: 20,
+            height: 20
+          };
+          const iconGradient = context.createLinearGradient(
+            iconRect.x,
+            iconRect.y,
+            iconRect.x,
+            iconRect.y + iconRect.height
+          );
+          iconGradient.addColorStop(0, tool.colorStart);
+          iconGradient.addColorStop(1, tool.colorEnd);
+          context.fillStyle = iconGradient;
+          roundRect(context, iconRect, 6);
+          context.fill();
+          context.fillStyle = "#ffffff";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.font = "700 13px sans-serif";
+          context.fillText(index === 0 ? "?" : index === 1 ? "↶" : "↺", iconRect.x + 10, iconRect.y + 10.5);
+          context.textAlign = "left";
+          context.textBaseline = "top";
+          drawWrappedText(
+            context,
+            tool.text,
+            {
+              x: iconRect.x + 30,
+              y: iconRect.y + 1,
+              width: toolCardRect.width - 50,
+              height: 24
+            },
+            {
+              font: "12px sans-serif",
+              color: THEME.textPrimary,
+              lineHeight: 16,
+              maxLines: 1
+            }
+          );
+        });
+      }
+      const buttonGradient = context.createLinearGradient(
+        actionRect.x,
+        actionRect.y,
+        actionRect.x,
+        actionRect.y + actionRect.height
       );
-      for (const button of homeButtons) {
-        const isPressed = uiState.pressedUiId === `home:${button.id}`;
-        const buttonRect = { ...button.rect, y: button.rect.y + (isPressed ? 1.5 : 0) };
-        context.fillStyle = button.primary ? THEME.textPrimary : THEME.surfaceStrong;
-        context.strokeStyle = button.primary ? THEME.textPrimary : THEME.border;
-        context.lineWidth = 1;
-        roundRect(context, buttonRect, 18);
+      buttonGradient.addColorStop(0, "#57b9ff");
+      buttonGradient.addColorStop(1, "#2c89f3");
+      context.fillStyle = buttonGradient;
+      context.strokeStyle = "rgba(255,255,255,0.92)";
+      context.lineWidth = 1.2;
+      roundRect(context, actionRect, 14);
+      context.fill();
+      context.stroke();
+      context.fillStyle = "#ffffff";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "700 16px sans-serif";
+      context.fillText(t(locale, "landing.gotIt"), actionRect.x + actionRect.width / 2, actionRect.y + actionRect.height / 2 + 1);
+      context.restore();
+    }
+    function drawSettingsDialog() {
+      const context = surface.getContext2D();
+      const panelRect = {
+        x: (metrics.width - 248) / 2,
+        y: Math.max(metrics.safeTop + 54, (metrics.height - 244) / 2),
+        width: 248,
+        height: 244
+      };
+      settingsDialogPanelRect = panelRect;
+      soundToggleRect = {
+        x: panelRect.x + panelRect.width - 62,
+        y: panelRect.y + 70,
+        width: 40,
+        height: 22
+      };
+      vibrationToggleRect = {
+        x: panelRect.x + panelRect.width - 62,
+        y: panelRect.y + 112,
+        width: 40,
+        height: 22
+      };
+      settingsBackButtonRect = {
+        x: panelRect.x + 22,
+        y: panelRect.y + panelRect.height - 52,
+        width: 92,
+        height: 34
+      };
+      settingsContinueButtonRect = {
+        x: panelRect.x + panelRect.width - 114,
+        y: panelRect.y + panelRect.height - 52,
+        width: 92,
+        height: 34
+      };
+      const drawToggleRow = (y, iconColorStart, iconColorEnd, label, enabled, toggleRect, glyph) => {
+        const iconRect = {
+          x: panelRect.x + 24,
+          y,
+          width: 22,
+          height: 22
+        };
+        const iconGradient = context.createLinearGradient(
+          iconRect.x,
+          iconRect.y,
+          iconRect.x,
+          iconRect.y + iconRect.height
+        );
+        iconGradient.addColorStop(0, iconColorStart);
+        iconGradient.addColorStop(1, iconColorEnd);
+        context.fillStyle = iconGradient;
+        roundRect(context, iconRect, 7);
         context.fill();
-        context.stroke();
+        context.fillStyle = "#ffffff";
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.font = "700 13px sans-serif";
-        context.fillStyle = button.primary ? THEME.white : THEME.textPrimary;
-        context.fillText(
-          button.label,
-          buttonRect.x + buttonRect.width / 2,
-          buttonRect.y + buttonRect.height / 2
+        context.fillText(glyph, iconRect.x + 11, iconRect.y + 11.5);
+        context.textAlign = "left";
+        context.textBaseline = "middle";
+        context.fillStyle = THEME.textPrimary;
+        context.font = "700 15px sans-serif";
+        context.fillText(label, iconRect.x + 32, iconRect.y + 11);
+        const toggleGradient = context.createLinearGradient(
+          toggleRect.x,
+          toggleRect.y,
+          toggleRect.x,
+          toggleRect.y + toggleRect.height
         );
+        if (enabled) {
+          toggleGradient.addColorStop(0, "#6dd66c");
+          toggleGradient.addColorStop(1, "#3eaf47");
+        } else {
+          toggleGradient.addColorStop(0, "#e9e3ea");
+          toggleGradient.addColorStop(1, "#cfc3d1");
+        }
+        context.fillStyle = toggleGradient;
+        context.strokeStyle = "rgba(255,255,255,0.92)";
+        context.lineWidth = 1;
+        roundRect(context, toggleRect, toggleRect.height / 2);
+        context.fill();
+        context.stroke();
+        const knobX = enabled ? toggleRect.x + toggleRect.width - 11 : toggleRect.x + 11;
+        context.fillStyle = "#ffffff";
+        context.beginPath();
+        context.arc(knobX, toggleRect.y + toggleRect.height / 2, 8.5, 0, Math.PI * 2);
+        context.fill();
+      };
+      context.save();
+      context.fillStyle = "rgba(77, 60, 89, 0.22)";
+      context.fillRect(0, 0, metrics.width, metrics.height);
+      const panelGradient = context.createLinearGradient(
+        panelRect.x,
+        panelRect.y,
+        panelRect.x,
+        panelRect.y + panelRect.height
+      );
+      panelGradient.addColorStop(0, "rgba(255,255,255,0.98)");
+      panelGradient.addColorStop(1, "rgba(248,244,255,0.95)");
+      context.fillStyle = panelGradient;
+      context.strokeStyle = "rgba(255,255,255,0.96)";
+      context.lineWidth = 1.2;
+      context.shadowColor = "rgba(123, 97, 147, 0.2)";
+      context.shadowBlur = 24;
+      context.shadowOffsetY = 10;
+      roundRect(context, panelRect, 22);
+      context.fill();
+      context.shadowColor = "transparent";
+      context.stroke();
+      context.textAlign = "center";
+      context.textBaseline = "top";
+      context.fillStyle = "#4f63c6";
+      context.font = "700 22px sans-serif";
+      context.fillText(t(locale, "settings.title"), panelRect.x + panelRect.width / 2, panelRect.y + 20);
+      drawToggleRow(
+        panelRect.y + 66,
+        "#82db78",
+        "#46b957",
+        t(locale, "settings.sound"),
+        userSettings.soundEnabled,
+        soundToggleRect,
+        "♪"
+      );
+      drawToggleRow(
+        panelRect.y + 108,
+        "#c57fff",
+        "#9b5ce5",
+        t(locale, "settings.vibration"),
+        userSettings.vibrationEnabled,
+        vibrationToggleRect,
+        "≈"
+      );
+      const backGradient = context.createLinearGradient(
+        settingsBackButtonRect.x,
+        settingsBackButtonRect.y,
+        settingsBackButtonRect.x,
+        settingsBackButtonRect.y + settingsBackButtonRect.height
+      );
+      backGradient.addColorStop(0, "#f7f7f7");
+      backGradient.addColorStop(1, "#dddddd");
+      context.fillStyle = backGradient;
+      context.strokeStyle = "rgba(255,255,255,0.95)";
+      roundRect(context, settingsBackButtonRect, 12);
+      context.fill();
+      context.stroke();
+      context.fillStyle = "#7c727f";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "700 14px sans-serif";
+      context.fillText(
+        t(locale, "settings.backHome"),
+        settingsBackButtonRect.x + settingsBackButtonRect.width / 2,
+        settingsBackButtonRect.y + settingsBackButtonRect.height / 2 + 1
+      );
+      const continueGradient = context.createLinearGradient(
+        settingsContinueButtonRect.x,
+        settingsContinueButtonRect.y,
+        settingsContinueButtonRect.x,
+        settingsContinueButtonRect.y + settingsContinueButtonRect.height
+      );
+      continueGradient.addColorStop(0, "#58bcff");
+      continueGradient.addColorStop(1, "#2d89f4");
+      context.fillStyle = continueGradient;
+      context.strokeStyle = "rgba(255,255,255,0.95)";
+      roundRect(context, settingsContinueButtonRect, 12);
+      context.fill();
+      context.stroke();
+      context.fillStyle = "#ffffff";
+      context.fillText(
+        t(locale, "settings.continue"),
+        settingsContinueButtonRect.x + settingsContinueButtonRect.width / 2,
+        settingsContinueButtonRect.y + settingsContinueButtonRect.height / 2 + 1
+      );
+      context.restore();
+    }
+    function drawLeaderboardPanel() {
+      const context = surface.getContext2D();
+      const panelWidth = Math.min(metrics.width - 30, 340);
+      const panelHeight = Math.min(metrics.height - 110, 446);
+      const panelRect = {
+        x: (metrics.width - panelWidth) / 2,
+        y: Math.max(metrics.safeTop + 36, (metrics.height - panelHeight) / 2),
+        width: panelWidth,
+        height: panelHeight
+      };
+      leaderboardPanelRect = panelRect;
+      context.save();
+      context.fillStyle = "rgba(71, 49, 82, 0.22)";
+      context.fillRect(0, 0, metrics.width, metrics.height);
+      const panelGradient = context.createLinearGradient(
+        panelRect.x,
+        panelRect.y,
+        panelRect.x,
+        panelRect.y + panelRect.height
+      );
+      panelGradient.addColorStop(0, "rgba(255,255,255,0.96)");
+      panelGradient.addColorStop(1, "rgba(249,239,255,0.92)");
+      context.fillStyle = panelGradient;
+      context.strokeStyle = "rgba(255,255,255,0.92)";
+      context.lineWidth = 1.4;
+      context.shadowColor = "rgba(116, 77, 143, 0.26)";
+      context.shadowBlur = 28;
+      context.shadowOffsetY = 12;
+      roundRect(context, panelRect, 24);
+      context.fill();
+      context.shadowColor = "transparent";
+      context.stroke();
+      const headerChipRect = {
+        x: panelRect.x + 72,
+        y: panelRect.y + 16,
+        width: panelRect.width - 144,
+        height: 38
+      };
+      const headerChipGradient = context.createLinearGradient(
+        headerChipRect.x,
+        headerChipRect.y,
+        headerChipRect.x,
+        headerChipRect.y + headerChipRect.height
+      );
+      headerChipGradient.addColorStop(0, "#f7ecff");
+      headerChipGradient.addColorStop(1, "#eddcff");
+      context.fillStyle = headerChipGradient;
+      context.strokeStyle = "rgba(255,255,255,0.95)";
+      context.lineWidth = 1;
+      roundRect(context, headerChipRect, 18);
+      context.fill();
+      context.stroke();
+      context.textAlign = "left";
+      context.textBaseline = "top";
+      context.fillStyle = "#9b61db";
+      context.font = "700 20px sans-serif";
+      context.textAlign = "center";
+      context.fillText(
+        t(locale, "landing.weeklyLeaderboard"),
+        panelRect.x + panelRect.width / 2,
+        panelRect.y + 22
+      );
+      drawWrappedText(
+        context,
+        t(locale, "landing.localWeeklyNote"),
+        {
+          x: panelRect.x + 22,
+          y: panelRect.y + 66,
+          width: panelRect.width - 44,
+          height: 36
+        },
+        {
+          font: "11px sans-serif",
+          color: THEME.textSecondary,
+          lineHeight: 14,
+          maxLines: 2
+        }
+      );
+      const listTop = panelRect.y + 110;
+      const listLeft = panelRect.x + 18;
+      const rowWidth = panelRect.width - 36;
+      const rowHeight = 56;
+      const rowGap = 10;
+      const entries = weeklyLeaderboard.slice(0, 6);
+      if (entries.length === 0) {
+        drawHudShell(context, {
+          x: listLeft,
+          y: listTop + 18,
+          width: rowWidth,
+          height: 104
+        });
+        drawWrappedText(
+          context,
+          t(locale, "landing.emptyLeaderboard"),
+          {
+            x: listLeft + 18,
+            y: listTop + 48,
+            width: rowWidth - 36,
+            height: 40
+          },
+          {
+            font: "13px sans-serif",
+            color: THEME.textPrimary,
+            lineHeight: 18,
+            maxLines: 2
+          }
+        );
+      } else {
+        entries.forEach((entry, index) => {
+          const rowRect = {
+            x: listLeft,
+            y: listTop + index * (rowHeight + rowGap),
+            width: rowWidth,
+            height: rowHeight
+          };
+          drawHudShell(context, rowRect);
+          const badgeRect = {
+            x: rowRect.x + 14,
+            y: rowRect.y + 12,
+            width: 26,
+            height: 26
+          };
+          const badgeGradient = context.createLinearGradient(
+            badgeRect.x,
+            badgeRect.y,
+            badgeRect.x,
+            badgeRect.y + badgeRect.height
+          );
+          if (index === 0) {
+            badgeGradient.addColorStop(0, "#ffd56d");
+            badgeGradient.addColorStop(1, "#ff9e1a");
+          } else if (index === 1) {
+            badgeGradient.addColorStop(0, "#d9c9ff");
+            badgeGradient.addColorStop(1, "#8a77ff");
+          } else {
+            badgeGradient.addColorStop(0, "#a8e0ff");
+            badgeGradient.addColorStop(1, "#53b7ff");
+          }
+          context.fillStyle = badgeGradient;
+          roundRect(context, badgeRect, 9);
+          context.fill();
+          context.fillStyle = "#ffffff";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.font = "700 15px sans-serif";
+          context.fillText(String(index + 1), badgeRect.x + badgeRect.width / 2, badgeRect.y + badgeRect.height / 2 + 0.5);
+          context.fillStyle = THEME.textPrimary;
+          context.textAlign = "left";
+          context.textBaseline = "top";
+          context.font = "700 14px sans-serif";
+          context.fillText(
+            t(locale, "landing.bestTime", { duration: formatDuration(entry.durationMs) }),
+            rowRect.x + 52,
+            rowRect.y + 10
+          );
+          context.fillStyle = THEME.textSecondary;
+          context.font = "11px sans-serif";
+          context.fillText(
+            t(locale, "landing.completedAt", {
+              completedAt: formatCompletedAt(locale, entry.completedAt)
+            }),
+            rowRect.x + 52,
+            rowRect.y + 32
+          );
+        });
       }
       context.fillStyle = THEME.textMuted;
       context.font = "10px sans-serif";
+      context.textAlign = "center";
       context.fillText(
-        hasProgress ? t(locale, "home.resumeTip") : t(locale, "home.freshTip"),
-        panelRect.x + 26,
+        t(locale, "landing.close"),
+        panelRect.x + panelRect.width / 2,
         panelRect.y + panelRect.height - 24
       );
       context.restore();
@@ -3095,9 +4478,12 @@
       context.save();
       context.fillStyle = THEME.overlay;
       context.fillRect(0, 0, metrics.width, metrics.height);
-      context.fillStyle = THEME.surfaceStrong;
+      const panelGradient = context.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+      panelGradient.addColorStop(0, "rgba(255,255,255,0.95)");
+      panelGradient.addColorStop(1, "rgba(255,255,255,0.84)");
+      context.fillStyle = panelGradient;
       context.strokeStyle = THEME.border;
-      context.lineWidth = 1;
+      context.lineWidth = 1.2;
       roundRect(context, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, 20);
       context.fill();
       context.stroke();
@@ -3122,7 +4508,7 @@
         const x = gridStartX + col * (tileSize + gap);
         const y = gridStartY + row * (tileSize + gap);
         if (slot >= levels.length) {
-          context.fillStyle = THEME.surfaceMuted;
+          context.fillStyle = "rgba(255,255,255,0.42)";
           roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
           context.fill();
           continue;
@@ -3131,11 +4517,11 @@
         const completed = Boolean(snapshot.records[level.id]);
         const isCurrent = snapshot.levelIndex === slot;
         const isViewing = isCurrent && snapshot.mode === "record";
-        context.fillStyle = completed ? THEME.successSoft : THEME.surfaceStrong;
+        context.fillStyle = completed ? "rgba(204,255,212,0.92)" : "rgba(255,255,255,0.94)";
         if (isCurrent) {
-          context.fillStyle = isViewing ? THEME.infoSoft : THEME.accentSoft;
+          context.fillStyle = isViewing ? THEME.infoSoft : "rgba(255, 238, 183, 0.98)";
         }
-        context.strokeStyle = THEME.border;
+        context.strokeStyle = isCurrent ? THEME.borderAccent : THEME.border;
         context.lineWidth = isCurrent ? 2 : 1;
         roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
         context.fill();
@@ -3175,6 +4561,19 @@
       context.restore();
     }
     function drawOverlay(snapshot) {
+      if (uiState.homeOpen) {
+        drawLandingScreen();
+        if (uiState.leaderboardOpen) {
+          drawLeaderboardPanel();
+        }
+        if (uiState.helpOpen) {
+          drawInfoDialog("help");
+        }
+        if (uiState.goalOpen) {
+          drawInfoDialog("goal");
+        }
+        return;
+      }
       drawHeader(snapshot);
       drawInfoCards(snapshot);
       drawButtons(snapshot);
@@ -3182,23 +4581,29 @@
       if (uiState.levelPanelOpen) {
         drawLevelPanel(snapshot);
       }
-      if (uiState.homeOpen) {
-        drawHomeScreen(snapshot);
+      if (uiState.leaderboardOpen) {
+        drawLeaderboardPanel();
+      }
+      if (uiState.settingsOpen) {
+        drawSettingsDialog();
       }
     }
     function render() {
-      renderer.render(currentSnapshot, {
-        labels: {
-          solvedBadge: t(locale, "renderer.badgeSolved"),
-          recordBadge: t(locale, "renderer.badgeRecord")
-        },
-        insets: {
-          top: layout.topInset,
-          bottom: layout.bottomInset
-        }
-      });
+      if (!uiState.homeOpen) {
+        renderer.render(currentSnapshot, {
+          labels: {
+            solvedBadge: t(locale, "renderer.badgeSolved"),
+            recordBadge: t(locale, "renderer.badgeRecord")
+          },
+          insets: {
+            top: layout.topInset,
+            bottom: layout.bottomInset
+          }
+        });
+      }
       drawOverlay(currentSnapshot);
       syncFeedbackAudio(currentSnapshot);
+      syncWeeklyLeaderboard(currentSnapshot);
       scheduleAutoAdvance(currentSnapshot);
     }
     function ensureAnimationLoop() {
@@ -3217,6 +4622,30 @@
     function hasOverlayEffects() {
       return Date.now() < autoAdvanceBannerUntil;
     }
+    function syncWeeklyLeaderboard(snapshot) {
+      if (snapshot.mode !== "play" || !snapshot.solved || snapshot.hasNextLevel || Object.keys(snapshot.records).length !== levels.length || snapshot.effects.celebrationId === 0 || snapshot.effects.celebrationId === lastCampaignCompletionCelebrationId) {
+        return;
+      }
+      lastCampaignCompletionCelebrationId = snapshot.effects.celebrationId;
+      if (!campaignState) {
+        return;
+      }
+      const completedAt = (/* @__PURE__ */ new Date()).toISOString();
+      const durationMs = Math.max(0, Date.now() - campaignState.startedAt);
+      weeklyLeaderboard = storage.recordWeeklyLeaderboardEntry(durationMs, completedAt);
+      campaignState = null;
+      storage.saveCampaignState(null);
+    }
+    function triggerVibration(type) {
+      var _a;
+      if (!userSettings.vibrationEnabled) {
+        return;
+      }
+      try {
+        (_a = wx.vibrateShort) == null ? void 0 : _a.call(wx, { type });
+      } catch (e) {
+      }
+    }
     function syncFeedbackAudio(snapshot) {
       var _a, _b;
       const placementEffectId = (_b = (_a = snapshot.effects.placement) == null ? void 0 : _a.id) != null ? _b : 0;
@@ -3224,18 +4653,21 @@
         lastPlacementEffectId = placementEffectId;
         if (placementEffectId > 0) {
           audio.playPlacement();
+          triggerVibration("light");
         }
       }
       if (snapshot.effects.invalidId !== lastInvalidEffectId) {
         lastInvalidEffectId = snapshot.effects.invalidId;
         if (snapshot.effects.invalidId > 0) {
           audio.playInvalid();
+          triggerVibration("medium");
         }
       }
       if (snapshot.effects.celebrationId !== lastCelebrationEffectId) {
         lastCelebrationEffectId = snapshot.effects.celebrationId;
         if (snapshot.effects.celebrationId > 0) {
           audio.playCelebration();
+          triggerVibration("heavy");
         }
       }
     }
@@ -3271,9 +4703,12 @@
         height
       };
       context.save();
-      context.fillStyle = THEME.surfaceStrong;
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      gradient.addColorStop(0, "#fff9da");
+      gradient.addColorStop(1, "rgba(255,255,255,0.92)");
+      context.fillStyle = gradient;
       context.strokeStyle = THEME.borderAccent;
-      context.lineWidth = 1;
+      context.lineWidth = 1.2;
       context.shadowColor = THEME.shadow;
       context.shadowBlur = 22;
       context.shadowOffsetY = 10;
@@ -3301,19 +4736,120 @@
     }
     function handleUiTap(x, y) {
       if (uiState.homeOpen) {
-        const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
         uiState.pressedUiId = null;
+        if (uiState.helpOpen || uiState.goalOpen) {
+          const closeButtonHit = infoDialogButtonRect ? isPointInsideRect(x, y, infoDialogButtonRect) : false;
+          const insidePanel = infoDialogPanelRect ? isPointInsideRect(x, y, infoDialogPanelRect) : false;
+          if (closeButtonHit || !insidePanel) {
+            uiState.helpOpen = false;
+            uiState.goalOpen = false;
+          }
+          render();
+          return true;
+        }
+        if (uiState.leaderboardOpen) {
+          if (!leaderboardPanelRect || !isPointInsideRect(x, y, leaderboardPanelRect)) {
+            uiState.leaderboardOpen = false;
+          }
+          render();
+          return true;
+        }
+        const topIconButton = topIconButtons.find((item) => isPointInsideRect(x, y, item.rect));
+        if (topIconButton) {
+          if (topIconButton.id === "help") {
+            uiState.helpOpen = true;
+            uiState.goalOpen = false;
+          } else {
+            uiState.goalOpen = true;
+            uiState.helpOpen = false;
+          }
+          render();
+          return true;
+        }
+        const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
         if (!homeButton) {
           render();
           return true;
         }
-        if (homeButton.id === "continue") {
+        if (homeButton.id === "newGame") {
+          game.resetCampaign();
+          campaignState = {
+            startedAt: Date.now(),
+            weekKey: getWeeklyBucketKey()
+          };
+          storage.saveCampaignState(campaignState);
           uiState.homeOpen = false;
+          uiState.leaderboardOpen = false;
+          uiState.helpOpen = false;
+          uiState.goalOpen = false;
           render();
           return true;
         }
-        uiState.homeOpen = false;
-        game.setLevel(0);
+        uiState.leaderboardOpen = true;
+        render();
+        return true;
+      }
+      if (uiState.settingsOpen) {
+        uiState.pressedUiId = null;
+        const insidePanel = settingsDialogPanelRect ? isPointInsideRect(x, y, settingsDialogPanelRect) : false;
+        if (soundToggleRect && isPointInsideRect(x, y, soundToggleRect)) {
+          userSettings = {
+            ...userSettings,
+            soundEnabled: !userSettings.soundEnabled
+          };
+          audio.setEnabled(userSettings.soundEnabled);
+          saveUserSettings(storageAdapter, userSettings);
+          render();
+          return true;
+        }
+        if (vibrationToggleRect && isPointInsideRect(x, y, vibrationToggleRect)) {
+          userSettings = {
+            ...userSettings,
+            vibrationEnabled: !userSettings.vibrationEnabled
+          };
+          saveUserSettings(storageAdapter, userSettings);
+          if (userSettings.vibrationEnabled) {
+            triggerVibration("light");
+          }
+          render();
+          return true;
+        }
+        if (settingsBackButtonRect && isPointInsideRect(x, y, settingsBackButtonRect)) {
+          uiState.settingsOpen = false;
+          uiState.leaderboardOpen = false;
+          uiState.levelPanelOpen = false;
+          uiState.homeOpen = true;
+          render();
+          return true;
+        }
+        if (settingsContinueButtonRect && isPointInsideRect(x, y, settingsContinueButtonRect)) {
+          uiState.settingsOpen = false;
+          render();
+          return true;
+        }
+        if (!insidePanel) {
+          uiState.settingsOpen = false;
+          render();
+          return true;
+        }
+        render();
+        return true;
+      }
+      if (uiState.leaderboardOpen) {
+        if (!leaderboardPanelRect || !isPointInsideRect(x, y, leaderboardPanelRect)) {
+          uiState.leaderboardOpen = false;
+        }
+        render();
+        return true;
+      }
+      const gameTopButton = gameTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+      if (gameTopButton) {
+        uiState.pressedUiId = null;
+        if (gameTopButton.id === "settings") {
+          uiState.settingsOpen = true;
+        } else {
+          uiState.leaderboardOpen = true;
+        }
         render();
         return true;
       }
@@ -3363,13 +4899,31 @@
     }
     function updatePressedUi(x, y) {
       if (uiState.homeOpen) {
+        if (uiState.leaderboardOpen || uiState.helpOpen || uiState.goalOpen) {
+          uiState.pressedUiId = null;
+          render();
+          return;
+        }
+        const topIconButton = topIconButtons.find((item) => isPointInsideRect(x, y, item.rect));
+        if (topIconButton) {
+          uiState.pressedUiId = `icon:${topIconButton.id}`;
+          render();
+          return;
+        }
         const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
         uiState.pressedUiId = homeButton ? `home:${homeButton.id}` : null;
         render();
         return;
       }
-      if (uiState.levelPanelOpen) {
+      if (uiState.levelPanelOpen || uiState.leaderboardOpen || uiState.settingsOpen) {
         uiState.pressedUiId = null;
+        render();
+        return;
+      }
+      const gameTopButton = gameTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+      if (gameTopButton) {
+        uiState.pressedUiId = `icon:${gameTopButton.id}`;
+        render();
         return;
       }
       const button = buttons.find((item) => item.enabled && isPointInsideRect(x, y, item.rect));
@@ -3427,7 +4981,10 @@
   }
   try {
     drawBootstrapSplash();
-    bootstrapWechatGame();
+    void bootstrapWechatGame().catch((error) => {
+      console.error("[Fill Grid] WeChat bootstrap failed:", error);
+      drawBootstrapError(error);
+    });
   } catch (error) {
     console.error("[Fill Grid] WeChat bootstrap failed:", error);
     drawBootstrapError(error);

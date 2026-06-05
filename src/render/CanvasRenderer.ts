@@ -57,13 +57,13 @@ interface SurfaceRect {
 }
 
 const PLACEMENT_COLORS = [
-  '#f2c572',
-  '#9fd0c7',
-  '#f4a076',
-  '#b5c9f6',
-  '#d9b8f3',
-  '#f6c3d7',
-  '#cce4a7',
+  '#ffb9cc',
+  '#ffc89f',
+  '#ffe76b',
+  '#a9efcc',
+  '#8fd8ff',
+  '#cbc4ff',
+  '#ffd1ea',
 ];
 
 function getNow(): number {
@@ -244,11 +244,17 @@ export class CanvasRenderer {
 
   private drawBackdrop(width: number, height: number): void {
     const gradient = this.context.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, '#fcf8ef');
-    gradient.addColorStop(1, '#efe4d3');
+    gradient.addColorStop(0, '#ff968f');
+    gradient.addColorStop(0.48, '#f29ac8');
+    gradient.addColorStop(1, '#a9e7ff');
 
     this.context.fillStyle = gradient;
     this.context.fillRect(0, 0, width, height);
+    this.drawCloudCluster(width * 0.18, height * 0.15, 0.85);
+    this.drawCloudCluster(width * 0.87, height * 0.12, 0.7);
+    this.drawCloudCluster(width * 0.12, height * 0.92, 1.1);
+    this.drawCloudCluster(width * 0.82, height * 0.95, 0.95);
+    this.drawSkySparkles(width, height);
   }
 
   private drawBoardSurface(): void {
@@ -256,12 +262,20 @@ export class CanvasRenderer {
     const frameInset = 14;
 
     context.save();
-    context.fillStyle = '#fffaf1';
-    context.strokeStyle = '#d4c8b6';
-    context.lineWidth = 2.5;
-    context.shadowColor = 'rgba(53, 41, 25, 0.12)';
-    context.shadowBlur = 18;
-    context.shadowOffsetY = 8;
+    const gradient = context.createLinearGradient(
+      metrics.offsetX,
+      metrics.offsetY - frameInset,
+      metrics.offsetX,
+      metrics.offsetY + metrics.boardHeight + frameInset,
+    );
+    gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+    gradient.addColorStop(1, 'rgba(234, 249, 255, 0.86)');
+    context.fillStyle = gradient;
+    context.strokeStyle = 'rgba(255,255,255,0.88)';
+    context.lineWidth = 2.8;
+    context.shadowColor = 'rgba(167, 123, 165, 0.24)';
+    context.shadowBlur = 24;
+    context.shadowOffsetY = 10;
     this.roundRect(
       metrics.offsetX - frameInset,
       metrics.offsetY - frameInset,
@@ -332,8 +346,8 @@ export class CanvasRenderer {
   }
 
   private drawPreview(rect: GridRect, valid: boolean, clue: Clue | null): void {
-    const fillColor = valid ? '#6eb59b' : '#d9735c';
-    const strokeColor = valid ? '#2f7d61' : '#8f4334';
+    const fillColor = valid ? '#8fe8c2' : '#ffab99';
+    const strokeColor = valid ? '#53c793' : '#f26f5b';
     this.fillRect(rect, fillColor, strokeColor, 0.45, [10, 6]);
     this.drawPreviewAccent(rect, strokeColor);
     this.drawPreviewCorners(rect, strokeColor);
@@ -343,24 +357,24 @@ export class CanvasRenderer {
   }
 
   private drawHint(rect: GridRect): void {
-    this.fillRect(rect, '#79aee3', '#2f5f93', 0.24, [8, 6]);
+    this.fillRect(rect, '#8fd8ff', '#4ba8e6', 0.24, [8, 6]);
   }
 
   private drawSelectedPlacement(placement: Placement): void {
     const badgeRect = this.getPlacementDeleteBadgeRect(placement);
     const { context } = this;
 
-    this.drawPreviewAccent(placement.rect, '#8f4a22');
-    this.drawPreviewCorners(placement.rect, '#8f4a22');
+    this.drawPreviewAccent(placement.rect, '#ffb627');
+    this.drawPreviewCorners(placement.rect, '#ffb627');
 
     context.save();
-    context.fillStyle = '#fff6f3';
-    context.strokeStyle = '#c65443';
+    context.fillStyle = '#fff8fb';
+    context.strokeStyle = '#f16673';
     context.lineWidth = 2;
     this.roundRect(badgeRect.x, badgeRect.y, badgeRect.width, badgeRect.height, 11);
     context.fill();
     context.stroke();
-    context.strokeStyle = '#c65443';
+    context.strokeStyle = '#f16673';
     context.lineWidth = 2.5;
     context.beginPath();
     context.moveTo(badgeRect.x + 7, badgeRect.y + 7);
@@ -387,14 +401,20 @@ export class CanvasRenderer {
     context.save();
     context.globalAlpha = alpha;
     context.fillStyle = fillColor;
-    context.fillRect(x + 2, y + 2, width - 4, height - 4);
+    this.roundRect(x + 2, y + 2, width - 4, height - 4, Math.max(8, metrics.cellSize * 0.18));
+    context.fill();
     context.restore();
 
     context.save();
     context.strokeStyle = strokeColor;
-    context.lineWidth = 3;
+    context.lineWidth = 2.6;
     context.setLineDash(dash);
-    context.strokeRect(x + 1.5, y + 1.5, width - 3, height - 3);
+    this.roundRect(x + 1.5, y + 1.5, width - 3, height - 3, Math.max(9, metrics.cellSize * 0.2));
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = 'rgba(255,255,255,0.18)';
+    this.roundRect(x + 4, y + 4, Math.max(10, width * 0.18), Math.max(8, height * 0.12), 8);
+    context.fill();
     context.restore();
   }
 
@@ -508,8 +528,10 @@ export class CanvasRenderer {
   private drawGrid(level: Level): void {
     const { context, metrics } = this;
     context.save();
-    context.strokeStyle = '#c7bba9';
-    context.lineWidth = 1;
+    context.strokeStyle = 'rgba(255, 244, 252, 0.98)';
+    context.shadowColor = 'rgba(47, 118, 214, 0.38)';
+    context.shadowBlur = 4;
+    context.lineWidth = 1.4;
 
     for (let x = 0; x <= level.width; x += 1) {
       const lineX = metrics.offsetX + x * metrics.cellSize + 0.5;
@@ -543,16 +565,16 @@ export class CanvasRenderer {
       const centerY = this.metrics.offsetY + (clue.y + 0.5) * this.metrics.cellSize;
       const covered = coveredClues.has(`${clue.x},${clue.y}`);
 
-      this.context.fillStyle = covered ? '#22333f' : '#334f62';
+      this.context.fillStyle = covered ? '#6b4258' : '#7a5c69';
       this.context.beginPath();
       this.context.arc(centerX, centerY, this.metrics.cellSize * 0.24, 0, Math.PI * 2);
-      this.context.fillStyle = covered ? 'rgba(255, 250, 241, 0.92)' : 'rgba(255, 255, 255, 0.96)';
+      this.context.fillStyle = covered ? 'rgba(255, 250, 252, 0.96)' : 'rgba(255, 255, 255, 0.94)';
       this.context.fill();
-      this.context.strokeStyle = covered ? '#22333f' : '#7995a8';
+      this.context.strokeStyle = covered ? '#d997b6' : '#ffe17a';
       this.context.lineWidth = 2;
       this.context.stroke();
 
-      this.context.fillStyle = covered ? '#22333f' : '#334f62';
+      this.context.fillStyle = covered ? '#6b4258' : '#6a4f5d';
       this.context.fillText(String(clue.value), centerX, centerY + 1);
     }
 
@@ -567,7 +589,10 @@ export class CanvasRenderer {
     const y = Math.max(16, metrics.offsetY - 52);
 
     context.save();
-    context.fillStyle = '#2f8f62';
+    const gradient = context.createLinearGradient(x, y, x, y + badgeHeight);
+    gradient.addColorStop(0, '#a9ef77');
+    gradient.addColorStop(1, '#64c949');
+    context.fillStyle = gradient;
     this.roundRect(x, y, badgeWidth, badgeHeight, 16);
     context.fill();
 
@@ -628,7 +653,7 @@ export class CanvasRenderer {
     this.celebrationStartedAt = now;
     const centerX = this.metrics.offsetX + this.metrics.boardWidth / 2;
     const topY = this.metrics.offsetY + 24;
-    const colors = ['#f2c572', '#9fd0c7', '#f4a076', '#b5c9f6', '#cce4a7'];
+    const colors = ['#ffd766', '#8fd8ff', '#ffb9cc', '#a9efcc', '#cbc4ff'];
 
     this.celebrationParticles = Array.from({ length: 18 }, (_, index) => ({
       x: centerX + (index - 9) * 10,
@@ -649,5 +674,54 @@ export class CanvasRenderer {
     this.context.arcTo(x, y + height, x, y, radius);
     this.context.arcTo(x, y, x + width, y, radius);
     this.context.closePath();
+  }
+
+  private drawCloudCluster(centerX: number, centerY: number, scale: number): void {
+    const puffs = [
+      { x: -38, y: 14, r: 22 },
+      { x: -10, y: 2, r: 28 },
+      { x: 20, y: 8, r: 24 },
+      { x: 48, y: 18, r: 18 },
+    ];
+
+    this.context.save();
+    this.context.fillStyle = 'rgba(255,255,255,0.54)';
+    this.context.shadowColor = 'rgba(255,255,255,0.24)';
+    this.context.shadowBlur = 16;
+    for (const puff of puffs) {
+      this.context.beginPath();
+      this.context.arc(
+        centerX + puff.x * scale,
+        centerY + puff.y * scale,
+        puff.r * scale,
+        0,
+        Math.PI * 2,
+      );
+      this.context.fill();
+    }
+    this.context.restore();
+  }
+
+  private drawSkySparkles(width: number, height: number): void {
+    const sparkles = [
+      { x: width * 0.26, y: height * 0.24, size: 4 },
+      { x: width * 0.78, y: height * 0.3, size: 5 },
+      { x: width * 0.18, y: height * 0.74, size: 4 },
+      { x: width * 0.86, y: height * 0.84, size: 5 },
+    ];
+
+    this.context.save();
+    this.context.strokeStyle = 'rgba(255,255,255,0.68)';
+    this.context.lineWidth = 1.4;
+    this.context.lineCap = 'round';
+    for (const sparkle of sparkles) {
+      this.context.beginPath();
+      this.context.moveTo(sparkle.x - sparkle.size, sparkle.y);
+      this.context.lineTo(sparkle.x + sparkle.size, sparkle.y);
+      this.context.moveTo(sparkle.x, sparkle.y - sparkle.size);
+      this.context.lineTo(sparkle.x, sparkle.y + sparkle.size);
+      this.context.stroke();
+    }
+    this.context.restore();
   }
 }

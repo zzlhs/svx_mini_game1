@@ -55,6 +55,18 @@ export interface SavedProgress {
   attemptStartedAt: number;
 }
 
+export interface CampaignRunState {
+  startedAt: number;
+  weekKey: string;
+}
+
+export interface WeeklyLeaderboardEntry {
+  id: string;
+  weekKey: string;
+  durationMs: number;
+  completedAt: string;
+}
+
 export interface PlacementEffectEvent {
   id: number;
   placementId: string;

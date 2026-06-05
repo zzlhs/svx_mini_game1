@@ -2,7 +2,10 @@ import { FeedbackAudio } from '../audio/FeedbackAudio';
 import { GameController } from '../game/GameController';
 import { levels } from '../game/levels';
 import { getCoveredCellCount } from '../game/logic';
-import type { GameSnapshot, LevelRecord } from '../game/types';
+import type {
+  GameSnapshot,
+  LevelRecord,
+} from '../game/types';
 import {
   detectLocale,
   formatLevelName,
@@ -15,7 +18,7 @@ import { WechatPointerInputSource } from '../input/WechatPointerInputSource';
 import { PointerController } from '../input/PointerController';
 import { CanvasRenderer } from '../render/CanvasRenderer';
 import { WechatCanvasSurface } from '../render/WechatCanvasSurface';
-import { BrowserGameStorage } from '../storage/BrowserGameStorage';
+import { BrowserGameStorage, getWeeklyBucketKey } from '../storage/BrowserGameStorage';
 import { WechatStorageAdapter } from '../storage/WechatStorageAdapter';
 
 interface OverlayActionApi {
@@ -48,15 +51,31 @@ interface ButtonSpec {
 }
 
 interface HomeButtonSpec {
-  id: 'continue' | 'start';
-  label: string;
+  id: 'newGame' | 'leaderboard';
   rect: Rect;
-  primary: boolean;
+}
+
+interface TopIconButtonSpec {
+  id: 'goal' | 'help' | 'settings' | 'leaderboardTop';
+  rect: Rect;
 }
 
 interface TileSpec {
   index: number;
   rect: Rect;
+}
+
+interface LandingAssets {
+  background: WechatImage | null;
+  newGameButton: WechatImage | null;
+  leaderboardButton: WechatImage | null;
+  checkIcon: WechatImage | null;
+  helpIcon: WechatImage | null;
+}
+
+interface UserSettings {
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
 }
 
 interface UiLayout {
@@ -82,30 +101,37 @@ interface ScreenMetrics {
 }
 
 const THEME = {
-  backgroundStart: '#fcf8ef',
-  backgroundEnd: '#efe4d3',
-  surfaceStrong: 'rgba(255, 250, 242, 0.98)',
-  surface: 'rgba(255, 250, 242, 0.90)',
-  surfaceSoft: 'rgba(255, 250, 242, 0.78)',
-  surfaceMuted: 'rgba(239, 231, 219, 0.82)',
-  border: 'rgba(94, 77, 52, 0.10)',
-  borderSoft: 'rgba(94, 77, 52, 0.08)',
-  borderAccent: 'rgba(143, 91, 43, 0.14)',
-  shadow: 'rgba(53, 41, 25, 0.12)',
-  overlay: 'rgba(33, 27, 20, 0.24)',
-  textPrimary: '#24313b',
-  textSecondary: '#667785',
-  textMuted: '#7b6a57',
-  accent: '#8f5b2b',
-  accentStrong: '#8f4a22',
-  accentSoft: '#fff0df',
-  accentFill: '#e5a15b',
-  success: '#2f8f62',
-  successSoft: '#e9f8ef',
-  info: '#31507f',
-  infoSoft: '#e7f0ff',
-  white: '#fffaf1',
-  disabledText: '#9a8b76',
+  backgroundStart: '#ff958f',
+  backgroundMid: '#f39ac9',
+  backgroundEnd: '#aae6ff',
+  surfaceStrong: 'rgba(255, 255, 255, 0.92)',
+  surface: 'rgba(255, 255, 255, 0.84)',
+  surfaceSoft: 'rgba(255, 255, 255, 0.76)',
+  surfaceMuted: 'rgba(255, 255, 255, 0.46)',
+  border: 'rgba(255, 255, 255, 0.82)',
+  borderSoft: 'rgba(255, 255, 255, 0.58)',
+  borderAccent: 'rgba(255, 214, 74, 0.95)',
+  shadow: 'rgba(182, 110, 137, 0.24)',
+  overlay: 'rgba(123, 95, 124, 0.20)',
+  textPrimary: '#684355',
+  textSecondary: '#8d7080',
+  textMuted: '#a18899',
+  accent: '#ffab27',
+  accentStrong: '#ff8315',
+  accentSoft: '#fff1b9',
+  accentFill: '#ffd54b',
+  success: '#7cc95d',
+  successSoft: '#ecffd8',
+  info: '#55a7e3',
+  infoSoft: '#dcf5ff',
+  white: '#fffefe',
+  disabledText: '#cbbbc4',
+  candyPink: '#ffb9cc',
+  candyPeach: '#ffc392',
+  candyYellow: '#ffe369',
+  candyMint: '#8fe8c2',
+  candyBlue: '#7cc8ff',
+  candyLavender: '#cbc4ff',
 } as const;
 
 declare global {
@@ -115,6 +141,16 @@ declare global {
 }
 
 let cachedCanvas: WechatCanvasLike | null = null;
+
+const WECHAT_ASSET_PATHS = {
+  background: 'assets/wechat/bg.jpg',
+  newGameButton: 'assets/wechat/new_game2.png',
+  leaderboardButton: 'assets/wechat/rank_cutout.png',
+  checkIcon: 'assets/wechat/check_icon.png',
+  helpIcon: 'assets/wechat/help_icon.png',
+} as const;
+
+const SETTINGS_STORAGE_KEY = 'patch-grid-wechat-settings-v1';
 
 function isWechatCanvasLike(value: unknown): value is WechatCanvasLike {
   return (
@@ -141,6 +177,32 @@ function scheduleFrame(callback: () => void): number {
   }
 
   return setTimeout(callback, 16) as unknown as number;
+}
+
+function createWechatImage(canvas: WechatCanvasLike): WechatImage | null {
+  const canvasWithImage = canvas as WechatCanvasLike & { createImage?: () => WechatImage };
+  if (typeof canvasWithImage.createImage === 'function') {
+    return canvasWithImage.createImage();
+  }
+
+  if (typeof wx.createImage === 'function') {
+    return wx.createImage();
+  }
+
+  return null;
+}
+
+function loadWechatImage(canvas: WechatCanvasLike, source: string): Promise<WechatImage | null> {
+  const image = createWechatImage(canvas);
+  if (!image) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
 }
 
 function resolveLocale(): Locale {
@@ -183,6 +245,33 @@ function formatCompletedAt(locale: Locale, isoString: string): string {
   return formatLocaleDate(locale, isoString) ?? t(locale, 'fallback.unknownTime');
 }
 
+function loadUserSettings(adapter: WechatStorageAdapter): UserSettings {
+  try {
+    const raw = adapter.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      return {
+        soundEnabled: true,
+        vibrationEnabled: true,
+      };
+    }
+
+    const parsed = JSON.parse(raw) as Partial<UserSettings>;
+    return {
+      soundEnabled: parsed.soundEnabled !== false,
+      vibrationEnabled: parsed.vibrationEnabled !== false,
+    };
+  } catch {
+    return {
+      soundEnabled: true,
+      vibrationEnabled: true,
+    };
+  }
+}
+
+function saveUserSettings(adapter: WechatStorageAdapter, settings: UserSettings): void {
+  adapter.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+}
+
 function wrapLinesByLength(text: string, maxLength: number): string[] {
   if (text.length <= maxLength) {
     return [text];
@@ -210,6 +299,7 @@ function drawBootstrapSplash(): void {
 
     const gradient = context.createLinearGradient(0, 0, metrics.width, metrics.height);
     gradient.addColorStop(0, THEME.backgroundStart);
+    gradient.addColorStop(0.5, THEME.backgroundMid);
     gradient.addColorStop(1, THEME.backgroundEnd);
     context.fillStyle = gradient;
     context.fillRect(0, 0, metrics.width, metrics.height);
@@ -218,7 +308,7 @@ function drawBootstrapSplash(): void {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = '700 26px sans-serif';
-    context.fillText('填充格子', metrics.width / 2, metrics.height / 2 - 16);
+    context.fillText('填满格子', metrics.width / 2, metrics.height / 2 - 16);
     context.font = '500 14px sans-serif';
     context.fillStyle = THEME.textSecondary;
     context.fillText('Loading mini game...', metrics.width / 2, metrics.height / 2 + 18);
@@ -245,7 +335,7 @@ function drawBootstrapError(error: unknown): void {
     context.textAlign = 'left';
     context.textBaseline = 'top';
     context.font = '700 20px sans-serif';
-    context.fillText('填充格子', 20, 24);
+    context.fillText('填满格子', 20, 24);
     context.font = '500 14px sans-serif';
     context.fillStyle = THEME.accentStrong;
     context.fillText('Mini game bootstrap failed.', 20, 58);
@@ -355,33 +445,50 @@ function computeLayout(metrics: ScreenMetrics): UiLayout {
 
 function drawCardShell(context: CanvasRenderingContext2D, rect: Rect): void {
   context.save();
-  context.fillStyle = THEME.surface;
-  context.strokeStyle = THEME.borderSoft;
-  context.lineWidth = 1;
+  const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+  gradient.addColorStop(0, THEME.surfaceStrong);
+  gradient.addColorStop(1, THEME.surfaceSoft);
+  context.fillStyle = gradient;
+  context.strokeStyle = THEME.border;
+  context.lineWidth = 1.2;
+  context.shadowColor = THEME.shadow;
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 8;
   roundRect(context, rect, 14);
   context.fill();
+  context.shadowColor = 'transparent';
   context.stroke();
   context.restore();
 }
 
 function drawHudShell(context: CanvasRenderingContext2D, rect: Rect): void {
   context.save();
-  context.fillStyle = THEME.surfaceSoft;
-  context.strokeStyle = THEME.borderSoft;
-  context.lineWidth = 1;
+  const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.72)');
+  context.fillStyle = gradient;
+  context.strokeStyle = THEME.border;
+  context.lineWidth = 1.1;
+  context.shadowColor = THEME.shadow;
+  context.shadowBlur = 14;
+  context.shadowOffsetY = 5;
   roundRect(context, rect, 18);
   context.fill();
+  context.shadowColor = 'transparent';
   context.stroke();
   context.restore();
 }
 
 function drawToolbarShell(context: CanvasRenderingContext2D, rect: Rect): void {
   context.save();
-  context.fillStyle = THEME.surface;
-  context.strokeStyle = THEME.borderSoft;
+  const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.82)');
+  context.fillStyle = gradient;
+  context.strokeStyle = THEME.border;
   context.shadowColor = THEME.shadow;
-  context.shadowBlur = 18;
-  context.shadowOffsetY = 8;
+  context.shadowBlur = 22;
+  context.shadowOffsetY = 10;
   roundRect(context, rect, 22);
   context.fill();
   context.shadowColor = 'transparent';
@@ -399,22 +506,333 @@ function drawTextFrame(
   } = {},
 ): void {
   context.save();
-  context.fillStyle = options.fill ?? 'rgba(255, 250, 242, 0.52)';
+  context.fillStyle = options.fill ?? 'rgba(255, 255, 255, 0.56)';
   context.strokeStyle = options.stroke ?? THEME.borderSoft;
-  context.lineWidth = 1;
+  context.lineWidth = 1.1;
   roundRect(context, rect, options.radius ?? 10);
   context.fill();
   context.stroke();
   context.restore();
 }
 
+function drawImageCover(
+  context: CanvasRenderingContext2D,
+  image: WechatImage,
+  rect: Rect,
+): void {
+  const sourceWidth = image.width ?? rect.width;
+  const sourceHeight = image.height ?? rect.height;
+  if (sourceWidth <= 0 || sourceHeight <= 0) {
+    return;
+  }
+
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = rect.width / rect.height;
+  let sx = 0;
+  let sy = 0;
+  let sw = sourceWidth;
+  let sh = sourceHeight;
+
+  if (sourceRatio > targetRatio) {
+    sw = sourceHeight * targetRatio;
+    sx = (sourceWidth - sw) / 2;
+  } else {
+    sh = sourceWidth / targetRatio;
+    sy = (sourceHeight - sh) / 2;
+  }
+
+  context.drawImage(
+    image as unknown as CanvasImageSource,
+    sx,
+    sy,
+    sw,
+    sh,
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height,
+  );
+}
+
+function drawImageFit(
+  context: CanvasRenderingContext2D,
+  image: WechatImage,
+  rect: Rect,
+): void {
+  context.drawImage(
+    image as unknown as CanvasImageSource,
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height,
+  );
+}
+
+function drawLandingTopIconBar(
+  context: CanvasRenderingContext2D,
+  metrics: ScreenMetrics,
+  assets: LandingAssets,
+  buttons: TopIconButtonSpec[],
+  pressedId: string | null,
+): void {
+  const barRect = {
+    x: 16,
+    y: metrics.safeTop + 6,
+    width: 148,
+    height: 62,
+  };
+
+  context.save();
+  context.fillStyle = 'rgba(255,255,255,0.96)';
+  context.strokeStyle = 'rgba(255,255,255,0.98)';
+  context.lineWidth = 1.2;
+  context.shadowColor = 'rgba(144, 118, 153, 0.22)';
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 6;
+  roundRect(context, barRect, 19);
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.strokeStyle = 'rgba(238, 230, 241, 0.82)';
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(barRect.x + barRect.width / 2, barRect.y + 8);
+  context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 8);
+  context.stroke();
+
+  buttons.forEach((button) => {
+    const isPressed = pressedId === `icon:${button.id}`;
+    const renderRect = {
+      ...button.rect,
+      y: button.rect.y + (isPressed ? 1.5 : 0),
+    };
+    const image = button.id === 'goal' ? assets.checkIcon : assets.helpIcon;
+    if (image) {
+      drawImageFit(context, image, renderRect);
+    }
+  });
+
+  context.restore();
+}
+
+function drawRoundTopIcon(
+  context: CanvasRenderingContext2D,
+  rect: Rect,
+  palette: { start: string; end: string; outline: string },
+  icon: 'gear' | 'trophy',
+  pressed: boolean,
+): void {
+  const renderRect = {
+    ...rect,
+    y: rect.y + (pressed ? 1.5 : 0),
+  };
+  const centerX = renderRect.x + renderRect.width / 2;
+  const centerY = renderRect.y + renderRect.height / 2;
+  const radius = renderRect.width / 2;
+  const gradient = context.createLinearGradient(
+    renderRect.x,
+    renderRect.y,
+    renderRect.x,
+    renderRect.y + renderRect.height,
+  );
+  gradient.addColorStop(0, palette.start);
+  gradient.addColorStop(1, palette.end);
+
+  context.save();
+  context.fillStyle = gradient;
+  context.strokeStyle = 'rgba(255,255,255,0.92)';
+  context.lineWidth = 1.2;
+  context.shadowColor = 'rgba(147, 114, 163, 0.18)';
+  context.shadowBlur = 10;
+  context.shadowOffsetY = 4;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.strokeStyle = palette.outline;
+  context.fillStyle = palette.outline;
+  context.lineWidth = 1.8;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+
+  if (icon === 'gear') {
+    context.beginPath();
+    context.arc(centerX, centerY, 4.2, 0, Math.PI * 2);
+    context.stroke();
+    for (let index = 0; index < 8; index += 1) {
+      const angle = (Math.PI * 2 * index) / 8;
+      const inner = 6.3;
+      const outer = 8.4;
+      context.beginPath();
+      context.moveTo(centerX + Math.cos(angle) * inner, centerY + Math.sin(angle) * inner);
+      context.lineTo(centerX + Math.cos(angle) * outer, centerY + Math.sin(angle) * outer);
+      context.stroke();
+    }
+    context.beginPath();
+    context.arc(centerX, centerY, 1.4, 0, Math.PI * 2);
+    context.fill();
+  } else {
+    context.beginPath();
+    context.moveTo(centerX - 5.5, centerY - 6);
+    context.lineTo(centerX - 3.8, centerY + 1.5);
+    context.lineTo(centerX + 3.8, centerY + 1.5);
+    context.lineTo(centerX + 5.5, centerY - 6);
+    context.closePath();
+    context.stroke();
+    context.beginPath();
+    context.moveTo(centerX - 3, centerY + 1.5);
+    context.lineTo(centerX - 2.2, centerY + 5.4);
+    context.moveTo(centerX + 3, centerY + 1.5);
+    context.lineTo(centerX + 2.2, centerY + 5.4);
+    context.moveTo(centerX - 4.2, centerY + 6.6);
+    context.lineTo(centerX + 4.2, centerY + 6.6);
+    context.stroke();
+  }
+
+  context.restore();
+}
+
+function drawGameTopIconBar(
+  context: CanvasRenderingContext2D,
+  metrics: ScreenMetrics,
+  buttons: TopIconButtonSpec[],
+  pressedId: string | null,
+): void {
+  const barRect = {
+    x: 16,
+    y: Math.max(0, metrics.safeTop - 14),
+    width: 68,
+    height: 26,
+  };
+
+  context.save();
+  const barGradient = context.createLinearGradient(barRect.x, barRect.y, barRect.x, barRect.y + barRect.height);
+  barGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
+  barGradient.addColorStop(1, 'rgba(248,244,255,0.92)');
+  context.fillStyle = barGradient;
+  context.strokeStyle = 'rgba(255,255,255,0.98)';
+  context.lineWidth = 1;
+  context.shadowColor = 'rgba(144, 118, 153, 0.14)';
+  context.shadowBlur = 10;
+  context.shadowOffsetY = 3;
+  roundRect(context, barRect, 13);
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.strokeStyle = 'rgba(238, 230, 241, 0.82)';
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(barRect.x + barRect.width / 2, barRect.y + 5);
+  context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 5);
+  context.stroke();
+
+  buttons.forEach((button) => {
+    const pressed = pressedId === `icon:${button.id}`;
+    if (button.id === 'settings') {
+      drawRoundTopIcon(
+        context,
+        button.rect,
+        {
+          start: '#fff0ba',
+          end: '#ffc96a',
+          outline: '#de9229',
+        },
+        'gear',
+        pressed,
+      );
+    } else {
+      drawRoundTopIcon(
+        context,
+        button.rect,
+        {
+          start: '#fff4c7',
+          end: '#ffd987',
+          outline: '#cc9a32',
+        },
+        'trophy',
+        pressed,
+      );
+    }
+  });
+
+  context.restore();
+}
+
+function getToolbarButtonStyle(
+  button: ButtonSpec,
+): {
+  fillStart: string;
+  fillEnd: string;
+  textColor: string;
+  iconColor: string;
+  stroke: string;
+} {
+  if (!button.enabled) {
+    return {
+      fillStart: 'rgba(255, 255, 255, 0.78)',
+      fillEnd: 'rgba(245, 238, 243, 0.68)',
+      textColor: THEME.disabledText,
+      iconColor: THEME.disabledText,
+      stroke: THEME.borderSoft,
+    };
+  }
+
+  switch (button.id) {
+    case 'levels':
+      return {
+        fillStart: '#ffe3bd',
+        fillEnd: '#ffd18a',
+        textColor: '#8d5c2f',
+        iconColor: '#e08d31',
+        stroke: 'rgba(255,255,255,0.9)',
+      };
+    case 'undo':
+      return {
+        fillStart: '#7dc6ff',
+        fillEnd: '#539cf4',
+        textColor: '#ffffff',
+        iconColor: '#ffffff',
+        stroke: 'rgba(255,255,255,0.92)',
+      };
+    case 'restart':
+      return {
+        fillStart: '#ffb04c',
+        fillEnd: '#ff7f19',
+        textColor: '#ffffff',
+        iconColor: '#ffffff',
+        stroke: 'rgba(255,255,255,0.92)',
+      };
+    case 'hint':
+      return {
+        fillStart: '#ffc8e5',
+        fillEnd: '#f5a7d0',
+        textColor: '#ffffff',
+        iconColor: '#ffffff',
+        stroke: 'rgba(255,255,255,0.92)',
+      };
+    case 'next':
+      return {
+        fillStart: '#bdeea7',
+        fillEnd: '#7ed466',
+        textColor: '#ffffff',
+        iconColor: '#ffffff',
+        stroke: 'rgba(255,255,255,0.92)',
+      };
+  }
+}
+
 function drawToolbarIcon(
   context: CanvasRenderingContext2D,
   button: ButtonSpec,
+  color?: string,
 ): void {
   const centerX = button.rect.x + button.rect.width / 2;
   const centerY = button.rect.y + 15;
-  const iconColor = button.enabled ? THEME.accent : THEME.disabledText;
+  const iconColor = color ?? (button.enabled ? THEME.accent : THEME.disabledText);
 
   context.save();
   context.strokeStyle = iconColor;
@@ -572,13 +990,24 @@ function getRecordDetail(
   });
 }
 
-function bootstrapWechatGame(): void {
+async function bootstrapWechatGame(): Promise<void> {
   const locale = resolveLocale();
   const canvas = resolveWechatCanvas();
+  const landingAssets: LandingAssets = {
+    background: null,
+    newGameButton: null,
+    leaderboardButton: null,
+    checkIcon: null,
+    helpIcon: null,
+  };
   const metrics = getWindowMetrics();
   const layout = computeLayout(metrics);
-  const storage = new BrowserGameStorage(new WechatStorageAdapter());
+  const storageAdapter = new WechatStorageAdapter();
+  const storage = new BrowserGameStorage(storageAdapter);
+  let userSettings = loadUserSettings(storageAdapter);
   const loadedGameState = storage.load(levels);
+  let campaignState = storage.loadCampaignState();
+  let weeklyLeaderboard = storage.loadWeeklyLeaderboard();
   const game = new GameController(levels, {
     initialRecords: loadedGameState.records,
     initialProgress: loadedGameState.progress,
@@ -598,42 +1027,100 @@ function bootstrapWechatGame(): void {
   });
   const renderer = new CanvasRenderer(surface);
   const audio = new FeedbackAudio();
+  audio.setEnabled(userSettings.soundEnabled);
   const inputSource = new WechatPointerInputSource();
   const uiState = {
     levelPanelOpen: false,
     homeOpen: true,
+    leaderboardOpen: false,
+    helpOpen: false,
+    goalOpen: false,
+    settingsOpen: false,
     pressedUiId: null as string | null,
   };
   new PointerController(inputSource, surface, renderer, game, {
-    shouldIgnoreInput: () => uiState.levelPanelOpen || uiState.homeOpen,
+    shouldIgnoreInput: () =>
+      uiState.levelPanelOpen ||
+      uiState.homeOpen ||
+      uiState.leaderboardOpen ||
+      uiState.helpOpen ||
+      uiState.goalOpen ||
+      uiState.settingsOpen,
   });
 
   let currentSnapshot = game.getSnapshot();
   let animationFrameId = 0;
   let buttons: ButtonSpec[] = [];
   let homeButtons: HomeButtonSpec[] = [];
+  let topIconButtons: TopIconButtonSpec[] = [];
+  let gameTopButtons: TopIconButtonSpec[] = [];
   let levelTiles: TileSpec[] = [];
+  let leaderboardPanelRect: Rect | null = null;
+  let infoDialogPanelRect: Rect | null = null;
+  let infoDialogButtonRect: Rect | null = null;
+  let settingsDialogPanelRect: Rect | null = null;
+  let settingsBackButtonRect: Rect | null = null;
+  let settingsContinueButtonRect: Rect | null = null;
+  let soundToggleRect: Rect | null = null;
+  let vibrationToggleRect: Rect | null = null;
   let lastPlacementEffectId = 0;
   let lastInvalidEffectId = 0;
   let lastCelebrationEffectId = 0;
   let autoAdvanceTimeoutId = 0;
   let lastAutoAdvanceCelebrationId = 0;
   let autoAdvanceBannerUntil = 0;
+  let lastCampaignCompletionCelebrationId = 0;
+
+  const [backgroundImage, newGameButtonImage, leaderboardButtonImage, checkIconImage, helpIconImage] = await Promise.all([
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.background),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.newGameButton),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardButton),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.checkIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.helpIcon),
+  ]);
+
+  landingAssets.background = backgroundImage;
+  landingAssets.newGameButton = newGameButtonImage;
+  landingAssets.leaderboardButton = leaderboardButtonImage;
+  landingAssets.checkIcon = checkIconImage;
+  landingAssets.helpIcon = helpIconImage;
 
   function drawHeader(snapshot: ReturnType<GameController['getSnapshot']>): void {
     const context = surface.getContext2D();
+    const textStartX = layout.headerRect.x + 104;
     drawHudShell(context, layout.headerRect);
+    gameTopButtons = [
+      {
+        id: 'settings',
+        rect: {
+          x: 22,
+          y: Math.max(1, metrics.safeTop - 11),
+          width: 18,
+          height: 18,
+        },
+      },
+      {
+        id: 'leaderboardTop',
+        rect: {
+          x: 46,
+          y: Math.max(1, metrics.safeTop - 11),
+          width: 18,
+          height: 18,
+        },
+      },
+    ];
+    drawGameTopIconBar(context, metrics, gameTopButtons, uiState.pressedUiId);
 
     context.save();
     context.textAlign = 'left';
     context.textBaseline = 'top';
     context.fillStyle = THEME.accent;
     context.font = '600 10px sans-serif';
-    context.fillText(t(locale, 'app.eyebrow'), layout.headerRect.x + 14, layout.headerRect.y + 7);
+    context.fillText(t(locale, 'app.eyebrow'), textStartX, layout.headerRect.y + 7);
 
     context.fillStyle = THEME.textPrimary;
     context.font = '700 19px sans-serif';
-    context.fillText(t(locale, 'app.title'), layout.headerRect.x + 14, layout.headerRect.y + 16);
+    context.fillText(t(locale, 'app.title'), textStartX, layout.headerRect.y + 16);
 
     context.fillStyle = THEME.textSecondary;
     context.font = '600 10px sans-serif';
@@ -642,7 +1129,7 @@ function bootstrapWechatGame(): void {
         current: snapshot.levelIndex + 1,
         total: levels.length,
       }),
-      layout.headerRect.x + 14,
+      textStartX,
       layout.headerRect.y + 34,
     );
     context.fillText(
@@ -651,7 +1138,7 @@ function bootstrapWechatGame(): void {
         height: snapshot.level.height,
         clues: snapshot.level.clues.length,
       }),
-      layout.headerRect.x + 102,
+      textStartX + 74,
       layout.headerRect.y + 34,
     );
 
@@ -659,26 +1146,38 @@ function bootstrapWechatGame(): void {
     context.font = '700 11px sans-serif';
     context.fillText(
       formatLevelName(locale, snapshot.level.number, snapshot.level.titleKey),
-      layout.headerRect.x + 14,
+      textStartX,
       layout.headerRect.y + 46,
     );
     context.restore();
 
     context.save();
-    context.fillStyle =
+    const chipGradient = context.createLinearGradient(
+      layout.chipRect.x,
+      layout.chipRect.y,
+      layout.chipRect.x,
+      layout.chipRect.y + layout.chipRect.height,
+    );
+    const chipStart =
       snapshot.mode === 'record'
-        ? THEME.infoSoft
+        ? '#dff5ff'
         : snapshot.solved
-          ? THEME.successSoft
+          ? '#e4ffd7'
           : snapshot.preview?.validation.ok
-            ? THEME.accentSoft
-            : THEME.surfaceMuted;
-    context.strokeStyle =
+            ? '#fff2bb'
+            : 'rgba(255,255,255,0.82)';
+    const chipEnd =
       snapshot.mode === 'record'
-        ? THEME.borderSoft
+        ? '#c8edff'
         : snapshot.solved
-          ? THEME.borderSoft
-          : THEME.borderSoft;
+          ? '#c6ffb7'
+          : snapshot.preview?.validation.ok
+            ? '#ffd96a'
+            : 'rgba(255,255,255,0.62)';
+    chipGradient.addColorStop(0, chipStart);
+    chipGradient.addColorStop(1, chipEnd);
+    context.fillStyle = chipGradient;
+    context.strokeStyle = THEME.border;
     roundRect(context, layout.chipRect, 13);
     context.fill();
     context.stroke();
@@ -904,18 +1403,27 @@ function bootstrapWechatGame(): void {
       const isPressed = uiState.pressedUiId === `toolbar:${button.id}`;
       const buttonY = isPressed ? button.rect.y + 1.5 : button.rect.y;
       const buttonRect = { ...button.rect, y: buttonY };
-      context.fillStyle = button.enabled ? THEME.surfaceStrong : THEME.surfaceMuted;
-      context.strokeStyle = button.enabled
-        ? THEME.border
-        : THEME.borderSoft;
-      context.lineWidth = 1;
+      const style = getToolbarButtonStyle(button);
+      const gradient = context.createLinearGradient(
+        buttonRect.x,
+        buttonRect.y,
+        buttonRect.x,
+        buttonRect.y + buttonRect.height,
+      );
+      gradient.addColorStop(0, style.fillStart);
+      gradient.addColorStop(1, style.fillEnd);
+      context.fillStyle = gradient;
+      context.strokeStyle = style.stroke;
+      context.lineWidth = 1.2;
+      context.shadowColor = 'rgba(255,255,255,0.28)';
+      context.shadowBlur = 0;
       roundRect(context, buttonRect, 14);
       context.fill();
       context.stroke();
 
-      drawToolbarIcon(context, { ...button, rect: buttonRect });
+      drawToolbarIcon(context, { ...button, rect: buttonRect }, style.iconColor);
 
-      context.fillStyle = button.enabled ? THEME.textPrimary : THEME.disabledText;
+      context.fillStyle = style.textColor;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.font = '600 10px sans-serif';
@@ -928,134 +1436,748 @@ function bootstrapWechatGame(): void {
     context.restore();
   }
 
-  function drawHomeScreen(snapshot: ReturnType<GameController['getSnapshot']>): void {
+  function drawFallbackLandingButton(
+    context: CanvasRenderingContext2D,
+    rect: Rect,
+    label: string,
+    palette: 'orange' | 'purple',
+  ): void {
+    const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    if (palette === 'orange') {
+      gradient.addColorStop(0, '#ffd85f');
+      gradient.addColorStop(1, '#ff9f20');
+    } else {
+      gradient.addColorStop(0, '#dab7ff');
+      gradient.addColorStop(1, '#a96df0');
+    }
+
+    context.save();
+    context.fillStyle = gradient;
+    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    context.lineWidth = 2;
+    context.shadowColor = 'rgba(255, 220, 140, 0.42)';
+    context.shadowBlur = 28;
+    roundRect(context, rect, 24);
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = '700 26px sans-serif';
+    context.fillText(label, rect.x + rect.width / 2, rect.y + rect.height / 2 + 2);
+    context.restore();
+  }
+
+  function drawLandingScreen(): void {
     const context = surface.getContext2D();
-    const panelWidth = Math.min(metrics.width - 36, 320);
-    const panelHeight = 300;
-    const panelRect = {
-      x: (metrics.width - panelWidth) / 2,
-      y: Math.max(layout.headerRect.y + 18, (metrics.height - panelHeight) / 2 - 18),
-      width: panelWidth,
-      height: panelHeight,
-    };
-    const completed = Object.keys(snapshot.records).length;
-    const hasProgress = snapshot.levelIndex > 0 || snapshot.placements.length > 0;
-    const buttonWidth = panelWidth - 44;
-    const startButtonRect = {
-      x: panelRect.x + 22,
-      y: panelRect.y + panelRect.height - 74,
-      width: buttonWidth,
-      height: 44,
-    };
-    const continueButtonRect = {
-      x: panelRect.x + 22,
-      y: startButtonRect.y - 54,
-      width: buttonWidth,
-      height: 44,
-    };
+    const buttonSize = Math.min(metrics.width * 0.72, 280);
+    const firstButtonTop = metrics.height * 0.58;
+    const secondButtonTop = firstButtonTop + buttonSize * 0.52;
+    const iconBarY = metrics.safeTop + 6;
+    const iconBarX = 16;
+    const iconBarWidth = 148;
+    const iconBarHeight = 62;
+    const iconSize = 48;
+    const leftCenterX = iconBarX + iconBarWidth * 0.25;
+    const rightCenterX = iconBarX + iconBarWidth * 0.75;
+    const iconTop = iconBarY + (iconBarHeight - iconSize) / 2;
 
     homeButtons = [
       {
-        id: 'continue',
-        label: t(locale, 'home.continue'),
-        rect: continueButtonRect,
-        primary: true,
+        id: 'newGame',
+        rect: {
+          x: (metrics.width - buttonSize) / 2,
+          y: firstButtonTop,
+          width: buttonSize,
+          height: buttonSize,
+        },
       },
       {
-        id: 'start',
-        label: t(locale, 'home.start'),
-        rect: startButtonRect,
-        primary: false,
+        id: 'leaderboard',
+        rect: {
+          x: (metrics.width - buttonSize) / 2,
+          y: secondButtonTop,
+          width: buttonSize,
+          height: buttonSize,
+        },
+      },
+    ];
+    topIconButtons = [
+      {
+        id: 'goal',
+        rect: {
+          x: leftCenterX - iconSize / 2,
+          y: iconTop,
+          width: iconSize,
+          height: iconSize,
+        },
+      },
+      {
+        id: 'help',
+        rect: {
+          x: rightCenterX - iconSize / 2,
+          y: iconTop,
+          width: iconSize,
+          height: iconSize,
+        },
       },
     ];
 
     context.save();
-    context.fillStyle = THEME.overlay;
+    context.clearRect(0, 0, metrics.width, metrics.height);
+    if (landingAssets.background) {
+      drawImageCover(context, landingAssets.background, {
+        x: 0,
+        y: 0,
+        width: metrics.width,
+        height: metrics.height,
+      });
+    } else {
+      const gradient = context.createLinearGradient(0, 0, 0, metrics.height);
+      gradient.addColorStop(0, THEME.backgroundStart);
+      gradient.addColorStop(0.5, THEME.backgroundMid);
+      gradient.addColorStop(1, THEME.backgroundEnd);
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, metrics.width, metrics.height);
+    }
+
+    const newGameRect = homeButtons[0].rect;
+    const leaderboardRect = homeButtons[1].rect;
+    const newGamePressed = uiState.pressedUiId === 'home:newGame';
+    const leaderboardPressed = uiState.pressedUiId === 'home:leaderboard';
+    const newGameRenderRect = {
+      ...newGameRect,
+      y: newGameRect.y + (newGamePressed ? 3 : 0),
+    };
+    const leaderboardRenderRect = {
+      ...leaderboardRect,
+      y: leaderboardRect.y + (leaderboardPressed ? 3 : 0),
+    };
+
+    if (landingAssets.newGameButton) {
+      drawImageFit(context, landingAssets.newGameButton, newGameRenderRect);
+    } else {
+      drawFallbackLandingButton(context, newGameRenderRect, t(locale, 'home.start'), 'orange');
+    }
+
+    if (landingAssets.leaderboardButton) {
+      drawImageFit(context, landingAssets.leaderboardButton, leaderboardRenderRect);
+    } else {
+      drawFallbackLandingButton(
+        context,
+        leaderboardRenderRect,
+        t(locale, 'landing.weeklyLeaderboard'),
+        'purple',
+      );
+    }
+
+    drawLandingTopIconBar(context, metrics, landingAssets, topIconButtons, uiState.pressedUiId);
+
+    context.restore();
+  }
+
+  function drawInfoDialog(mode: 'help' | 'goal'): void {
+    const context = surface.getContext2D();
+    const panelWidth = Math.min(metrics.width - 40, 336);
+    const panelHeight = mode === 'help' ? 490 : 398;
+    const panelRect = {
+      x: (metrics.width - panelWidth) / 2,
+      y: Math.max(metrics.safeTop + 54, (metrics.height - panelHeight) / 2),
+      width: panelWidth,
+      height: panelHeight,
+    };
+    const actionRect = {
+      x: panelRect.x + 84,
+      y: panelRect.y + panelRect.height - 58,
+      width: panelRect.width - 168,
+      height: 42,
+    };
+    infoDialogPanelRect = panelRect;
+    infoDialogButtonRect = actionRect;
+
+    context.save();
+    context.fillStyle = 'rgba(83, 62, 95, 0.22)';
     context.fillRect(0, 0, metrics.width, metrics.height);
 
-    context.fillStyle = THEME.surfaceStrong;
-    context.strokeStyle = THEME.border;
-    context.lineWidth = 1;
-    context.shadowColor = THEME.shadow;
+    const panelGradient = context.createLinearGradient(
+      panelRect.x,
+      panelRect.y,
+      panelRect.x,
+      panelRect.y + panelRect.height,
+    );
+    panelGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
+    panelGradient.addColorStop(1, 'rgba(252,247,255,0.96)');
+    context.fillStyle = panelGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.96)';
+    context.lineWidth = 1.2;
+    context.shadowColor = 'rgba(123, 97, 147, 0.22)';
     context.shadowBlur = 24;
     context.shadowOffsetY = 10;
-    roundRect(context, panelRect, 26);
+    roundRect(context, panelRect, 22);
     context.fill();
     context.shadowColor = 'transparent';
     context.stroke();
+
+    const titleChipRect = {
+      x: panelRect.x + 68,
+      y: panelRect.y + 18,
+      width: panelRect.width - 136,
+      height: 38,
+    };
+    const titleChipGradient = context.createLinearGradient(
+      titleChipRect.x,
+      titleChipRect.y,
+      titleChipRect.x,
+      titleChipRect.y + titleChipRect.height,
+    );
+    titleChipGradient.addColorStop(0, '#fff4fa');
+    titleChipGradient.addColorStop(1, '#ffe3ef');
+    context.fillStyle = titleChipGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.95)';
+    context.lineWidth = 1;
+    roundRect(context, titleChipRect, 18);
+    context.fill();
+    context.stroke();
+
+    context.textAlign = 'center';
+    context.textBaseline = 'top';
+    context.fillStyle = '#ff8e9c';
+    context.font = '700 24px sans-serif';
+    context.fillText(
+      mode === 'help' ? t(locale, 'landing.helpTitle') : t(locale, 'landing.goalTitle'),
+      panelRect.x + panelRect.width / 2,
+      panelRect.y + 24,
+    );
+
+    context.textAlign = 'left';
+    context.fillStyle = '#4f63c6';
+    context.font = '700 18px sans-serif';
+    context.fillText(
+      mode === 'help' ? t(locale, 'landing.ruleSection') : t(locale, 'landing.goalSection'),
+      panelRect.x + 20,
+      panelRect.y + 74,
+    );
+
+    const bodyLines =
+      mode === 'help'
+        ? [
+            t(locale, 'landing.helpRule1'),
+            t(locale, 'landing.helpRule2'),
+            t(locale, 'landing.helpRule3'),
+            t(locale, 'landing.helpRule4'),
+          ]
+        : [
+            t(locale, 'landing.goalRule1'),
+            t(locale, 'landing.goalRule2'),
+            t(locale, 'landing.goalRule3'),
+          ];
+
+    const ruleCardRect = {
+      x: panelRect.x + 18,
+      y: panelRect.y + 104,
+      width: panelRect.width - 36,
+      height: mode === 'help' ? 152 : 132,
+    };
+    drawTextFrame(context, ruleCardRect, {
+      radius: 16,
+      fill: 'rgba(255,255,255,0.72)',
+      stroke: 'rgba(236, 226, 246, 0.95)',
+    });
+
+    context.fillStyle = THEME.textPrimary;
+    context.font = '13px sans-serif';
+    bodyLines.forEach((line, index) => {
+      const rowY = ruleCardRect.y + 16 + index * 34;
+      context.fillStyle = '#7b8cff';
+      context.font = '700 13px sans-serif';
+      context.fillText(`${index + 1}.`, ruleCardRect.x + 14, rowY);
+      drawWrappedText(
+        context,
+        line,
+        {
+          x: ruleCardRect.x + 34,
+          y: rowY,
+          width: ruleCardRect.width - 50,
+          height: 28,
+        },
+        {
+          font: '13px sans-serif',
+          color: THEME.textPrimary,
+          lineHeight: 17,
+          maxLines: 2,
+        },
+      );
+    });
+
+    const toolsTop = ruleCardRect.y + ruleCardRect.height + 18;
+    if (mode === 'help') {
+      context.fillStyle = '#4f63c6';
+      context.font = '700 18px sans-serif';
+      context.fillText(t(locale, 'landing.toolSection'), panelRect.x + 20, toolsTop);
+
+      const toolCardRect = {
+        x: panelRect.x + 18,
+        y: toolsTop + 26,
+        width: panelRect.width - 36,
+        height: 102,
+      };
+      drawTextFrame(context, toolCardRect, {
+        radius: 16,
+        fill: 'rgba(255,255,255,0.72)',
+        stroke: 'rgba(236, 226, 246, 0.95)',
+      });
+
+      const toolRows = [
+        { colorStart: '#7cc8ff', colorEnd: '#4ba4ea', text: t(locale, 'landing.toolHint') },
+        { colorStart: '#ffc878', colorEnd: '#ff9e34', text: t(locale, 'landing.toolUndo') },
+        { colorStart: '#ffb2d4', colorEnd: '#ef7bb0', text: t(locale, 'landing.toolRestart') },
+      ];
+
+      toolRows.forEach((tool, index) => {
+        const iconRect = {
+          x: toolCardRect.x + 14,
+          y: toolCardRect.y + 14 + index * 28,
+          width: 20,
+          height: 20,
+        };
+        const iconGradient = context.createLinearGradient(
+          iconRect.x,
+          iconRect.y,
+          iconRect.x,
+          iconRect.y + iconRect.height,
+        );
+        iconGradient.addColorStop(0, tool.colorStart);
+        iconGradient.addColorStop(1, tool.colorEnd);
+        context.fillStyle = iconGradient;
+        roundRect(context, iconRect, 6);
+        context.fill();
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.font = '700 13px sans-serif';
+        context.fillText(index === 0 ? '?' : index === 1 ? '↶' : '↺', iconRect.x + 10, iconRect.y + 10.5);
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        drawWrappedText(
+          context,
+          tool.text,
+          {
+            x: iconRect.x + 30,
+            y: iconRect.y + 1,
+            width: toolCardRect.width - 50,
+            height: 24,
+          },
+          {
+            font: '12px sans-serif',
+            color: THEME.textPrimary,
+            lineHeight: 16,
+            maxLines: 1,
+          },
+        );
+      });
+    }
+
+    const buttonGradient = context.createLinearGradient(
+      actionRect.x,
+      actionRect.y,
+      actionRect.x,
+      actionRect.y + actionRect.height,
+    );
+    buttonGradient.addColorStop(0, '#57b9ff');
+    buttonGradient.addColorStop(1, '#2c89f3');
+    context.fillStyle = buttonGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    context.lineWidth = 1.2;
+    roundRect(context, actionRect, 14);
+    context.fill();
+    context.stroke();
+
+    context.fillStyle = '#ffffff';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = '700 16px sans-serif';
+    context.fillText(t(locale, 'landing.gotIt'), actionRect.x + actionRect.width / 2, actionRect.y + actionRect.height / 2 + 1);
+    context.restore();
+  }
+
+  function drawSettingsDialog(): void {
+    const context = surface.getContext2D();
+    const panelRect = {
+      x: (metrics.width - 248) / 2,
+      y: Math.max(metrics.safeTop + 54, (metrics.height - 244) / 2),
+      width: 248,
+      height: 244,
+    };
+    settingsDialogPanelRect = panelRect;
+    soundToggleRect = {
+      x: panelRect.x + panelRect.width - 62,
+      y: panelRect.y + 70,
+      width: 40,
+      height: 22,
+    };
+    vibrationToggleRect = {
+      x: panelRect.x + panelRect.width - 62,
+      y: panelRect.y + 112,
+      width: 40,
+      height: 22,
+    };
+    settingsBackButtonRect = {
+      x: panelRect.x + 22,
+      y: panelRect.y + panelRect.height - 52,
+      width: 92,
+      height: 34,
+    };
+    settingsContinueButtonRect = {
+      x: panelRect.x + panelRect.width - 114,
+      y: panelRect.y + panelRect.height - 52,
+      width: 92,
+      height: 34,
+    };
+
+    const drawToggleRow = (
+      y: number,
+      iconColorStart: string,
+      iconColorEnd: string,
+      label: string,
+      enabled: boolean,
+      toggleRect: Rect,
+      glyph: string,
+    ): void => {
+      const iconRect = {
+        x: panelRect.x + 24,
+        y,
+        width: 22,
+        height: 22,
+      };
+      const iconGradient = context.createLinearGradient(
+        iconRect.x,
+        iconRect.y,
+        iconRect.x,
+        iconRect.y + iconRect.height,
+      );
+      iconGradient.addColorStop(0, iconColorStart);
+      iconGradient.addColorStop(1, iconColorEnd);
+      context.fillStyle = iconGradient;
+      roundRect(context, iconRect, 7);
+      context.fill();
+      context.fillStyle = '#ffffff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.font = '700 13px sans-serif';
+      context.fillText(glyph, iconRect.x + 11, iconRect.y + 11.5);
+
+      context.textAlign = 'left';
+      context.textBaseline = 'middle';
+      context.fillStyle = THEME.textPrimary;
+      context.font = '700 15px sans-serif';
+      context.fillText(label, iconRect.x + 32, iconRect.y + 11);
+
+      const toggleGradient = context.createLinearGradient(
+        toggleRect.x,
+        toggleRect.y,
+        toggleRect.x,
+        toggleRect.y + toggleRect.height,
+      );
+      if (enabled) {
+        toggleGradient.addColorStop(0, '#6dd66c');
+        toggleGradient.addColorStop(1, '#3eaf47');
+      } else {
+        toggleGradient.addColorStop(0, '#e9e3ea');
+        toggleGradient.addColorStop(1, '#cfc3d1');
+      }
+      context.fillStyle = toggleGradient;
+      context.strokeStyle = 'rgba(255,255,255,0.92)';
+      context.lineWidth = 1;
+      roundRect(context, toggleRect, toggleRect.height / 2);
+      context.fill();
+      context.stroke();
+
+      const knobX = enabled
+        ? toggleRect.x + toggleRect.width - 11
+        : toggleRect.x + 11;
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(knobX, toggleRect.y + toggleRect.height / 2, 8.5, 0, Math.PI * 2);
+      context.fill();
+    };
+
+    context.save();
+    context.fillStyle = 'rgba(77, 60, 89, 0.22)';
+    context.fillRect(0, 0, metrics.width, metrics.height);
+
+    const panelGradient = context.createLinearGradient(
+      panelRect.x,
+      panelRect.y,
+      panelRect.x,
+      panelRect.y + panelRect.height,
+    );
+    panelGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
+    panelGradient.addColorStop(1, 'rgba(248,244,255,0.95)');
+    context.fillStyle = panelGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.96)';
+    context.lineWidth = 1.2;
+    context.shadowColor = 'rgba(123, 97, 147, 0.2)';
+    context.shadowBlur = 24;
+    context.shadowOffsetY = 10;
+    roundRect(context, panelRect, 22);
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.stroke();
+
+    context.textAlign = 'center';
+    context.textBaseline = 'top';
+    context.fillStyle = '#4f63c6';
+    context.font = '700 22px sans-serif';
+    context.fillText(t(locale, 'settings.title'), panelRect.x + panelRect.width / 2, panelRect.y + 20);
+
+    drawToggleRow(
+      panelRect.y + 66,
+      '#82db78',
+      '#46b957',
+      t(locale, 'settings.sound'),
+      userSettings.soundEnabled,
+      soundToggleRect,
+      '♪',
+    );
+    drawToggleRow(
+      panelRect.y + 108,
+      '#c57fff',
+      '#9b5ce5',
+      t(locale, 'settings.vibration'),
+      userSettings.vibrationEnabled,
+      vibrationToggleRect,
+      '≈',
+    );
+
+    const backGradient = context.createLinearGradient(
+      settingsBackButtonRect.x,
+      settingsBackButtonRect.y,
+      settingsBackButtonRect.x,
+      settingsBackButtonRect.y + settingsBackButtonRect.height,
+    );
+    backGradient.addColorStop(0, '#f7f7f7');
+    backGradient.addColorStop(1, '#dddddd');
+    context.fillStyle = backGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.95)';
+    roundRect(context, settingsBackButtonRect, 12);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#7c727f';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = '700 14px sans-serif';
+    context.fillText(
+      t(locale, 'settings.backHome'),
+      settingsBackButtonRect.x + settingsBackButtonRect.width / 2,
+      settingsBackButtonRect.y + settingsBackButtonRect.height / 2 + 1,
+    );
+
+    const continueGradient = context.createLinearGradient(
+      settingsContinueButtonRect.x,
+      settingsContinueButtonRect.y,
+      settingsContinueButtonRect.x,
+      settingsContinueButtonRect.y + settingsContinueButtonRect.height,
+    );
+    continueGradient.addColorStop(0, '#58bcff');
+    continueGradient.addColorStop(1, '#2d89f4');
+    context.fillStyle = continueGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.95)';
+    roundRect(context, settingsContinueButtonRect, 12);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.fillText(
+      t(locale, 'settings.continue'),
+      settingsContinueButtonRect.x + settingsContinueButtonRect.width / 2,
+      settingsContinueButtonRect.y + settingsContinueButtonRect.height / 2 + 1,
+    );
+
+    context.restore();
+  }
+
+  function drawLeaderboardPanel(): void {
+    const context = surface.getContext2D();
+    const panelWidth = Math.min(metrics.width - 30, 340);
+    const panelHeight = Math.min(metrics.height - 110, 446);
+    const panelRect = {
+      x: (metrics.width - panelWidth) / 2,
+      y: Math.max(metrics.safeTop + 36, (metrics.height - panelHeight) / 2),
+      width: panelWidth,
+      height: panelHeight,
+    };
+    leaderboardPanelRect = panelRect;
+
+    context.save();
+    context.fillStyle = 'rgba(71, 49, 82, 0.22)';
+    context.fillRect(0, 0, metrics.width, metrics.height);
+
+    const panelGradient = context.createLinearGradient(
+      panelRect.x,
+      panelRect.y,
+      panelRect.x,
+      panelRect.y + panelRect.height,
+    );
+    panelGradient.addColorStop(0, 'rgba(255,255,255,0.96)');
+    panelGradient.addColorStop(1, 'rgba(249,239,255,0.92)');
+    context.fillStyle = panelGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    context.lineWidth = 1.4;
+    context.shadowColor = 'rgba(116, 77, 143, 0.26)';
+    context.shadowBlur = 28;
+    context.shadowOffsetY = 12;
+    roundRect(context, panelRect, 24);
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.stroke();
+
+    const headerChipRect = {
+      x: panelRect.x + 72,
+      y: panelRect.y + 16,
+      width: panelRect.width - 144,
+      height: 38,
+    };
+    const headerChipGradient = context.createLinearGradient(
+      headerChipRect.x,
+      headerChipRect.y,
+      headerChipRect.x,
+      headerChipRect.y + headerChipRect.height,
+    );
+    headerChipGradient.addColorStop(0, '#f7ecff');
+    headerChipGradient.addColorStop(1, '#eddcff');
+    context.fillStyle = headerChipGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.95)';
+    context.lineWidth = 1;
+    roundRect(context, headerChipRect, 18);
+    context.fill();
+    context.stroke();
+
     context.textAlign = 'left';
     context.textBaseline = 'top';
-    context.fillStyle = THEME.accent;
-    context.font = '700 11px sans-serif';
-    context.fillText(t(locale, 'app.eyebrow'), panelRect.x + 22, panelRect.y + 20);
-    context.fillStyle = THEME.textPrimary;
-    context.font = '700 28px sans-serif';
-    context.fillText(t(locale, 'app.title'), panelRect.x + 22, panelRect.y + 38);
+    context.fillStyle = '#9b61db';
+    context.font = '700 20px sans-serif';
+    context.textAlign = 'center';
+    context.fillText(
+      t(locale, 'landing.weeklyLeaderboard'),
+      panelRect.x + panelRect.width / 2,
+      panelRect.y + 22,
+    );
 
     drawWrappedText(
       context,
-      t(locale, 'home.subtitle'),
+      t(locale, 'landing.localWeeklyNote'),
       {
         x: panelRect.x + 22,
-        y: panelRect.y + 78,
+        y: panelRect.y + 66,
         width: panelRect.width - 44,
-        height: 44,
+        height: 36,
       },
       {
-        font: '12px sans-serif',
+        font: '11px sans-serif',
         color: THEME.textSecondary,
-        lineHeight: 16,
+        lineHeight: 14,
         maxLines: 2,
       },
     );
 
-    drawHudShell(context, {
-      x: panelRect.x + 22,
-      y: panelRect.y + 126,
-      width: panelRect.width - 44,
-      height: 68,
-    });
-    context.fillStyle = THEME.accent;
-    context.font = '700 10px sans-serif';
-    context.fillText(
-      t(locale, 'home.progress', { completed, total: levels.length }),
-      panelRect.x + 36,
-      panelRect.y + 140,
-    );
-    context.fillStyle = THEME.textPrimary;
-    context.font = '700 15px sans-serif';
-    context.fillText(
-      t(locale, 'home.currentLevel', { level: snapshot.levelIndex + 1 }),
-      panelRect.x + 36,
-      panelRect.y + 158,
-    );
+    const listTop = panelRect.y + 110;
+    const listLeft = panelRect.x + 18;
+    const rowWidth = panelRect.width - 36;
+    const rowHeight = 56;
+    const rowGap = 10;
+    const entries = weeklyLeaderboard.slice(0, 6);
 
-    for (const button of homeButtons) {
-      const isPressed = uiState.pressedUiId === `home:${button.id}`;
-      const buttonRect = { ...button.rect, y: button.rect.y + (isPressed ? 1.5 : 0) };
-      context.fillStyle = button.primary ? THEME.textPrimary : THEME.surfaceStrong;
-      context.strokeStyle = button.primary ? THEME.textPrimary : THEME.border;
-      context.lineWidth = 1;
-      roundRect(context, buttonRect, 18);
-      context.fill();
-      context.stroke();
-
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.font = '700 13px sans-serif';
-      context.fillStyle = button.primary ? THEME.white : THEME.textPrimary;
-      context.fillText(
-        button.label,
-        buttonRect.x + buttonRect.width / 2,
-        buttonRect.y + buttonRect.height / 2,
+    if (entries.length === 0) {
+      drawHudShell(context, {
+        x: listLeft,
+        y: listTop + 18,
+        width: rowWidth,
+        height: 104,
+      });
+      drawWrappedText(
+        context,
+        t(locale, 'landing.emptyLeaderboard'),
+        {
+          x: listLeft + 18,
+          y: listTop + 48,
+          width: rowWidth - 36,
+          height: 40,
+        },
+        {
+          font: '13px sans-serif',
+          color: THEME.textPrimary,
+          lineHeight: 18,
+          maxLines: 2,
+        },
       );
+    } else {
+      entries.forEach((entry, index) => {
+        const rowRect = {
+          x: listLeft,
+          y: listTop + index * (rowHeight + rowGap),
+          width: rowWidth,
+          height: rowHeight,
+        };
+
+        drawHudShell(context, rowRect);
+        const badgeRect = {
+          x: rowRect.x + 14,
+          y: rowRect.y + 12,
+          width: 26,
+          height: 26,
+        };
+        const badgeGradient = context.createLinearGradient(
+          badgeRect.x,
+          badgeRect.y,
+          badgeRect.x,
+          badgeRect.y + badgeRect.height,
+        );
+        if (index === 0) {
+          badgeGradient.addColorStop(0, '#ffd56d');
+          badgeGradient.addColorStop(1, '#ff9e1a');
+        } else if (index === 1) {
+          badgeGradient.addColorStop(0, '#d9c9ff');
+          badgeGradient.addColorStop(1, '#8a77ff');
+        } else {
+          badgeGradient.addColorStop(0, '#a8e0ff');
+          badgeGradient.addColorStop(1, '#53b7ff');
+        }
+        context.fillStyle = badgeGradient;
+        roundRect(context, badgeRect, 9);
+        context.fill();
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.font = '700 15px sans-serif';
+        context.fillText(String(index + 1), badgeRect.x + badgeRect.width / 2, badgeRect.y + badgeRect.height / 2 + 0.5);
+
+        context.fillStyle = THEME.textPrimary;
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.font = '700 14px sans-serif';
+        context.fillText(
+          t(locale, 'landing.bestTime', { duration: formatDuration(entry.durationMs) }),
+          rowRect.x + 52,
+          rowRect.y + 10,
+        );
+        context.fillStyle = THEME.textSecondary;
+        context.font = '11px sans-serif';
+        context.fillText(
+          t(locale, 'landing.completedAt', {
+            completedAt: formatCompletedAt(locale, entry.completedAt),
+          }),
+          rowRect.x + 52,
+          rowRect.y + 32,
+        );
+      });
     }
 
     context.fillStyle = THEME.textMuted;
     context.font = '10px sans-serif';
+    context.textAlign = 'center';
     context.fillText(
-      hasProgress ? t(locale, 'home.resumeTip') : t(locale, 'home.freshTip'),
-      panelRect.x + 26,
+      t(locale, 'landing.close'),
+      panelRect.x + panelRect.width / 2,
       panelRect.y + panelRect.height - 24,
     );
     context.restore();
@@ -1083,9 +2205,12 @@ function bootstrapWechatGame(): void {
     context.fillStyle = THEME.overlay;
     context.fillRect(0, 0, metrics.width, metrics.height);
 
-    context.fillStyle = THEME.surfaceStrong;
+    const panelGradient = context.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+    panelGradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+    panelGradient.addColorStop(1, 'rgba(255,255,255,0.84)');
+    context.fillStyle = panelGradient;
     context.strokeStyle = THEME.border;
-    context.lineWidth = 1;
+    context.lineWidth = 1.2;
     roundRect(context, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, 20);
     context.fill();
     context.stroke();
@@ -1113,7 +2238,7 @@ function bootstrapWechatGame(): void {
       const y = gridStartY + row * (tileSize + gap);
 
       if (slot >= levels.length) {
-        context.fillStyle = THEME.surfaceMuted;
+        context.fillStyle = 'rgba(255,255,255,0.42)';
         roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
         context.fill();
         continue;
@@ -1124,11 +2249,11 @@ function bootstrapWechatGame(): void {
       const isCurrent = snapshot.levelIndex === slot;
       const isViewing = isCurrent && snapshot.mode === 'record';
 
-      context.fillStyle = completed ? THEME.successSoft : THEME.surfaceStrong;
+      context.fillStyle = completed ? 'rgba(204,255,212,0.92)' : 'rgba(255,255,255,0.94)';
       if (isCurrent) {
-        context.fillStyle = isViewing ? THEME.infoSoft : THEME.accentSoft;
+        context.fillStyle = isViewing ? THEME.infoSoft : 'rgba(255, 238, 183, 0.98)';
       }
-      context.strokeStyle = THEME.border;
+      context.strokeStyle = isCurrent ? THEME.borderAccent : THEME.border;
       context.lineWidth = isCurrent ? 2 : 1;
       roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
       context.fill();
@@ -1175,6 +2300,20 @@ function bootstrapWechatGame(): void {
   }
 
   function drawOverlay(snapshot: ReturnType<GameController['getSnapshot']>): void {
+    if (uiState.homeOpen) {
+      drawLandingScreen();
+      if (uiState.leaderboardOpen) {
+        drawLeaderboardPanel();
+      }
+      if (uiState.helpOpen) {
+        drawInfoDialog('help');
+      }
+      if (uiState.goalOpen) {
+        drawInfoDialog('goal');
+      }
+      return;
+    }
+
     drawHeader(snapshot);
     drawInfoCards(snapshot);
     drawButtons(snapshot);
@@ -1184,24 +2323,31 @@ function bootstrapWechatGame(): void {
       drawLevelPanel(snapshot);
     }
 
-    if (uiState.homeOpen) {
-      drawHomeScreen(snapshot);
+    if (uiState.leaderboardOpen) {
+      drawLeaderboardPanel();
+    }
+
+    if (uiState.settingsOpen) {
+      drawSettingsDialog();
     }
   }
 
   function render(): void {
-    renderer.render(currentSnapshot, {
-      labels: {
-        solvedBadge: t(locale, 'renderer.badgeSolved'),
-        recordBadge: t(locale, 'renderer.badgeRecord'),
-      },
-      insets: {
-        top: layout.topInset,
-        bottom: layout.bottomInset,
-      },
-    });
+    if (!uiState.homeOpen) {
+      renderer.render(currentSnapshot, {
+        labels: {
+          solvedBadge: t(locale, 'renderer.badgeSolved'),
+          recordBadge: t(locale, 'renderer.badgeRecord'),
+        },
+        insets: {
+          top: layout.topInset,
+          bottom: layout.bottomInset,
+        },
+      });
+    }
     drawOverlay(currentSnapshot);
     syncFeedbackAudio(currentSnapshot);
+    syncWeeklyLeaderboard(currentSnapshot);
     scheduleAutoAdvance(currentSnapshot);
   }
 
@@ -1226,12 +2372,49 @@ function bootstrapWechatGame(): void {
     return Date.now() < autoAdvanceBannerUntil;
   }
 
+  function syncWeeklyLeaderboard(snapshot: GameSnapshot): void {
+    if (
+      snapshot.mode !== 'play' ||
+      !snapshot.solved ||
+      snapshot.hasNextLevel ||
+      Object.keys(snapshot.records).length !== levels.length ||
+      snapshot.effects.celebrationId === 0 ||
+      snapshot.effects.celebrationId === lastCampaignCompletionCelebrationId
+    ) {
+      return;
+    }
+
+    lastCampaignCompletionCelebrationId = snapshot.effects.celebrationId;
+    if (!campaignState) {
+      return;
+    }
+
+    const completedAt = new Date().toISOString();
+    const durationMs = Math.max(0, Date.now() - campaignState.startedAt);
+    weeklyLeaderboard = storage.recordWeeklyLeaderboardEntry(durationMs, completedAt);
+    campaignState = null;
+    storage.saveCampaignState(null);
+  }
+
+  function triggerVibration(type: 'light' | 'medium' | 'heavy'): void {
+    if (!userSettings.vibrationEnabled) {
+      return;
+    }
+
+    try {
+      wx.vibrateShort?.({ type });
+    } catch {
+      // Ignore vibration failures in unsupported runtimes.
+    }
+  }
+
   function syncFeedbackAudio(snapshot: GameSnapshot): void {
     const placementEffectId = snapshot.effects.placement?.id ?? 0;
     if (placementEffectId !== lastPlacementEffectId) {
       lastPlacementEffectId = placementEffectId;
       if (placementEffectId > 0) {
         audio.playPlacement();
+        triggerVibration('light');
       }
     }
 
@@ -1239,6 +2422,7 @@ function bootstrapWechatGame(): void {
       lastInvalidEffectId = snapshot.effects.invalidId;
       if (snapshot.effects.invalidId > 0) {
         audio.playInvalid();
+        triggerVibration('medium');
       }
     }
 
@@ -1246,6 +2430,7 @@ function bootstrapWechatGame(): void {
       lastCelebrationEffectId = snapshot.effects.celebrationId;
       if (snapshot.effects.celebrationId > 0) {
         audio.playCelebration();
+        triggerVibration('heavy');
       }
     }
   }
@@ -1293,9 +2478,12 @@ function bootstrapWechatGame(): void {
     };
 
     context.save();
-    context.fillStyle = THEME.surfaceStrong;
+    const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    gradient.addColorStop(0, '#fff9da');
+    gradient.addColorStop(1, 'rgba(255,255,255,0.92)');
+    context.fillStyle = gradient;
     context.strokeStyle = THEME.borderAccent;
-    context.lineWidth = 1;
+    context.lineWidth = 1.2;
     context.shadowColor = THEME.shadow;
     context.shadowBlur = 22;
     context.shadowOffsetY = 10;
@@ -1325,21 +2513,139 @@ function bootstrapWechatGame(): void {
 
   function handleUiTap(x: number, y: number): boolean {
     if (uiState.homeOpen) {
-      const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
       uiState.pressedUiId = null;
+      if (uiState.helpOpen || uiState.goalOpen) {
+        const closeButtonHit = infoDialogButtonRect
+          ? isPointInsideRect(x, y, infoDialogButtonRect)
+          : false;
+        const insidePanel = infoDialogPanelRect
+          ? isPointInsideRect(x, y, infoDialogPanelRect)
+          : false;
+        if (closeButtonHit || !insidePanel) {
+          uiState.helpOpen = false;
+          uiState.goalOpen = false;
+        }
+        render();
+        return true;
+      }
+
+      if (uiState.leaderboardOpen) {
+        if (!leaderboardPanelRect || !isPointInsideRect(x, y, leaderboardPanelRect)) {
+          uiState.leaderboardOpen = false;
+        }
+        render();
+        return true;
+      }
+
+      const topIconButton = topIconButtons.find((item) => isPointInsideRect(x, y, item.rect));
+      if (topIconButton) {
+        if (topIconButton.id === 'help') {
+          uiState.helpOpen = true;
+          uiState.goalOpen = false;
+        } else {
+          uiState.goalOpen = true;
+          uiState.helpOpen = false;
+        }
+        render();
+        return true;
+      }
+
+      const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
       if (!homeButton) {
         render();
         return true;
       }
 
-      if (homeButton.id === 'continue') {
+      if (homeButton.id === 'newGame') {
+        game.resetCampaign();
+        campaignState = {
+          startedAt: Date.now(),
+          weekKey: getWeeklyBucketKey(),
+        };
+        storage.saveCampaignState(campaignState);
         uiState.homeOpen = false;
+        uiState.leaderboardOpen = false;
+        uiState.helpOpen = false;
+        uiState.goalOpen = false;
         render();
         return true;
       }
 
-      uiState.homeOpen = false;
-      game.setLevel(0);
+      uiState.leaderboardOpen = true;
+      render();
+      return true;
+    }
+
+    if (uiState.settingsOpen) {
+      uiState.pressedUiId = null;
+      const insidePanel = settingsDialogPanelRect
+        ? isPointInsideRect(x, y, settingsDialogPanelRect)
+        : false;
+      if (soundToggleRect && isPointInsideRect(x, y, soundToggleRect)) {
+        userSettings = {
+          ...userSettings,
+          soundEnabled: !userSettings.soundEnabled,
+        };
+        audio.setEnabled(userSettings.soundEnabled);
+        saveUserSettings(storageAdapter, userSettings);
+        render();
+        return true;
+      }
+
+      if (vibrationToggleRect && isPointInsideRect(x, y, vibrationToggleRect)) {
+        userSettings = {
+          ...userSettings,
+          vibrationEnabled: !userSettings.vibrationEnabled,
+        };
+        saveUserSettings(storageAdapter, userSettings);
+        if (userSettings.vibrationEnabled) {
+          triggerVibration('light');
+        }
+        render();
+        return true;
+      }
+
+      if (settingsBackButtonRect && isPointInsideRect(x, y, settingsBackButtonRect)) {
+        uiState.settingsOpen = false;
+        uiState.leaderboardOpen = false;
+        uiState.levelPanelOpen = false;
+        uiState.homeOpen = true;
+        render();
+        return true;
+      }
+
+      if (settingsContinueButtonRect && isPointInsideRect(x, y, settingsContinueButtonRect)) {
+        uiState.settingsOpen = false;
+        render();
+        return true;
+      }
+
+      if (!insidePanel) {
+        uiState.settingsOpen = false;
+        render();
+        return true;
+      }
+
+      render();
+      return true;
+    }
+
+    if (uiState.leaderboardOpen) {
+      if (!leaderboardPanelRect || !isPointInsideRect(x, y, leaderboardPanelRect)) {
+        uiState.leaderboardOpen = false;
+      }
+      render();
+      return true;
+    }
+
+    const gameTopButton = gameTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+    if (gameTopButton) {
+      uiState.pressedUiId = null;
+      if (gameTopButton.id === 'settings') {
+        uiState.settingsOpen = true;
+      } else {
+        uiState.leaderboardOpen = true;
+      }
       render();
       return true;
     }
@@ -1394,14 +2700,35 @@ function bootstrapWechatGame(): void {
 
   function updatePressedUi(x: number, y: number): void {
     if (uiState.homeOpen) {
+      if (uiState.leaderboardOpen || uiState.helpOpen || uiState.goalOpen) {
+        uiState.pressedUiId = null;
+        render();
+        return;
+      }
+
+      const topIconButton = topIconButtons.find((item) => isPointInsideRect(x, y, item.rect));
+      if (topIconButton) {
+        uiState.pressedUiId = `icon:${topIconButton.id}`;
+        render();
+        return;
+      }
+
       const homeButton = homeButtons.find((item) => isPointInsideRect(x, y, item.rect));
       uiState.pressedUiId = homeButton ? `home:${homeButton.id}` : null;
       render();
       return;
     }
 
-    if (uiState.levelPanelOpen) {
+    if (uiState.levelPanelOpen || uiState.leaderboardOpen || uiState.settingsOpen) {
       uiState.pressedUiId = null;
+      render();
+      return;
+    }
+
+    const gameTopButton = gameTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+    if (gameTopButton) {
+      uiState.pressedUiId = `icon:${gameTopButton.id}`;
+      render();
       return;
     }
 
@@ -1472,7 +2799,10 @@ function bootstrapWechatGame(): void {
 
 try {
   drawBootstrapSplash();
-  bootstrapWechatGame();
+  void bootstrapWechatGame().catch((error) => {
+    console.error('[Fill Grid] WeChat bootstrap failed:', error);
+    drawBootstrapError(error);
+  });
 } catch (error) {
   console.error('[Fill Grid] WeChat bootstrap failed:', error);
   drawBootstrapError(error);
