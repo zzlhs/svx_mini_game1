@@ -58,6 +58,7 @@ app.innerHTML = `
 
         <div class="canvas-stage">
           <canvas id="game-canvas" aria-label="Fill Grid game board"></canvas>
+          <div id="selection-layer" class="selection-layer" aria-hidden="true"></div>
         </div>
       </section>
 
@@ -110,6 +111,7 @@ app.innerHTML = `
 `;
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
+const selectionLayer = document.querySelector<HTMLDivElement>('#selection-layer');
 const appEyebrow = document.querySelector<HTMLParagraphElement>('#app-eyebrow');
 const appTitle = document.querySelector<HTMLHeadingElement>('#app-title');
 const appHeroCopy = document.querySelector<HTMLParagraphElement>('#app-hero-copy');
@@ -143,6 +145,7 @@ const nextButton = document.querySelector<HTMLButtonElement>('#next-button');
 
 if (
   !canvas ||
+  !selectionLayer ||
   !appEyebrow ||
   !appTitle ||
   !appHeroCopy ||
@@ -176,6 +179,9 @@ if (
 ) {
   throw new Error('UI bootstrapping failed');
 }
+
+type SelectionTheme = 'pink' | 'yellow' | 'green' | 'blue' | 'purple';
+const selectionThemes: readonly SelectionTheme[] = ['pink', 'yellow', 'green', 'blue', 'purple'];
 
 let locale: Locale = loadLocale() ?? detectLocale();
 const gameStorage = new BrowserGameStorage(new BrowserLocalStorageAdapter());
@@ -263,6 +269,69 @@ function formatDuration(durationMs: number): string {
 
 function formatCompletedAt(isoString: string): string {
   return formatLocaleDate(locale, isoString) ?? t(locale, 'fallback.unknownTime');
+}
+
+let lastSelectionLayerKey = '';
+
+function getSelectionTheme(index: number): SelectionTheme {
+  return selectionThemes[index % selectionThemes.length];
+}
+
+function renderSelectionRegions(snapshot: GameSnapshot): void {
+  const boardRect = renderer.getBoardSurfaceRect();
+  const layerKey = [
+    boardRect.x,
+    boardRect.y,
+    boardRect.width,
+    boardRect.height,
+    snapshot.selectedPlacementId ?? '',
+    ...snapshot.placements.map((placement) =>
+      [
+        placement.id,
+        placement.rect.x,
+        placement.rect.y,
+        placement.rect.width,
+        placement.rect.height,
+      ].join(','),
+    ),
+  ].join('|');
+
+  if (lastSelectionLayerKey === layerKey) {
+    return;
+  }
+
+  lastSelectionLayerKey = layerKey;
+  selectionLayer!.replaceChildren();
+
+  const nodes = snapshot.placements.map((placement, index) => {
+    const region = document.createElement('div');
+    const theme = getSelectionTheme(index);
+    const surfaceRect = renderer.getSurfaceRectForGridRect(placement.rect);
+    const cellSize = surfaceRect.width / Math.max(1, placement.rect.width);
+
+    region.className = `selection-region selection-region--${theme}`;
+    if (snapshot.selectedPlacementId === placement.id) {
+      region.classList.add('selection-region--selected');
+    }
+
+    region.style.left = `${surfaceRect.x}px`;
+    region.style.top = `${surfaceRect.y}px`;
+    region.style.width = `${surfaceRect.width}px`;
+    region.style.height = `${surfaceRect.height}px`;
+    region.style.setProperty('--selection-grid-size', `${cellSize}px`);
+    region.dataset.row = String(placement.rect.y);
+    region.dataset.col = String(placement.rect.x);
+    region.dataset.rows = String(placement.rect.height);
+    region.dataset.cols = String(placement.rect.width);
+
+    const surface = document.createElement('div');
+    surface.className = 'selection-region__surface';
+    region.append(surface);
+
+    return region;
+  });
+
+  selectionLayer!.append(...nodes);
 }
 
 function renderRecord(record: LevelRecord | null, mode: GameSnapshot['mode']): void {
@@ -390,16 +459,22 @@ const renderUi = (snapshot: GameSnapshot): void => {
 const render = (snapshot: GameSnapshot): void => {
   currentSnapshot = snapshot;
   renderUi(snapshot);
+  renderBoard(snapshot);
+  syncFeedbackAudio(snapshot);
+  scheduleAutoAdvance(snapshot);
+  ensureAnimationLoop();
+};
+
+function renderBoard(snapshot: GameSnapshot): void {
   renderer.render(snapshot, {
     labels: {
       solvedBadge: t(locale, 'renderer.badgeSolved'),
       recordBadge: t(locale, 'renderer.badgeRecord'),
     },
+    showPlacementFills: false,
   });
-  syncFeedbackAudio(snapshot);
-  scheduleAutoAdvance(snapshot);
-  ensureAnimationLoop();
-};
+  renderSelectionRegions(snapshot);
+}
 
 function syncFeedbackAudio(snapshot: GameSnapshot): void {
   const placementEffectId = snapshot.effects.placement?.id ?? 0;
@@ -461,12 +536,7 @@ function ensureAnimationLoop(): void {
 
 function tickAnimationFrame(): void {
   animationFrameId = 0;
-  renderer.render(currentSnapshot, {
-    labels: {
-      solvedBadge: t(locale, 'renderer.badgeSolved'),
-      recordBadge: t(locale, 'renderer.badgeRecord'),
-    },
-  });
+  renderBoard(currentSnapshot);
 
   if (renderer.hasActiveEffects()) {
     animationFrameId = window.requestAnimationFrame(tickAnimationFrame);
@@ -518,24 +588,16 @@ window.addEventListener('keydown', (event) => {
 
 window.addEventListener('resize', () => {
   currentSnapshot = game.getSnapshot();
-  renderer.render(currentSnapshot, {
-    labels: {
-      solvedBadge: t(locale, 'renderer.badgeSolved'),
-      recordBadge: t(locale, 'renderer.badgeRecord'),
-    },
-  });
+  lastSelectionLayerKey = '';
+  renderBoard(currentSnapshot);
   ensureAnimationLoop();
 });
 
 if ('ResizeObserver' in window) {
   const observer = new ResizeObserver(() => {
     currentSnapshot = game.getSnapshot();
-    renderer.render(currentSnapshot, {
-      labels: {
-        solvedBadge: t(locale, 'renderer.badgeSolved'),
-        recordBadge: t(locale, 'renderer.badgeRecord'),
-      },
-    });
+    lastSelectionLayerKey = '';
+    renderBoard(currentSnapshot);
     ensureAnimationLoop();
   });
   observer.observe(canvas);

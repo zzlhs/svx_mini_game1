@@ -221,6 +221,7 @@ button:disabled {
 }
 
 .canvas-stage {
+  position: relative;
   width: 100%;
   height: min(72vh, 720px);
   min-height: 360px;
@@ -231,9 +232,177 @@ button:disabled {
 }
 
 #game-canvas {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.selection-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.selection-region {
+  --selection-grid-size: 64px;
+  --selection-fill-start: rgba(255, 255, 255, 0.28);
+  --selection-fill-mid: rgba(255, 255, 255, 0.08);
+  --selection-fill-end: rgba(255, 255, 255, 0.14);
+  --selection-border: rgba(255, 255, 255, 0.88);
+  --selection-shadow: rgba(218, 115, 168, 0.18);
+  position: absolute;
+  overflow: visible;
+  border-radius: 30px;
+  z-index: 1;
+}
+
+.selection-region--selected {
+  z-index: 2;
+}
+
+.selection-region__surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  border: 1.5px solid var(--selection-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.08) 36%, rgba(255, 255, 255, 0.16) 100%),
+    linear-gradient(135deg, var(--selection-fill-start) 0%, var(--selection-fill-mid) 52%, var(--selection-fill-end) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 14px 26px var(--selection-shadow),
+    0 5px 12px rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(4px) saturate(1.08);
+}
+
+.selection-region__surface::before,
+.selection-region__surface::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.selection-region__surface::before {
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 30%),
+    radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.42), transparent 42%),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.07) 0,
+      rgba(255, 255, 255, 0.07) calc(var(--selection-grid-size) * 0.5),
+      rgba(255, 255, 255, 0) calc(var(--selection-grid-size) * 0.5),
+      rgba(255, 255, 255, 0) var(--selection-grid-size)
+    ),
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.055) 0,
+      rgba(255, 255, 255, 0.055) calc(var(--selection-grid-size) * 0.5),
+      rgba(255, 255, 255, 0) calc(var(--selection-grid-size) * 0.5),
+      rgba(255, 255, 255, 0) var(--selection-grid-size)
+    );
+  background-size:
+    auto,
+    auto,
+    var(--selection-grid-size) var(--selection-grid-size),
+    var(--selection-grid-size) var(--selection-grid-size);
+  opacity: 0.95;
+}
+
+.selection-region__surface::after {
+  inset: 8px;
+  border-radius: calc(30px - 8px);
+  border: 2px dashed rgba(255, 255, 255, 0.84);
+  opacity: 0.96;
+}
+
+.selection-region--selected .selection-region__surface {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 18px 34px var(--selection-shadow),
+    0 0 0 3px rgba(255, 255, 255, 0.16);
+}
+
+.selection-region--pink {
+  --selection-fill-start: rgba(255, 186, 211, 0.4);
+  --selection-fill-mid: rgba(255, 161, 196, 0.24);
+  --selection-fill-end: rgba(255, 126, 180, 0.24);
+  --selection-border: rgba(255, 192, 214, 0.98);
+  --selection-shadow: rgba(226, 122, 171, 0.22);
+}
+
+.selection-region--yellow {
+  --selection-fill-start: rgba(255, 232, 155, 0.4);
+  --selection-fill-mid: rgba(255, 210, 99, 0.26);
+  --selection-fill-end: rgba(255, 193, 64, 0.24);
+  --selection-border: rgba(255, 235, 179, 0.98);
+  --selection-shadow: rgba(224, 168, 78, 0.24);
+}
+
+.selection-region--green {
+  --selection-fill-start: rgba(186, 244, 205, 0.36);
+  --selection-fill-mid: rgba(135, 224, 163, 0.22);
+  --selection-fill-end: rgba(102, 205, 141, 0.2);
+  --selection-border: rgba(217, 251, 226, 0.98);
+  --selection-shadow: rgba(108, 192, 132, 0.22);
+}
+
+.selection-region--blue {
+  --selection-fill-start: rgba(178, 226, 255, 0.34);
+  --selection-fill-mid: rgba(120, 194, 247, 0.22);
+  --selection-fill-end: rgba(92, 168, 239, 0.2);
+  --selection-border: rgba(212, 239, 255, 0.98);
+  --selection-shadow: rgba(102, 161, 222, 0.22);
+}
+
+.selection-region--purple {
+  --selection-fill-start: rgba(225, 209, 255, 0.35);
+  --selection-fill-mid: rgba(193, 162, 246, 0.22);
+  --selection-fill-end: rgba(162, 129, 232, 0.2);
+  --selection-border: rgba(236, 227, 255, 0.98);
+  --selection-shadow: rgba(151, 120, 216, 0.24);
+}
+
+.selection-region__deco {
+  position: absolute;
+  display: block;
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+  opacity: 0.98;
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.2));
+}
+
+.selection-region__deco--top {
+  top: -7px;
+  left: -6px;
+  width: calc(100% + 12px) !important;
+  height: 30px !important;
+  object-fit: fill;
+  border-radius: 0;
+}
+
+.selection-region__deco--strawberry {
+  filter: drop-shadow(0 3px 6px rgba(255, 163, 178, 0.3));
+}
+
+.selection-region__deco--drip {
+  top: -10px;
+  left: -8px;
+  right: -8px;
+  width: calc(100% + 16px) !important;
+  height: 34px !important;
+  object-fit: fill;
+}
+
+.selection-region__deco--tintable {
+  opacity: 0.94;
 }
 
 .sidebar {

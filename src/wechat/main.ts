@@ -67,10 +67,51 @@ interface TileSpec {
 
 interface LandingAssets {
   background: WechatImage | null;
+  gameplayBackground: WechatImage | null;
   newGameButton: WechatImage | null;
   leaderboardButton: WechatImage | null;
   checkIcon: WechatImage | null;
   helpIcon: WechatImage | null;
+  sunIcon: WechatImage | null;
+  trophyIcon: WechatImage | null;
+  lightbulbIcon: WechatImage | null;
+  noteIcon: WechatImage | null;
+  flagIcon: WechatImage | null;
+  checklistIcon: WechatImage | null;
+  cloudFaceIcon: WechatImage | null;
+  mascotCatCloud: WechatImage | null;
+  bottomButtonIcons: WechatImage | null;
+  decorSheet: WechatImage | null;
+  selectionStrawberry: WechatImage | null;
+  selectionHeartPink: WechatImage | null;
+  selectionStarYellow: WechatImage | null;
+  selectionSparkleWhite: WechatImage | null;
+  selectionBubblePink: WechatImage | null;
+  selectionBubbleYellow: WechatImage | null;
+  selectionDripYellow: WechatImage | null;
+  settingsCloudSmileHeart: WechatImage | null;
+  settingsStarPinkBig: WechatImage | null;
+  settingsMusicBadge: WechatImage | null;
+  settingsVibrationBadge: WechatImage | null;
+  settingsCloudClusterLeft: WechatImage | null;
+  settingsHeartCorner: WechatImage | null;
+  settingsHeartSmall: WechatImage | null;
+  settingsSparkleWhite: WechatImage | null;
+  settingsStarYellowSmall: WechatImage | null;
+  levelPanelCloudLeft: WechatImage | null;
+  levelPanelCloudRight: WechatImage | null;
+  levelPanelCloudSmileHeart: WechatImage | null;
+  levelPanelHeartPink: WechatImage | null;
+  levelPanelRibbonPink: WechatImage | null;
+  leaderboardRibbonPurple: WechatImage | null;
+  leaderboardBunnyPeekLeft: WechatImage | null;
+  leaderboardRainbowCloud: WechatImage | null;
+  leaderboardEmptyTrophyBunny: WechatImage | null;
+  levelPanelStarBigYellow: WechatImage | null;
+  levelPanelStarBlue: WechatImage | null;
+  levelPanelStarFaceYellow: WechatImage | null;
+  levelPanelStarPink: WechatImage | null;
+  levelPanelSparkleWhite: WechatImage | null;
 }
 
 interface UserSettings {
@@ -143,11 +184,52 @@ declare global {
 let cachedCanvas: WechatCanvasLike | null = null;
 
 const WECHAT_ASSET_PATHS = {
-  background: 'assets/wechat/bg.jpg',
-  newGameButton: 'assets/wechat/new_game2.png',
-  leaderboardButton: 'assets/wechat/rank_cutout.png',
-  checkIcon: 'assets/wechat/check_icon.png',
-  helpIcon: 'assets/wechat/help_icon.png',
+  background: 'dist-wechat/assets/wechat/bg.jpg',
+  gameplayBackground: 'dist-wechat/assets/wechat/bg_kawaii.png',
+  newGameButton: 'dist-wechat/assets/wechat/new_game2.png',
+  leaderboardButton: 'dist-wechat/assets/wechat/rank_cutout.png',
+  checkIcon: 'dist-wechat/assets/wechat/check_icon.png',
+  helpIcon: 'dist-wechat/assets/wechat/help_icon.png',
+  sunIcon: 'dist-wechat/assets/wechat/kawaii/icon-sun.png',
+  trophyIcon: 'dist-wechat/assets/wechat/kawaii/icon-trophy.png',
+  lightbulbIcon: 'dist-wechat/assets/wechat/kawaii/icon-lightbulb.png',
+  noteIcon: 'dist-wechat/assets/wechat/kawaii/icon-note.png',
+  flagIcon: 'dist-wechat/assets/wechat/kawaii/icon-flag.png',
+  checklistIcon: 'dist-wechat/assets/wechat/kawaii/icon-checklist.png',
+  cloudFaceIcon: 'dist-wechat/assets/wechat/kawaii/icon-cloud-face.png',
+  mascotCatCloud: 'dist-wechat/assets/wechat/kawaii/mascot-cat-cloud.png',
+  bottomButtonIcons: 'dist-wechat/assets/wechat/kawaii/bottom-btn.png',
+  decorSheet: 'dist-wechat/assets/wechat/kawaii/icon-star-heart-cloud.png',
+  selectionStrawberry: 'dist-wechat/assets/wechat/selection/selection_decor_strawberry.png',
+  selectionHeartPink: 'dist-wechat/assets/wechat/selection/selection_decor_heart_pink.png',
+  selectionStarYellow: 'dist-wechat/assets/wechat/selection/selection_decor_star_yellow.png',
+  selectionSparkleWhite: 'dist-wechat/assets/wechat/selection/selection_decor_sparkle_white.png',
+  selectionBubblePink: 'dist-wechat/assets/wechat/selection/selection_decor_bubble_pink.png',
+  selectionBubbleYellow: 'dist-wechat/assets/wechat/selection/selection_decor_bubble_yellow.png',
+  selectionDripYellow: 'dist-wechat/assets/wechat/selection/selection_top_drip_yellow.png',
+  settingsCloudSmileHeart: 'dist-wechat/assets/wechat/settings/decor_cloud_smile_heart.png',
+  settingsStarPinkBig: 'dist-wechat/assets/wechat/settings/decor_star_pink_big.png',
+  settingsMusicBadge: 'dist-wechat/assets/wechat/settings/icon_music_badge.png',
+  settingsVibrationBadge: 'dist-wechat/assets/wechat/settings/icon_vibration_badge.png',
+  settingsCloudClusterLeft: 'dist-wechat/assets/wechat/settings/decor_cloud_cluster_left.png',
+  settingsHeartCorner: 'dist-wechat/assets/wechat/settings/decor_heart_corner.png',
+  settingsHeartSmall: 'dist-wechat/assets/wechat/settings/decor_heart_small.png',
+  settingsSparkleWhite: 'dist-wechat/assets/wechat/settings/decor_sparkle_white.png',
+  settingsStarYellowSmall: 'dist-wechat/assets/wechat/settings/decor_star_yellow_small_transparent.png',
+  levelPanelCloudLeft: 'dist-wechat/assets/wechat/level-panel/decor_cloud_cluster_left.png',
+  levelPanelCloudRight: 'dist-wechat/assets/wechat/level-panel/decor_cloud_cluster_right.png',
+  levelPanelCloudSmileHeart: 'dist-wechat/assets/wechat/level-panel/decor_cloud_smile_heart.png',
+  levelPanelHeartPink: 'dist-wechat/assets/wechat/level-panel/decor_heart_pink.png',
+  levelPanelRibbonPink: 'dist-wechat/assets/wechat/level-panel/decor_ribbon_pink.png',
+  leaderboardRibbonPurple: 'dist-wechat/assets/wechat/leaderboard/decor_ribbon_leaderboard_purple.png',
+  leaderboardBunnyPeekLeft: 'dist-wechat/assets/wechat/leaderboard/decor_bunny_peek_left.png',
+  leaderboardRainbowCloud: 'dist-wechat/assets/wechat/leaderboard/decor_rainbow_cloud.png',
+  leaderboardEmptyTrophyBunny: 'dist-wechat/assets/wechat/leaderboard/empty_trophy_bunny.png',
+  levelPanelStarBigYellow: 'dist-wechat/assets/wechat/level-panel/decor_star_big_yellow.png',
+  levelPanelStarBlue: 'dist-wechat/assets/wechat/level-panel/decor_star_blue.png',
+  levelPanelStarFaceYellow: 'dist-wechat/assets/wechat/level-panel/decor_star_face_yellow.png',
+  levelPanelStarPink: 'dist-wechat/assets/wechat/level-panel/decor_star_pink.png',
+  levelPanelSparkleWhite: 'dist-wechat/assets/wechat/level-panel/decor_sparkle_white.png',
 } as const;
 
 const SETTINGS_STORAGE_KEY = 'patch-grid-wechat-settings-v1';
@@ -373,33 +455,35 @@ function isPointInsideRect(x: number, y: number, rect: Rect): boolean {
 }
 
 function computeLayout(metrics: ScreenMetrics): UiLayout {
-  const padding = 12;
-  const gap = 6;
-  const headerHeight = 56;
-  const infoHeight = 56;
-  const rulesHeight = 72;
-  const actionsHeight = 42;
-  const bottomSafeSpacing = Math.max(16, metrics.safeBottom + 6);
+  const compact = metrics.height < 780;
+  const padding = compact ? 12 : 14;
+  const gap = compact ? 8 : 9;
+  const topBarHeight = compact ? 30 : 32;
+  const headerHeight = compact ? 96 : 104;
+  const infoHeight = compact ? 74 : 82;
+  const rulesHeight = compact ? 78 : 84;
+  const actionsHeight = compact ? 86 : 94;
+  const bottomSafeSpacing = Math.max(18, metrics.safeBottom + 10);
+  const topBarY = Math.max(2, metrics.safeTop - (compact ? 22 : 24));
   const headerRect = {
     x: padding,
-    y: metrics.safeTop + 14,
+    y: topBarY + topBarHeight + 2,
     width: metrics.width - padding * 2,
     height: headerHeight,
   };
 
-  const infoY = headerRect.y + headerHeight + 8;
-  const hintWidth = Math.max(156, Math.floor((metrics.width - padding * 2 - gap * 2) * 0.42));
-  const smallCardWidth = Math.floor((metrics.width - padding * 2 - gap * 2 - hintWidth) / 2);
+  const infoY = headerRect.y + headerHeight + gap;
+  const cardWidth = Math.floor((metrics.width - padding * 2 - gap * 2) / 3);
   const hintRect = {
     x: padding,
     y: infoY,
-    width: hintWidth,
+    width: cardWidth,
     height: infoHeight,
   };
   const recordRect = {
     x: hintRect.x + hintRect.width + gap,
     y: infoY,
-    width: smallCardWidth,
+    width: cardWidth,
     height: infoHeight,
   };
   const progressRect = {
@@ -420,16 +504,16 @@ function computeLayout(metrics: ScreenMetrics): UiLayout {
     width: metrics.width - padding * 2,
     height: rulesHeight,
   };
-  const topInset = infoY + infoHeight + 12;
-  const bottomInset = metrics.height - (rulesRect.y - 10);
+  const topInset = infoY + infoHeight + 8;
+  const bottomInset = Math.max(106, metrics.height - rulesRect.y + 10);
 
   return {
     headerRect,
     chipRect: {
-      x: headerRect.x + headerRect.width - 92,
-      y: headerRect.y + 6,
-      width: 78,
-      height: 26,
+      x: headerRect.x + headerRect.width - (compact ? 108 : 116),
+      y: headerRect.y + (compact ? 18 : 22),
+      width: compact ? 94 : 102,
+      height: compact ? 42 : 46,
     },
     hintRect,
     recordRect,
@@ -444,55 +528,34 @@ function computeLayout(metrics: ScreenMetrics): UiLayout {
 }
 
 function drawCardShell(context: CanvasRenderingContext2D, rect: Rect): void {
+  const radius = 22;
   context.save();
   const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
-  gradient.addColorStop(0, THEME.surfaceStrong);
-  gradient.addColorStop(1, THEME.surfaceSoft);
+  gradient.addColorStop(0, 'rgba(255, 252, 248, 0.97)');
+  gradient.addColorStop(1, 'rgba(255, 247, 241, 0.92)');
   context.fillStyle = gradient;
-  context.strokeStyle = THEME.border;
-  context.lineWidth = 1.2;
-  context.shadowColor = THEME.shadow;
+  context.strokeStyle = 'rgba(255, 203, 214, 0.95)';
+  context.lineWidth = 2.2;
+  context.shadowColor = 'rgba(188, 115, 149, 0.2)';
   context.shadowBlur = 18;
   context.shadowOffsetY = 8;
-  roundRect(context, rect, 14);
+  roundRect(context, rect, radius);
   context.fill();
   context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.save();
+  context.setLineDash([5, 4]);
+  context.strokeStyle = 'rgba(255, 174, 189, 0.88)';
+  context.lineWidth = 1.3;
+  roundRect(context, {
+    x: rect.x + 7,
+    y: rect.y + 7,
+    width: rect.width - 14,
+    height: rect.height - 14,
+  }, Math.max(10, radius - 6));
   context.stroke();
   context.restore();
-}
-
-function drawHudShell(context: CanvasRenderingContext2D, rect: Rect): void {
-  context.save();
-  const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
-  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
-  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.72)');
-  context.fillStyle = gradient;
-  context.strokeStyle = THEME.border;
-  context.lineWidth = 1.1;
-  context.shadowColor = THEME.shadow;
-  context.shadowBlur = 14;
-  context.shadowOffsetY = 5;
-  roundRect(context, rect, 18);
-  context.fill();
-  context.shadowColor = 'transparent';
-  context.stroke();
-  context.restore();
-}
-
-function drawToolbarShell(context: CanvasRenderingContext2D, rect: Rect): void {
-  context.save();
-  const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
-  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
-  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.82)');
-  context.fillStyle = gradient;
-  context.strokeStyle = THEME.border;
-  context.shadowColor = THEME.shadow;
-  context.shadowBlur = 22;
-  context.shadowOffsetY = 10;
-  roundRect(context, rect, 22);
-  context.fill();
-  context.shadowColor = 'transparent';
-  context.stroke();
   context.restore();
 }
 
@@ -513,6 +576,312 @@ function drawTextFrame(
   context.fill();
   context.stroke();
   context.restore();
+}
+
+function drawCatCloudMascot(
+  context: CanvasRenderingContext2D,
+  rect: Rect,
+  image: WechatImage | null,
+): void {
+  if (image) {
+    drawImageFit(context, image, rect);
+    return;
+  }
+
+  const cloud = {
+    x: rect.x + 4,
+    y: rect.y + rect.height - 52,
+    width: 86,
+    height: 58,
+  };
+
+  context.save();
+  const cloudGradient = context.createLinearGradient(cloud.x, cloud.y, cloud.x, cloud.y + cloud.height);
+  cloudGradient.addColorStop(0, '#ffb3d0');
+  cloudGradient.addColorStop(1, '#ff8db8');
+  context.fillStyle = cloudGradient;
+  context.shadowColor = 'rgba(255, 154, 191, 0.28)';
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 6;
+  roundRect(context, cloud, 28);
+  context.fill();
+  context.shadowColor = 'transparent';
+
+  context.fillStyle = '#fff8f4';
+  context.beginPath();
+  context.arc(rect.x + 34, rect.y + 28, 18, Math.PI * 0.2, Math.PI * 1.95);
+  context.arc(rect.x + 52, rect.y + 30, 18, Math.PI * 1.1, Math.PI * 0.1, true);
+  context.closePath();
+  context.fill();
+  context.beginPath();
+  context.moveTo(rect.x + 25, rect.y + 18);
+  context.lineTo(rect.x + 19, rect.y + 7);
+  context.lineTo(rect.x + 31, rect.y + 12);
+  context.closePath();
+  context.fill();
+  context.beginPath();
+  context.moveTo(rect.x + 55, rect.y + 12);
+  context.lineTo(rect.x + 66, rect.y + 8);
+  context.lineTo(rect.x + 61, rect.y + 20);
+  context.closePath();
+  context.fill();
+
+  context.strokeStyle = '#7a4858';
+  context.lineWidth = 2;
+  context.lineCap = 'round';
+  context.beginPath();
+  context.moveTo(rect.x + 31, rect.y + 31);
+  context.lineTo(rect.x + 35, rect.y + 28);
+  context.moveTo(rect.x + 49, rect.y + 28);
+  context.lineTo(rect.x + 53, rect.y + 31);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(rect.x + 40, rect.y + 36);
+  context.quadraticCurveTo(rect.x + 43, rect.y + 40, rect.x + 46, rect.y + 36);
+  context.stroke();
+  context.fillStyle = '#ffb1ba';
+  context.beginPath();
+  context.arc(rect.x + 28, rect.y + 37, 4, 0, Math.PI * 2);
+  context.arc(rect.x + 57, rect.y + 37, 4, 0, Math.PI * 2);
+  context.fill();
+
+  context.strokeStyle = '#fff8f4';
+  context.lineWidth = 5;
+  context.beginPath();
+  context.moveTo(cloud.x + 22, cloud.y + 10);
+  context.lineTo(cloud.x + 14, cloud.y + 24);
+  context.moveTo(cloud.x + 64, cloud.y + 10);
+  context.lineTo(cloud.x + 72, cloud.y + 24);
+  context.stroke();
+  context.restore();
+}
+
+function drawRuleBunnyPeek(context: CanvasRenderingContext2D, rect: Rect): void {
+  const bodyRect = {
+    x: rect.x + rect.width * 0.10,
+    y: rect.y + rect.height * 0.34,
+    width: rect.width * 0.80,
+    height: rect.height * 0.54,
+  };
+  const earWidth = rect.width * 0.24;
+  const earHeight = rect.height * 0.54;
+
+  context.save();
+  context.shadowColor = 'rgba(255, 170, 195, 0.24)';
+  context.shadowBlur = 12;
+  context.shadowOffsetY = 4;
+
+  const faceGradient = context.createLinearGradient(
+    bodyRect.x,
+    bodyRect.y,
+    bodyRect.x,
+    bodyRect.y + bodyRect.height,
+  );
+  faceGradient.addColorStop(0, '#fffdf8');
+  faceGradient.addColorStop(1, '#fff2e8');
+  context.fillStyle = faceGradient;
+  roundRect(context, bodyRect, bodyRect.height / 2);
+  context.fill();
+  context.shadowColor = 'transparent';
+
+  const drawEar = (ear: Rect, leanLeft: boolean): void => {
+    context.save();
+    const earGradient = context.createLinearGradient(ear.x, ear.y, ear.x, ear.y + ear.height);
+    earGradient.addColorStop(0, '#fffdf8');
+    earGradient.addColorStop(1, '#ffe9f0');
+    context.fillStyle = earGradient;
+    context.strokeStyle = 'rgba(255, 196, 212, 0.92)';
+    context.lineWidth = 2;
+    roundRect(context, ear, ear.width / 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#ffb7ca';
+    context.beginPath();
+    context.ellipse(
+      ear.x + ear.width * 0.55,
+      ear.y + ear.height * 0.54,
+      ear.width * 0.22,
+      ear.height * 0.30,
+      leanLeft ? -0.18 : 0.18,
+      0,
+      Math.PI * 2,
+    );
+    context.fill();
+    context.restore();
+  };
+
+  drawEar(
+    {
+      x: rect.x + rect.width * 0.18,
+      y: rect.y + rect.height * 0.02,
+      width: earWidth,
+      height: earHeight,
+    },
+    true,
+  );
+  drawEar(
+    {
+      x: rect.x + rect.width * 0.47,
+      y: rect.y,
+      width: earWidth,
+      height: earHeight,
+    },
+    false,
+  );
+
+  context.fillStyle = '#7a4b3d';
+  context.beginPath();
+  context.arc(bodyRect.x + bodyRect.width * 0.38, bodyRect.y + bodyRect.height * 0.42, 2.6, 0, Math.PI * 2);
+  context.arc(bodyRect.x + bodyRect.width * 0.62, bodyRect.y + bodyRect.height * 0.42, 2.6, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = '#ff8fa8';
+  context.beginPath();
+  context.arc(bodyRect.x + bodyRect.width * 0.25, bodyRect.y + bodyRect.height * 0.54, 4.5, 0, Math.PI * 2);
+  context.arc(bodyRect.x + bodyRect.width * 0.75, bodyRect.y + bodyRect.height * 0.54, 4.5, 0, Math.PI * 2);
+  context.fill();
+
+  context.strokeStyle = '#7a4b3d';
+  context.lineWidth = 1.8;
+  context.lineCap = 'round';
+  context.beginPath();
+  context.moveTo(bodyRect.x + bodyRect.width * 0.50, bodyRect.y + bodyRect.height * 0.46);
+  context.quadraticCurveTo(
+    bodyRect.x + bodyRect.width * 0.47,
+    bodyRect.y + bodyRect.height * 0.54,
+    bodyRect.x + bodyRect.width * 0.50,
+    bodyRect.y + bodyRect.height * 0.61,
+  );
+  context.stroke();
+
+  context.fillStyle = '#fff2e8';
+  context.beginPath();
+  context.arc(bodyRect.x + bodyRect.width * 0.14, bodyRect.y + bodyRect.height * 0.88, 5, 0, Math.PI * 2);
+  context.arc(bodyRect.x + bodyRect.width * 0.86, bodyRect.y + bodyRect.height * 0.88, 5, 0, Math.PI * 2);
+  context.fill();
+
+  context.restore();
+}
+
+function drawCardBadge(
+  context: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  palette: { start: string; end: string; outline: string },
+  icon: 'hint' | 'note' | 'flag' | 'rules',
+  image: WechatImage | null,
+  size = 36,
+): void {
+  const half = size / 2;
+  const scale = size / 36;
+  if (image) {
+    drawImageFit(context, image, {
+      x: centerX - half,
+      y: centerY - half,
+      width: size,
+      height: size,
+    });
+    return;
+  }
+
+  const gradient = context.createLinearGradient(centerX, centerY - half, centerX, centerY + half);
+  gradient.addColorStop(0, palette.start);
+  gradient.addColorStop(1, palette.end);
+
+  context.save();
+  context.fillStyle = gradient;
+  context.strokeStyle = 'rgba(255,255,255,0.92)';
+  context.lineWidth = 2;
+  context.shadowColor = 'rgba(178, 116, 145, 0.16)';
+  context.shadowBlur = 10;
+  context.shadowOffsetY = 4;
+  context.beginPath();
+  context.arc(centerX, centerY, half, 0, Math.PI * 2);
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.strokeStyle = palette.outline;
+  context.fillStyle = palette.outline;
+  context.lineWidth = 2;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+
+  if (icon === 'hint') {
+    context.beginPath();
+    context.arc(centerX, centerY - 2 * scale, 5 * scale, 0, Math.PI * 2);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(centerX - 3 * scale, centerY + 6 * scale);
+    context.lineTo(centerX + 3 * scale, centerY + 6 * scale);
+    context.moveTo(centerX - 1.5 * scale, centerY + 9 * scale);
+    context.lineTo(centerX + 1.5 * scale, centerY + 9 * scale);
+    context.stroke();
+  } else if (icon === 'note') {
+    roundRect(context, {
+      x: centerX - 7 * scale,
+      y: centerY - 8 * scale,
+      width: 14 * scale,
+      height: 16 * scale,
+    }, 4 * scale);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(centerX - 3 * scale, centerY - 10 * scale);
+    context.lineTo(centerX - 3 * scale, centerY - 6 * scale);
+    context.moveTo(centerX + 3 * scale, centerY - 10 * scale);
+    context.lineTo(centerX + 3 * scale, centerY - 6 * scale);
+    context.moveTo(centerX - 4 * scale, centerY - 2 * scale);
+    context.lineTo(centerX + 4 * scale, centerY - 2 * scale);
+    context.moveTo(centerX - 4 * scale, centerY + 2 * scale);
+    context.lineTo(centerX + 2 * scale, centerY + 2 * scale);
+    context.stroke();
+  } else if (icon === 'flag') {
+    context.beginPath();
+    context.moveTo(centerX - 4 * scale, centerY + 9 * scale);
+    context.lineTo(centerX - 4 * scale, centerY - 9 * scale);
+    context.lineTo(centerX + 7 * scale, centerY - 5 * scale);
+    context.lineTo(centerX - 4 * scale, centerY - 1 * scale);
+    context.stroke();
+  } else {
+    roundRect(context, {
+      x: centerX - 7 * scale,
+      y: centerY - 9 * scale,
+      width: 14 * scale,
+      height: 18 * scale,
+    }, 4 * scale);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(centerX - 3 * scale, centerY - 11 * scale);
+    context.lineTo(centerX - 3 * scale, centerY - 7 * scale);
+    context.moveTo(centerX + 3 * scale, centerY - 11 * scale);
+    context.lineTo(centerX + 3 * scale, centerY - 7 * scale);
+    context.moveTo(centerX - 4 * scale, centerY - 1 * scale);
+    context.lineTo(centerX - 1 * scale, centerY + 3 * scale);
+    context.lineTo(centerX + 4 * scale, centerY - 5 * scale);
+    context.stroke();
+  }
+  context.restore();
+}
+
+function drawDecorSprite(
+  context: CanvasRenderingContext2D,
+  sheet: WechatImage | null,
+  index: number,
+  rect: Rect,
+): boolean {
+  if (!sheet) {
+    return false;
+  }
+
+  const frameWidth = (sheet.width ?? 2172) / 7;
+  const frameHeight = sheet.height ?? 724;
+  drawImageFrame(context, sheet, {
+    x: frameWidth * index,
+    y: 0,
+    width: frameWidth,
+    height: frameHeight,
+  }, rect);
+  return true;
 }
 
 function drawImageCover(
@@ -568,18 +937,77 @@ function drawImageFit(
   );
 }
 
+function drawSticker(
+  context: CanvasRenderingContext2D,
+  image: WechatImage | null,
+  rect: Rect,
+  options: {
+    rotation?: number;
+    alpha?: number;
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetY?: number;
+  } = {},
+): boolean {
+  if (!image) {
+    return false;
+  }
+
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+
+  context.save();
+  context.globalAlpha = options.alpha ?? 1;
+  context.shadowColor = options.shadowColor ?? 'rgba(255, 255, 255, 0.34)';
+  context.shadowBlur = options.shadowBlur ?? 16;
+  context.shadowOffsetY = options.shadowOffsetY ?? 4;
+  context.translate(centerX, centerY);
+  context.rotate(((options.rotation ?? 0) * Math.PI) / 180);
+  context.drawImage(
+    image as unknown as CanvasImageSource,
+    -rect.width / 2,
+    -rect.height / 2,
+    rect.width,
+    rect.height,
+  );
+  context.restore();
+  return true;
+}
+
+function drawImageFrame(
+  context: CanvasRenderingContext2D,
+  image: WechatImage,
+  sourceRect: Rect,
+  targetRect: Rect,
+): void {
+  context.drawImage(
+    image as unknown as CanvasImageSource,
+    sourceRect.x,
+    sourceRect.y,
+    sourceRect.width,
+    sourceRect.height,
+    targetRect.x,
+    targetRect.y,
+    targetRect.width,
+    targetRect.height,
+  );
+}
+
 function drawLandingTopIconBar(
   context: CanvasRenderingContext2D,
-  metrics: ScreenMetrics,
   assets: LandingAssets,
   buttons: TopIconButtonSpec[],
   pressedId: string | null,
 ): void {
+  const minX = Math.min(...buttons.map((button) => button.rect.x));
+  const minY = Math.min(...buttons.map((button) => button.rect.y));
+  const maxX = Math.max(...buttons.map((button) => button.rect.x + button.rect.width));
+  const maxY = Math.max(...buttons.map((button) => button.rect.y + button.rect.height));
   const barRect = {
-    x: 16,
-    y: metrics.safeTop + 6,
-    width: 148,
-    height: 62,
+    x: minX - 10,
+    y: Math.max(2, minY - 8),
+    width: maxX - minX + 20,
+    height: maxY - minY + 16,
   };
 
   context.save();
@@ -697,42 +1125,54 @@ function drawRoundTopIcon(
 
 function drawGameTopIconBar(
   context: CanvasRenderingContext2D,
-  metrics: ScreenMetrics,
   buttons: TopIconButtonSpec[],
   pressedId: string | null,
+  assets: LandingAssets,
 ): void {
+  const minX = Math.min(...buttons.map((button) => button.rect.x));
+  const minY = Math.min(...buttons.map((button) => button.rect.y));
+  const maxX = Math.max(...buttons.map((button) => button.rect.x + button.rect.width));
+  const maxY = Math.max(...buttons.map((button) => button.rect.y + button.rect.height));
   const barRect = {
-    x: 16,
-    y: Math.max(0, metrics.safeTop - 14),
-    width: 68,
-    height: 26,
+    x: minX - 8,
+    y: Math.max(0, minY - 10),
+    width: maxX - minX + 16,
+    height: maxY - minY + 14,
   };
 
   context.save();
   const barGradient = context.createLinearGradient(barRect.x, barRect.y, barRect.x, barRect.y + barRect.height);
-  barGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
-  barGradient.addColorStop(1, 'rgba(248,244,255,0.92)');
+  barGradient.addColorStop(0, 'rgba(255,255,255,0.36)');
+  barGradient.addColorStop(1, 'rgba(255,255,255,0.18)');
   context.fillStyle = barGradient;
-  context.strokeStyle = 'rgba(255,255,255,0.98)';
-  context.lineWidth = 1;
-  context.shadowColor = 'rgba(144, 118, 153, 0.14)';
-  context.shadowBlur = 10;
-  context.shadowOffsetY = 3;
-  roundRect(context, barRect, 13);
+  context.strokeStyle = 'rgba(255,255,255,0.95)';
+  context.lineWidth = 1.6;
+  context.shadowColor = 'rgba(255,255,255,0.9)';
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 0;
+  roundRect(context, barRect, barRect.height / 2);
   context.fill();
-  context.shadowColor = 'transparent';
   context.stroke();
+  context.shadowColor = 'transparent';
 
-  context.strokeStyle = 'rgba(238, 230, 241, 0.82)';
-  context.lineWidth = 1;
+  context.strokeStyle = 'rgba(255,255,255,0.28)';
+  context.lineWidth = 1.1;
   context.beginPath();
-  context.moveTo(barRect.x + barRect.width / 2, barRect.y + 5);
-  context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 5);
+  context.moveTo(barRect.x + barRect.width / 2, barRect.y + 7);
+  context.lineTo(barRect.x + barRect.width / 2, barRect.y + barRect.height - 7);
   context.stroke();
 
   buttons.forEach((button) => {
     const pressed = pressedId === `icon:${button.id}`;
-    if (button.id === 'settings') {
+    const renderRect = {
+      ...button.rect,
+      y: button.rect.y + (pressed ? 1.5 : 0),
+    };
+    if (button.id === 'settings' && assets.sunIcon) {
+      drawImageFit(context, assets.sunIcon, renderRect);
+    } else if (button.id === 'leaderboardTop' && assets.trophyIcon) {
+      drawImageFit(context, assets.trophyIcon, renderRect);
+    } else if (button.id === 'settings') {
       drawRoundTopIcon(
         context,
         button.rect,
@@ -762,6 +1202,64 @@ function drawGameTopIconBar(
   context.restore();
 }
 
+function drawInfoMenuPill(
+  context: CanvasRenderingContext2D,
+  rect: Rect,
+  pressed: boolean,
+): void {
+  const renderRect = {
+    ...rect,
+    y: rect.y + (pressed ? 1.5 : 0),
+  };
+  const gradient = context.createLinearGradient(
+    renderRect.x,
+    renderRect.y,
+    renderRect.x,
+    renderRect.y + renderRect.height,
+  );
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.24)');
+
+  context.save();
+  context.fillStyle = gradient;
+  context.strokeStyle = 'rgba(255,255,255,0.96)';
+  context.lineWidth = 1.2;
+  context.shadowColor = 'rgba(145, 112, 153, 0.18)';
+  context.shadowBlur = 14;
+  context.shadowOffsetY = 4;
+  roundRect(context, renderRect, renderRect.height / 2);
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.stroke();
+
+  context.strokeStyle = 'rgba(255,255,255,0.88)';
+  context.lineWidth = 1.1;
+  context.beginPath();
+  context.moveTo(renderRect.x + renderRect.width * 0.58, renderRect.y + 6);
+  context.lineTo(renderRect.x + renderRect.width * 0.58, renderRect.y + renderRect.height - 6);
+  context.stroke();
+
+  context.fillStyle = '#ffffff';
+  const dotY = renderRect.y + renderRect.height / 2;
+  [renderRect.x + 20, renderRect.x + 30, renderRect.x + 40].forEach((dotX) => {
+    context.beginPath();
+    context.arc(dotX, dotY, 3.2, 0, Math.PI * 2);
+    context.fill();
+  });
+
+  const ringX = renderRect.x + renderRect.width - 20;
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = 2.2;
+  context.beginPath();
+  context.arc(ringX, dotY, 10, 0, Math.PI * 2);
+  context.stroke();
+  context.lineWidth = 1.4;
+  context.beginPath();
+  context.arc(ringX, dotY, 4.5, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
+}
+
 function getToolbarButtonStyle(
   button: ButtonSpec,
 ): {
@@ -784,32 +1282,32 @@ function getToolbarButtonStyle(
   switch (button.id) {
     case 'levels':
       return {
-        fillStart: '#ffe3bd',
-        fillEnd: '#ffd18a',
-        textColor: '#8d5c2f',
-        iconColor: '#e08d31',
+        fillStart: '#ffd469',
+        fillEnd: '#ffb649',
+        textColor: '#ffffff',
+        iconColor: '#ffffff',
         stroke: 'rgba(255,255,255,0.9)',
       };
     case 'undo':
       return {
-        fillStart: '#7dc6ff',
-        fillEnd: '#539cf4',
+        fillStart: '#cba6ff',
+        fillEnd: '#9c7bf1',
         textColor: '#ffffff',
         iconColor: '#ffffff',
         stroke: 'rgba(255,255,255,0.92)',
       };
     case 'restart':
       return {
-        fillStart: '#ffb04c',
-        fillEnd: '#ff7f19',
+        fillStart: '#ff938d',
+        fillEnd: '#ff6b74',
         textColor: '#ffffff',
         iconColor: '#ffffff',
         stroke: 'rgba(255,255,255,0.92)',
       };
     case 'hint':
       return {
-        fillStart: '#ffc8e5',
-        fillEnd: '#f5a7d0',
+        fillStart: '#ffb6df',
+        fillEnd: '#f48ec8',
         textColor: '#ffffff',
         iconColor: '#ffffff',
         stroke: 'rgba(255,255,255,0.92)',
@@ -829,9 +1327,36 @@ function drawToolbarIcon(
   context: CanvasRenderingContext2D,
   button: ButtonSpec,
   color?: string,
+  spriteSheet?: WechatImage | null,
 ): void {
+  if (spriteSheet) {
+    const frameWidth = (spriteSheet.width ?? 2172) / 5;
+    const frameHeight = spriteSheet.height ?? 724;
+    const frameIndexMap: Record<ButtonSpec['id'], number> = {
+      levels: 0,
+      undo: 1,
+      restart: 2,
+      hint: 3,
+      next: 4,
+    };
+    const frameIndex = frameIndexMap[button.id];
+    const iconRect = {
+      x: button.rect.x + button.rect.width * 0.18,
+      y: button.rect.y + button.rect.height * 0.12,
+      width: button.rect.width * 0.64,
+      height: button.rect.height * 0.42,
+    };
+    drawImageFrame(context, spriteSheet, {
+      x: frameWidth * frameIndex,
+      y: 0,
+      width: frameWidth,
+      height: frameHeight,
+    }, iconRect);
+    return;
+  }
+
   const centerX = button.rect.x + button.rect.width / 2;
-  const centerY = button.rect.y + 15;
+  const centerY = button.rect.y + button.rect.height * 0.38;
   const iconColor = color ?? (button.enabled ? THEME.accent : THEME.disabledText);
 
   context.save();
@@ -993,12 +1518,53 @@ function getRecordDetail(
 async function bootstrapWechatGame(): Promise<void> {
   const locale = resolveLocale();
   const canvas = resolveWechatCanvas();
-  const landingAssets: LandingAssets = {
+    const landingAssets: LandingAssets = {
     background: null,
+    gameplayBackground: null,
     newGameButton: null,
     leaderboardButton: null,
     checkIcon: null,
     helpIcon: null,
+    sunIcon: null,
+    trophyIcon: null,
+    lightbulbIcon: null,
+    noteIcon: null,
+    flagIcon: null,
+    checklistIcon: null,
+    cloudFaceIcon: null,
+    mascotCatCloud: null,
+    bottomButtonIcons: null,
+    decorSheet: null,
+    selectionStrawberry: null,
+    selectionHeartPink: null,
+    selectionStarYellow: null,
+    selectionSparkleWhite: null,
+    selectionBubblePink: null,
+    selectionBubbleYellow: null,
+    selectionDripYellow: null,
+    settingsCloudSmileHeart: null,
+    settingsStarPinkBig: null,
+    settingsMusicBadge: null,
+    settingsVibrationBadge: null,
+    settingsCloudClusterLeft: null,
+    settingsHeartCorner: null,
+    settingsHeartSmall: null,
+    settingsSparkleWhite: null,
+    settingsStarYellowSmall: null,
+    levelPanelCloudLeft: null,
+    levelPanelCloudRight: null,
+    levelPanelCloudSmileHeart: null,
+    levelPanelHeartPink: null,
+    levelPanelRibbonPink: null,
+    leaderboardRibbonPurple: null,
+    leaderboardBunnyPeekLeft: null,
+    leaderboardRainbowCloud: null,
+    leaderboardEmptyTrophyBunny: null,
+    levelPanelStarBigYellow: null,
+    levelPanelStarBlue: null,
+    levelPanelStarFaceYellow: null,
+    levelPanelStarPink: null,
+    levelPanelSparkleWhite: null,
   };
   const metrics = getWindowMetrics();
   const layout = computeLayout(metrics);
@@ -1058,6 +1624,9 @@ async function bootstrapWechatGame(): Promise<void> {
   let leaderboardPanelRect: Rect | null = null;
   let infoDialogPanelRect: Rect | null = null;
   let infoDialogButtonRect: Rect | null = null;
+  let infoDialogLeaderboardButtonRect: Rect | null = null;
+  let infoDialogMenuRect: Rect | null = null;
+  let infoDialogTopButtons: TopIconButtonSpec[] = [];
   let settingsDialogPanelRect: Rect | null = null;
   let settingsBackButtonRect: Rect | null = null;
   let settingsContinueButtonRect: Rect | null = null;
@@ -1070,67 +1639,203 @@ async function bootstrapWechatGame(): Promise<void> {
   let lastAutoAdvanceCelebrationId = 0;
   let autoAdvanceBannerUntil = 0;
   let lastCampaignCompletionCelebrationId = 0;
+  let infoDialogOpenAt = 0;
 
-  const [backgroundImage, newGameButtonImage, leaderboardButtonImage, checkIconImage, helpIconImage] = await Promise.all([
+  const [
+    backgroundImage,
+    gameplayBackgroundImage,
+    newGameButtonImage,
+    leaderboardButtonImage,
+    checkIconImage,
+    helpIconImage,
+    sunIconImage,
+    trophyIconImage,
+    lightbulbIconImage,
+    noteIconImage,
+    flagIconImage,
+    checklistIconImage,
+    cloudFaceIconImage,
+    mascotCatCloudImage,
+    bottomButtonIconsImage,
+    decorSheetImage,
+    selectionStrawberryImage,
+    selectionHeartPinkImage,
+    selectionStarYellowImage,
+    selectionSparkleWhiteImage,
+    selectionBubblePinkImage,
+    selectionBubbleYellowImage,
+    selectionDripYellowImage,
+    settingsCloudSmileHeartImage,
+    settingsStarPinkBigImage,
+    settingsMusicBadgeImage,
+    settingsVibrationBadgeImage,
+    settingsCloudClusterLeftImage,
+    settingsHeartCornerImage,
+    settingsHeartSmallImage,
+    settingsSparkleWhiteImage,
+    settingsStarYellowSmallImage,
+    levelPanelCloudLeftImage,
+    levelPanelCloudRightImage,
+    levelPanelCloudSmileHeartImage,
+    levelPanelHeartPinkImage,
+    levelPanelRibbonPinkImage,
+    leaderboardRibbonPurpleImage,
+    leaderboardBunnyPeekLeftImage,
+    leaderboardRainbowCloudImage,
+    leaderboardEmptyTrophyBunnyImage,
+    levelPanelStarBigYellowImage,
+    levelPanelStarBlueImage,
+    levelPanelStarFaceYellowImage,
+    levelPanelStarPinkImage,
+    levelPanelSparkleWhiteImage,
+  ] = await Promise.all([
     loadWechatImage(canvas, WECHAT_ASSET_PATHS.background),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.gameplayBackground),
     loadWechatImage(canvas, WECHAT_ASSET_PATHS.newGameButton),
     loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardButton),
     loadWechatImage(canvas, WECHAT_ASSET_PATHS.checkIcon),
     loadWechatImage(canvas, WECHAT_ASSET_PATHS.helpIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.sunIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.trophyIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.lightbulbIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.noteIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.flagIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.checklistIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.cloudFaceIcon),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.mascotCatCloud),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.bottomButtonIcons),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.decorSheet),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionStrawberry),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionHeartPink),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionStarYellow),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionSparkleWhite),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionBubblePink),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionBubbleYellow),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.selectionDripYellow),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsCloudSmileHeart),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsStarPinkBig),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsMusicBadge),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsVibrationBadge),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsCloudClusterLeft),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsHeartCorner),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsHeartSmall),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsSparkleWhite),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.settingsStarYellowSmall),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelCloudLeft),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelCloudRight),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelCloudSmileHeart),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelHeartPink),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelRibbonPink),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardRibbonPurple),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardBunnyPeekLeft),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardRainbowCloud),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.leaderboardEmptyTrophyBunny),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelStarBigYellow),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelStarBlue),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelStarFaceYellow),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelStarPink),
+    loadWechatImage(canvas, WECHAT_ASSET_PATHS.levelPanelSparkleWhite),
   ]);
 
   landingAssets.background = backgroundImage;
+  landingAssets.gameplayBackground = gameplayBackgroundImage;
   landingAssets.newGameButton = newGameButtonImage;
   landingAssets.leaderboardButton = leaderboardButtonImage;
   landingAssets.checkIcon = checkIconImage;
   landingAssets.helpIcon = helpIconImage;
+  landingAssets.sunIcon = sunIconImage;
+  landingAssets.trophyIcon = trophyIconImage;
+  landingAssets.lightbulbIcon = lightbulbIconImage;
+  landingAssets.noteIcon = noteIconImage;
+  landingAssets.flagIcon = flagIconImage;
+  landingAssets.checklistIcon = checklistIconImage;
+  landingAssets.cloudFaceIcon = cloudFaceIconImage;
+  landingAssets.mascotCatCloud = mascotCatCloudImage;
+  landingAssets.bottomButtonIcons = bottomButtonIconsImage;
+  landingAssets.decorSheet = decorSheetImage;
+  landingAssets.selectionStrawberry = selectionStrawberryImage;
+  landingAssets.selectionHeartPink = selectionHeartPinkImage;
+  landingAssets.selectionStarYellow = selectionStarYellowImage;
+  landingAssets.selectionSparkleWhite = selectionSparkleWhiteImage;
+  landingAssets.selectionBubblePink = selectionBubblePinkImage;
+  landingAssets.selectionBubbleYellow = selectionBubbleYellowImage;
+  landingAssets.selectionDripYellow = selectionDripYellowImage;
+  landingAssets.settingsCloudSmileHeart = settingsCloudSmileHeartImage;
+  landingAssets.settingsStarPinkBig = settingsStarPinkBigImage;
+  landingAssets.settingsMusicBadge = settingsMusicBadgeImage;
+  landingAssets.settingsVibrationBadge = settingsVibrationBadgeImage;
+  landingAssets.settingsCloudClusterLeft = settingsCloudClusterLeftImage;
+  landingAssets.settingsHeartCorner = settingsHeartCornerImage;
+  landingAssets.settingsHeartSmall = settingsHeartSmallImage;
+  landingAssets.settingsSparkleWhite = settingsSparkleWhiteImage;
+  landingAssets.settingsStarYellowSmall = settingsStarYellowSmallImage;
+  landingAssets.levelPanelCloudLeft = levelPanelCloudLeftImage;
+  landingAssets.levelPanelCloudRight = levelPanelCloudRightImage;
+  landingAssets.levelPanelCloudSmileHeart = levelPanelCloudSmileHeartImage;
+  landingAssets.levelPanelHeartPink = levelPanelHeartPinkImage;
+  landingAssets.levelPanelRibbonPink = levelPanelRibbonPinkImage;
+  landingAssets.leaderboardRibbonPurple = leaderboardRibbonPurpleImage;
+  landingAssets.leaderboardBunnyPeekLeft = leaderboardBunnyPeekLeftImage;
+  landingAssets.leaderboardRainbowCloud = leaderboardRainbowCloudImage;
+  landingAssets.leaderboardEmptyTrophyBunny = leaderboardEmptyTrophyBunnyImage;
+  landingAssets.levelPanelStarBigYellow = levelPanelStarBigYellowImage;
+  landingAssets.levelPanelStarBlue = levelPanelStarBlueImage;
+  landingAssets.levelPanelStarFaceYellow = levelPanelStarFaceYellowImage;
+  landingAssets.levelPanelStarPink = levelPanelStarPinkImage;
+  landingAssets.levelPanelSparkleWhite = levelPanelSparkleWhiteImage;
 
   function drawHeader(snapshot: ReturnType<GameController['getSnapshot']>): void {
     const context = surface.getContext2D();
-    const textStartX = layout.headerRect.x + 104;
-    drawHudShell(context, layout.headerRect);
+    const compact = metrics.height < 780;
+    const textStartX = layout.headerRect.x + (compact ? 126 : 138);
+    drawCardShell(context, layout.headerRect);
+    const topButtonSize = compact ? 34 : 36;
+    const topButtonGap = compact ? 10 : 12;
+    const topButtonY = Math.max(0, metrics.safeTop - (compact ? 38 : 40));
     gameTopButtons = [
       {
         id: 'settings',
         rect: {
           x: 22,
-          y: Math.max(1, metrics.safeTop - 11),
-          width: 18,
-          height: 18,
+          y: topButtonY,
+          width: topButtonSize,
+          height: topButtonSize,
         },
       },
       {
         id: 'leaderboardTop',
         rect: {
-          x: 46,
-          y: Math.max(1, metrics.safeTop - 11),
-          width: 18,
-          height: 18,
+          x: 22 + topButtonSize + topButtonGap,
+          y: topButtonY,
+          width: topButtonSize,
+          height: topButtonSize,
         },
       },
     ];
-    drawGameTopIconBar(context, metrics, gameTopButtons, uiState.pressedUiId);
+    drawGameTopIconBar(context, gameTopButtons, uiState.pressedUiId, landingAssets);
+    drawCatCloudMascot(context, {
+      x: layout.headerRect.x + (compact ? 10 : 12),
+      y: layout.headerRect.y + (compact ? 12 : 14),
+      width: compact ? 92 : 100,
+      height: compact ? 92 : 100,
+    }, landingAssets.mascotCatCloud);
 
     context.save();
     context.textAlign = 'left';
     context.textBaseline = 'top';
-    context.fillStyle = THEME.accent;
-    context.font = '600 10px sans-serif';
-    context.fillText(t(locale, 'app.eyebrow'), textStartX, layout.headerRect.y + 7);
-
     context.fillStyle = THEME.textPrimary;
-    context.font = '700 19px sans-serif';
-    context.fillText(t(locale, 'app.title'), textStartX, layout.headerRect.y + 16);
+    context.font = `${compact ? '700 24px' : '700 28px'} sans-serif`;
+    context.fillText(t(locale, 'app.title'), textStartX, layout.headerRect.y + 18);
 
     context.fillStyle = THEME.textSecondary;
-    context.font = '600 10px sans-serif';
+    context.font = `${compact ? '600 11px' : '600 12px'} sans-serif`;
     context.fillText(
       t(locale, 'level.progress', {
         current: snapshot.levelIndex + 1,
         total: levels.length,
       }),
       textStartX,
-      layout.headerRect.y + 34,
+      layout.headerRect.y + 50,
     );
     context.fillText(
       t(locale, 'board.meta', {
@@ -1138,16 +1843,16 @@ async function bootstrapWechatGame(): Promise<void> {
         height: snapshot.level.height,
         clues: snapshot.level.clues.length,
       }),
-      textStartX + 74,
-      layout.headerRect.y + 34,
+      textStartX + (compact ? 92 : 102),
+      layout.headerRect.y + 50,
     );
 
     context.fillStyle = THEME.textPrimary;
-    context.font = '700 11px sans-serif';
+    context.font = `${compact ? '700 15px' : '700 16px'} sans-serif`;
     context.fillText(
       formatLevelName(locale, snapshot.level.number, snapshot.level.titleKey),
       textStartX,
-      layout.headerRect.y + 46,
+      layout.headerRect.y + 70,
     );
     context.restore();
 
@@ -1164,32 +1869,45 @@ async function bootstrapWechatGame(): Promise<void> {
         : snapshot.solved
           ? '#e4ffd7'
           : snapshot.preview?.validation.ok
-            ? '#fff2bb'
-            : 'rgba(255,255,255,0.82)';
+            ? '#ffe78f'
+            : '#ffe78f';
     const chipEnd =
       snapshot.mode === 'record'
         ? '#c8edff'
         : snapshot.solved
           ? '#c6ffb7'
           : snapshot.preview?.validation.ok
-            ? '#ffd96a'
-            : 'rgba(255,255,255,0.62)';
+            ? '#ffc948'
+            : '#ffc948';
     chipGradient.addColorStop(0, chipStart);
     chipGradient.addColorStop(1, chipEnd);
     context.fillStyle = chipGradient;
-    context.strokeStyle = THEME.border;
-    roundRect(context, layout.chipRect, 13);
+    context.strokeStyle = 'rgba(255,255,255,0.94)';
+    context.lineWidth = 2;
+    roundRect(context, layout.chipRect, layout.chipRect.height / 2);
     context.fill();
     context.stroke();
+    context.save();
+    context.setLineDash([5, 4]);
+    context.strokeStyle = 'rgba(255,255,255,0.9)';
+    context.lineWidth = 1.2;
+    roundRect(context, {
+      x: layout.chipRect.x + 6,
+      y: layout.chipRect.y + 5,
+      width: layout.chipRect.width - 12,
+      height: layout.chipRect.height - 10,
+    }, Math.max(10, layout.chipRect.height / 2 - 6));
+    context.stroke();
+    context.restore();
     context.fillStyle =
       snapshot.mode === 'record'
         ? THEME.info
         : snapshot.solved
           ? THEME.success
-          : THEME.accent;
+          : '#9a5b00';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = '700 12px sans-serif';
+    context.font = `${compact ? '700 17px' : '700 19px'} sans-serif`;
     context.fillText(
       snapshot.mode === 'record'
         ? t(locale, 'chip.record')
@@ -1199,13 +1917,14 @@ async function bootstrapWechatGame(): Promise<void> {
             ? t(locale, 'chip.ready')
             : t(locale, 'chip.active'),
       layout.chipRect.x + layout.chipRect.width / 2,
-      layout.chipRect.y + layout.chipRect.height / 2 + 0.5,
+      layout.chipRect.y + layout.chipRect.height / 2 + 1,
     );
     context.restore();
   }
 
   function drawInfoCards(snapshot: ReturnType<GameController['getSnapshot']>): void {
     const context = surface.getContext2D();
+    const compact = metrics.height < 780;
     const hintText = snapshot.hintMessage ? tm(locale, snapshot.hintMessage) : t(locale, 'button.hint');
     const covered = getCoveredCellCount(snapshot.level, snapshot.placements);
     const total = snapshot.level.width * snapshot.level.height;
@@ -1219,24 +1938,42 @@ async function bootstrapWechatGame(): Promise<void> {
       : '--';
     const statusSummary = snapshot.mode === 'record' ? t(locale, 'chip.record') : tm(locale, snapshot.status);
 
-    drawHudShell(context, layout.hintRect);
-    drawHudShell(context, layout.recordRect);
-    drawHudShell(context, layout.progressRect);
+    drawCardShell(context, layout.hintRect);
+    drawCardShell(context, layout.recordRect);
+    drawCardShell(context, layout.progressRect);
+
+    drawCardBadge(context, layout.hintRect.x + 18, layout.hintRect.y + 16, {
+      start: '#ffe18d',
+      end: '#ffb85f',
+      outline: '#ea7e2b',
+    }, 'hint', landingAssets.lightbulbIcon);
+    drawCardBadge(context, layout.recordRect.x + 18, layout.recordRect.y + 16, {
+      start: '#ffd59a',
+      end: '#ffb65a',
+      outline: '#e5852f',
+    }, 'note', landingAssets.noteIcon);
+    drawCardBadge(context, layout.progressRect.x + 18, layout.progressRect.y + 16, {
+      start: '#bff0b5',
+      end: '#93dc86',
+      outline: '#57a856',
+    }, 'flag', landingAssets.flagIcon);
 
     context.save();
     context.textAlign = 'left';
     context.textBaseline = 'top';
 
-    context.fillStyle = THEME.accent;
-    context.font = '700 10px sans-serif';
-    context.fillText(t(locale, 'section.hints'), layout.hintRect.x + 12, layout.hintRect.y + 8);
-    context.fillText(t(locale, 'section.record'), layout.recordRect.x + 12, layout.recordRect.y + 8);
-    context.fillText(t(locale, 'section.progress'), layout.progressRect.x + 12, layout.progressRect.y + 8);
+    context.fillStyle = '#ff4f8d';
+    context.font = '700 11px sans-serif';
+    context.fillText(t(locale, 'section.hints'), layout.hintRect.x + 42, layout.hintRect.y + 10);
+    context.fillStyle = '#ef8f2f';
+    context.fillText(t(locale, 'section.record'), layout.recordRect.x + 42, layout.recordRect.y + 10);
+    context.fillStyle = '#51a24e';
+    context.fillText(t(locale, 'section.progress'), layout.progressRect.x + 42, layout.progressRect.y + 10);
 
     context.fillStyle = THEME.textPrimary;
-    context.font = '700 12px sans-serif';
-    context.fillText(recordSummary, layout.recordRect.x + 12, layout.recordRect.y + 22);
-    context.fillText(progressPrimary, layout.progressRect.x + 12, layout.progressRect.y + 22);
+    context.font = '700 13px sans-serif';
+    context.fillText(recordSummary, layout.recordRect.x + 14, layout.recordRect.y + 34);
+    context.fillText(progressPrimary, layout.progressRect.x + 14, layout.progressRect.y + 34);
 
     context.fillStyle = THEME.textSecondary;
     context.font = '11px sans-serif';
@@ -1244,16 +1981,16 @@ async function bootstrapWechatGame(): Promise<void> {
       context,
       hintText,
       {
-        x: layout.hintRect.x + 12,
-        y: layout.hintRect.y + 22,
+        x: layout.hintRect.x + 14,
+        y: layout.hintRect.y + 34,
         width: layout.hintRect.width - 24,
-        height: layout.hintRect.height - 36,
+        height: layout.hintRect.height - 42,
       },
       {
         font: '11px sans-serif',
         color: THEME.textSecondary,
         lineHeight: 14,
-        maxLines: 2,
+        maxLines: 3,
       },
     );
     drawWrappedText(
@@ -1262,61 +1999,10 @@ async function bootstrapWechatGame(): Promise<void> {
         ? getRecordDetail(locale, snapshot.currentRecord, snapshot.mode)
         : getRecordSummary(locale, snapshot.currentRecord),
       {
-        x: layout.recordRect.x + 12,
-        y: layout.recordRect.y + 34,
+        x: layout.recordRect.x + 14,
+        y: layout.recordRect.y + 50,
         width: layout.recordRect.width - 24,
-        height: layout.recordRect.height - 46,
-      },
-      {
-        font: '10px sans-serif',
-        color: THEME.textSecondary,
-        lineHeight: 12,
-        maxLines: 1,
-      },
-    );
-    drawWrappedText(
-      context,
-      statusSummary,
-      {
-        x: layout.progressRect.x + 12,
-        y: layout.progressRect.y + 34,
-        width: layout.progressRect.width - 24,
-        height: layout.progressRect.height - 46,
-      },
-      {
-        font: '10px sans-serif',
-        color: THEME.textSecondary,
-        lineHeight: 12,
-        maxLines: 1,
-      },
-    );
-    context.restore();
-
-    drawCardShell(context, layout.rulesRect);
-    const ruleInnerRect = {
-      x: layout.rulesRect.x + 10,
-      y: layout.rulesRect.y + 8,
-      width: layout.rulesRect.width - 20,
-      height: layout.rulesRect.height - 18,
-    };
-    drawTextFrame(context, ruleInnerRect, { radius: 10 });
-
-    context.save();
-    context.textAlign = 'left';
-    context.textBaseline = 'top';
-    context.fillStyle = THEME.accent;
-    context.font = '700 10px sans-serif';
-    context.fillText(t(locale, 'section.rules'), ruleInnerRect.x + 10, ruleInnerRect.y + 7);
-    context.restore();
-
-    drawWrappedText(
-      context,
-      `${t(locale, 'rule.area')}  ·  ${t(locale, 'rule.singleClue')}  ·  ${t(locale, 'rule.cover')}`,
-      {
-        x: ruleInnerRect.x + 10,
-        y: ruleInnerRect.y + 24,
-        width: ruleInnerRect.width - 20,
-        height: ruleInnerRect.height - 34,
+        height: layout.recordRect.height - 58,
       },
       {
         font: '10px sans-serif',
@@ -1325,14 +2011,65 @@ async function bootstrapWechatGame(): Promise<void> {
         maxLines: 2,
       },
     );
+    drawWrappedText(
+      context,
+      statusSummary,
+      {
+        x: layout.progressRect.x + 14,
+        y: layout.progressRect.y + 50,
+        width: layout.progressRect.width - 24,
+        height: layout.progressRect.height - 58,
+      },
+      {
+        font: '10px sans-serif',
+        color: THEME.textSecondary,
+        lineHeight: 12,
+        maxLines: 2,
+      },
+    );
+    context.restore();
+
+    drawCardShell(context, layout.rulesRect);
+    const rulesCenterY = layout.rulesRect.y + layout.rulesRect.height / 2;
+    const rulesBadgeSize = compact ? 44 : 48;
+    const rulesBadgeCenterX = layout.rulesRect.x + (compact ? 34 : 38);
+    const rulesTitleX = layout.rulesRect.x + (compact ? 62 : 70);
+    const rulesBodyX = layout.rulesRect.x + (compact ? 118 : 128);
+    drawCardBadge(context, rulesBadgeCenterX, rulesCenterY, {
+      start: '#ffd8dc',
+      end: '#ffb0bb',
+      outline: '#ef7f8e',
+    }, 'rules', landingAssets.checklistIcon, rulesBadgeSize);
+    context.save();
+    context.textAlign = 'left';
+    context.textBaseline = 'top';
+    context.fillStyle = '#ff4f8d';
+    context.font = '700 12px sans-serif';
+    context.fillText(t(locale, 'section.rules'), rulesTitleX, rulesCenterY - 9);
+    context.restore();
+    drawWrappedText(
+      context,
+      `${t(locale, 'rule.area')}  ·  ${t(locale, 'rule.singleClue')}  ·  ${t(locale, 'rule.cover')}`,
+      {
+        x: rulesBodyX,
+        y: rulesCenterY - 16,
+        width: layout.rulesRect.width - (rulesBodyX - layout.rulesRect.x) - 16,
+        height: 34,
+      },
+      {
+        font: '11px sans-serif',
+        color: THEME.textSecondary,
+        lineHeight: 16,
+        maxLines: 2,
+      },
+    );
   }
 
   function drawButtons(snapshot: ReturnType<GameController['getSnapshot']>): void {
     const context = surface.getContext2D();
-    const gap = 8;
+    const gap = 6;
     const buttonHeight = layout.actionsRect.height;
-    const levelButtonWidth = 72;
-    const actionWidth = Math.floor((layout.actionsRect.width - levelButtonWidth - gap * 4) / 4);
+    const actionWidth = Math.floor((layout.actionsRect.width - gap * 4) / 5);
 
     buttons = [
       {
@@ -1341,7 +2078,7 @@ async function bootstrapWechatGame(): Promise<void> {
         rect: {
           x: layout.actionsRect.x,
           y: layout.actionsRect.y,
-          width: levelButtonWidth,
+          width: actionWidth,
           height: buttonHeight,
         },
         enabled: true,
@@ -1350,7 +2087,7 @@ async function bootstrapWechatGame(): Promise<void> {
         id: 'undo',
         label: t(locale, 'button.undo'),
         rect: {
-          x: layout.actionsRect.x + levelButtonWidth + gap,
+          x: layout.actionsRect.x + (actionWidth + gap),
           y: layout.actionsRect.y,
           width: actionWidth,
           height: buttonHeight,
@@ -1361,7 +2098,7 @@ async function bootstrapWechatGame(): Promise<void> {
         id: 'restart',
         label: t(locale, snapshot.mode === 'record' ? 'button.retry' : 'button.restart'),
         rect: {
-          x: layout.actionsRect.x + levelButtonWidth + gap * 2 + actionWidth,
+          x: layout.actionsRect.x + (actionWidth + gap) * 2,
           y: layout.actionsRect.y,
           width: actionWidth,
           height: buttonHeight,
@@ -1372,7 +2109,7 @@ async function bootstrapWechatGame(): Promise<void> {
         id: 'hint',
         label: t(locale, 'button.hint'),
         rect: {
-          x: layout.actionsRect.x + levelButtonWidth + gap * 3 + actionWidth * 2,
+          x: layout.actionsRect.x + (actionWidth + gap) * 3,
           y: layout.actionsRect.y,
           width: actionWidth,
           height: buttonHeight,
@@ -1383,7 +2120,7 @@ async function bootstrapWechatGame(): Promise<void> {
         id: 'next',
         label: t(locale, 'button.next'),
         rect: {
-          x: layout.actionsRect.x + levelButtonWidth + gap * 4 + actionWidth * 3,
+          x: layout.actionsRect.x + (actionWidth + gap) * 4,
           y: layout.actionsRect.y,
           width: actionWidth,
           height: buttonHeight,
@@ -1393,12 +2130,6 @@ async function bootstrapWechatGame(): Promise<void> {
     ];
 
     context.save();
-    drawToolbarShell(context, {
-      x: layout.actionsRect.x - 2,
-      y: layout.actionsRect.y - 4,
-      width: layout.actionsRect.width + 4,
-      height: layout.actionsRect.height + 8,
-    });
     for (const button of buttons) {
       const isPressed = uiState.pressedUiId === `toolbar:${button.id}`;
       const buttonY = isPressed ? button.rect.y + 1.5 : button.rect.y;
@@ -1414,26 +2145,83 @@ async function bootstrapWechatGame(): Promise<void> {
       gradient.addColorStop(1, style.fillEnd);
       context.fillStyle = gradient;
       context.strokeStyle = style.stroke;
-      context.lineWidth = 1.2;
-      context.shadowColor = 'rgba(255,255,255,0.28)';
-      context.shadowBlur = 0;
-      roundRect(context, buttonRect, 14);
+      context.lineWidth = 2;
+      context.shadowColor = 'rgba(177, 113, 143, 0.18)';
+      context.shadowBlur = 12;
+      context.shadowOffsetY = 5;
+      roundRect(context, buttonRect, 20);
       context.fill();
+      context.shadowColor = 'transparent';
       context.stroke();
 
-      drawToolbarIcon(context, { ...button, rect: buttonRect }, style.iconColor);
+      context.fillStyle = 'rgba(255,255,255,0.26)';
+      roundRect(context, {
+        x: buttonRect.x + 8,
+        y: buttonRect.y + 6,
+        width: buttonRect.width - 16,
+        height: Math.max(14, buttonRect.height * 0.22),
+      }, 10);
+      context.fill();
+
+      drawToolbarIcon(
+        context,
+        { ...button, rect: buttonRect },
+        style.iconColor,
+        landingAssets.bottomButtonIcons,
+      );
 
       context.fillStyle = style.textColor;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.font = '600 10px sans-serif';
+      context.font = '700 12px sans-serif';
       context.fillText(
         button.label,
         buttonRect.x + buttonRect.width / 2,
-        buttonRect.y + buttonRect.height - 12,
+        buttonRect.y + buttonRect.height - 18,
       );
     }
     context.restore();
+  }
+
+  function drawBoardDecorations(): void {
+    const context = surface.getContext2D();
+    const boardRect = renderer.getBoardSurfaceRect();
+
+    if (landingAssets.cloudFaceIcon) {
+      drawImageFit(context, landingAssets.cloudFaceIcon, {
+        x: boardRect.x + boardRect.width - 66,
+        y: boardRect.y + boardRect.height - 34,
+        width: 72,
+        height: 54,
+      });
+    }
+
+    if (landingAssets.decorSheet) {
+      drawDecorSprite(context, landingAssets.decorSheet, 0, {
+        x: boardRect.x - 22,
+        y: boardRect.y - 18,
+        width: 28,
+        height: 28,
+      });
+      drawDecorSprite(context, landingAssets.decorSheet, 1, {
+        x: boardRect.x + boardRect.width - 10,
+        y: boardRect.y + 8,
+        width: 22,
+        height: 22,
+      });
+      drawDecorSprite(context, landingAssets.decorSheet, 2, {
+        x: boardRect.x - 18,
+        y: boardRect.y + boardRect.height - 14,
+        width: 30,
+        height: 30,
+      });
+      drawDecorSprite(context, landingAssets.decorSheet, 4, {
+        x: layout.rulesRect.x + layout.rulesRect.width - 20,
+        y: layout.rulesRect.y + 8,
+        width: 16,
+        height: 16,
+      });
+    }
   }
 
   function drawFallbackLandingButton(
@@ -1474,11 +2262,11 @@ async function bootstrapWechatGame(): Promise<void> {
     const buttonSize = Math.min(metrics.width * 0.72, 280);
     const firstButtonTop = metrics.height * 0.58;
     const secondButtonTop = firstButtonTop + buttonSize * 0.52;
-    const iconBarY = metrics.safeTop + 6;
-    const iconBarX = 16;
+    const iconBarY = Math.max(2, metrics.safeTop - 24);
+    const iconBarX = 14;
     const iconBarWidth = 148;
     const iconBarHeight = 62;
-    const iconSize = 48;
+    const iconSize = 50;
     const leftCenterX = iconBarX + iconBarWidth * 0.25;
     const rightCenterX = iconBarX + iconBarWidth * 0.75;
     const iconTop = iconBarY + (iconBarHeight - iconSize) / 2;
@@ -1572,92 +2360,149 @@ async function bootstrapWechatGame(): Promise<void> {
       );
     }
 
-    drawLandingTopIconBar(context, metrics, landingAssets, topIconButtons, uiState.pressedUiId);
+    drawLandingTopIconBar(context, landingAssets, topIconButtons, uiState.pressedUiId);
 
     context.restore();
   }
 
   function drawInfoDialog(mode: 'help' | 'goal'): void {
     const context = surface.getContext2D();
-    const panelWidth = Math.min(metrics.width - 40, 336);
-    const panelHeight = mode === 'help' ? 490 : 398;
+    const compact = metrics.height < 780;
+    const openProgress = infoDialogOpenAt > 0 ? Math.min(1, (Date.now() - infoDialogOpenAt) / 240) : 1;
+    const pop = 0.96 + 0.04 * (1 - Math.pow(1 - openProgress, 3));
+    const topButtonY = Math.max(0, metrics.safeTop - (compact ? 38 : 40));
+    infoDialogTopButtons = [];
+
+    const menuRect = {
+      x: metrics.width - (compact ? 136 : 144),
+      y: topButtonY,
+      width: compact ? 118 : 126,
+      height: compact ? 34 : 36,
+    };
+    infoDialogMenuRect = menuRect;
+
+    const panelWidth = Math.min(metrics.width - (compact ? 24 : 30), compact ? 340 : 368);
+    const panelHeight = mode === 'help' ? (compact ? 576 : 624) : (compact ? 514 : 560);
     const panelRect = {
       x: (metrics.width - panelWidth) / 2,
-      y: Math.max(metrics.safeTop + 54, (metrics.height - panelHeight) / 2),
+      y: topButtonY + menuRect.height + (compact ? 20 : 24),
       width: panelWidth,
       height: panelHeight,
     };
-    const actionRect = {
-      x: panelRect.x + 84,
-      y: panelRect.y + panelRect.height - 58,
-      width: panelRect.width - 168,
-      height: 42,
-    };
     infoDialogPanelRect = panelRect;
-    infoDialogButtonRect = actionRect;
 
-    context.save();
-    context.fillStyle = 'rgba(83, 62, 95, 0.22)';
-    context.fillRect(0, 0, metrics.width, metrics.height);
-
-    const panelGradient = context.createLinearGradient(
-      panelRect.x,
-      panelRect.y,
-      panelRect.x,
-      panelRect.y + panelRect.height,
-    );
-    panelGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
-    panelGradient.addColorStop(1, 'rgba(252,247,255,0.96)');
-    context.fillStyle = panelGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.96)';
-    context.lineWidth = 1.2;
-    context.shadowColor = 'rgba(123, 97, 147, 0.22)';
-    context.shadowBlur = 24;
-    context.shadowOffsetY = 10;
-    roundRect(context, panelRect, 22);
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.stroke();
-
-    const titleChipRect = {
-      x: panelRect.x + 68,
-      y: panelRect.y + 18,
-      width: panelRect.width - 136,
-      height: 38,
+    const renderPanelRect = {
+      x: panelRect.x + (1 - pop) * panelRect.width / 2,
+      y: panelRect.y + (1 - pop) * panelRect.height / 2 - (1 - pop) * 10,
+      width: panelRect.width * pop,
+      height: panelRect.height * pop,
     };
-    const titleChipGradient = context.createLinearGradient(
-      titleChipRect.x,
-      titleChipRect.y,
-      titleChipRect.x,
-      titleChipRect.y + titleChipRect.height,
-    );
-    titleChipGradient.addColorStop(0, '#fff4fa');
-    titleChipGradient.addColorStop(1, '#ffe3ef');
-    context.fillStyle = titleChipGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.95)';
-    context.lineWidth = 1;
-    roundRect(context, titleChipRect, 18);
-    context.fill();
-    context.stroke();
 
-    context.textAlign = 'center';
-    context.textBaseline = 'top';
-    context.fillStyle = '#ff8e9c';
-    context.font = '700 24px sans-serif';
-    context.fillText(
-      mode === 'help' ? t(locale, 'landing.helpTitle') : t(locale, 'landing.goalTitle'),
-      panelRect.x + panelRect.width / 2,
-      panelRect.y + 24,
-    );
+    const ruleHeaderHeight = compact ? 36 : 38;
+    const ruleCardHeight = mode === 'help' ? (compact ? 198 : 214) : (compact ? 168 : 182);
+    const toolHeaderHeight = compact ? 36 : 38;
+    const toolCardHeight = compact ? 130 : 142;
+    const buttonHeight = compact ? 48 : 50;
+    const buttonWidth = Math.min(renderPanelRect.width - 84, compact ? 176 : 188);
+    const closeButtonRect = {
+      x: renderPanelRect.x + (renderPanelRect.width - buttonWidth) / 2,
+      y: renderPanelRect.y + renderPanelRect.height - buttonHeight - (compact ? 18 : 20),
+      width: buttonWidth,
+      height: buttonHeight,
+    };
+    infoDialogButtonRect = closeButtonRect;
+    infoDialogLeaderboardButtonRect = null;
 
-    context.textAlign = 'left';
-    context.fillStyle = '#4f63c6';
-    context.font = '700 18px sans-serif';
-    context.fillText(
-      mode === 'help' ? t(locale, 'landing.ruleSection') : t(locale, 'landing.goalSection'),
-      panelRect.x + 20,
-      panelRect.y + 74,
-    );
+    const drawPillLabel = (
+      rect: Rect,
+      fillStart: string,
+      fillEnd: string,
+      text: string,
+      textColor: string,
+      iconColor: string,
+    ): void => {
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      gradient.addColorStop(0, fillStart);
+      gradient.addColorStop(1, fillEnd);
+      context.save();
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255,255,255,0.95)';
+      context.lineWidth = 1.2;
+      context.shadowColor = 'rgba(188, 115, 149, 0.16)';
+      context.shadowBlur = 10;
+      context.shadowOffsetY = 4;
+      roundRect(context, rect, rect.height / 2);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.fillStyle = iconColor;
+      context.beginPath();
+      context.arc(rect.x + 18, rect.y + rect.height / 2, 7, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#ffffff';
+      context.font = '700 11px sans-serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText('✿', rect.x + 18, rect.y + rect.height / 2 + 0.2);
+      context.fillStyle = textColor;
+      context.font = '700 16px sans-serif';
+      context.textAlign = 'left';
+      context.fillText(text, rect.x + 32, rect.y + rect.height / 2 + 0.5);
+      context.restore();
+    };
+
+    const drawNumberBadge = (centerX: number, centerY: number, value: number): void => {
+      const size = compact ? 26 : 28;
+      const gradient = context.createLinearGradient(centerX, centerY - size / 2, centerX, centerY + size / 2);
+      gradient.addColorStop(0, '#fff3f7');
+      gradient.addColorStop(1, '#ffd7e5');
+      context.save();
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255, 166, 189, 0.92)';
+      context.lineWidth = 2;
+      context.shadowColor = 'rgba(188, 115, 149, 0.12)';
+      context.shadowBlur = 8;
+      context.shadowOffsetY = 3;
+      context.beginPath();
+      context.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.fillStyle = '#ff5b8f';
+      context.font = `700 ${compact ? 14 : 15}px sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(String(value), centerX, centerY + 0.5);
+      context.restore();
+    };
+
+    const drawFeatureBadge = (
+      rect: Rect,
+      fillStart: string,
+      fillEnd: string,
+      glyph: string,
+    ): void => {
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      gradient.addColorStop(0, fillStart);
+      gradient.addColorStop(1, fillEnd);
+      context.save();
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255,255,255,0.92)';
+      context.lineWidth = 1.4;
+      context.shadowColor = 'rgba(188, 115, 149, 0.16)';
+      context.shadowBlur = 10;
+      context.shadowOffsetY = 4;
+      roundRect(context, rect, 8);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.font = '700 13px sans-serif';
+      context.fillText(glyph, rect.x + rect.width / 2, rect.y + rect.height / 2 + 0.5);
+      context.restore();
+    };
 
     const bodyLines =
       mode === 'help'
@@ -1673,205 +2518,421 @@ async function bootstrapWechatGame(): Promise<void> {
             t(locale, 'landing.goalRule3'),
           ];
 
+    context.save();
+    const overlayGradient = context.createLinearGradient(0, 0, 0, metrics.height);
+    overlayGradient.addColorStop(0, 'rgba(255, 199, 222, 0.34)');
+    overlayGradient.addColorStop(0.55, 'rgba(255, 250, 252, 0.18)');
+    overlayGradient.addColorStop(1, 'rgba(161, 210, 255, 0.18)');
+    context.fillStyle = overlayGradient;
+    context.fillRect(0, 0, metrics.width, metrics.height);
+    context.restore();
+
+    drawInfoMenuPill(context, menuRect, uiState.pressedUiId === 'dialog:menu');
+
+    context.save();
+    const panelGradient = context.createLinearGradient(
+      renderPanelRect.x,
+      renderPanelRect.y,
+      renderPanelRect.x,
+      renderPanelRect.y + renderPanelRect.height,
+    );
+    panelGradient.addColorStop(0, 'rgba(255, 252, 244, 0.96)');
+    panelGradient.addColorStop(1, 'rgba(255, 244, 231, 0.96)');
+    context.fillStyle = panelGradient;
+    context.strokeStyle = 'rgba(255, 184, 198, 0.90)';
+    context.lineWidth = 3.8;
+    context.shadowColor = 'rgba(120, 70, 100, 0.22)';
+    context.shadowBlur = 24;
+    context.shadowOffsetY = 10;
+    roundRect(context, renderPanelRect, compact ? 38 : 42);
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.stroke();
+    context.save();
+    context.setLineDash([7, 6]);
+    context.strokeStyle = 'rgba(255, 165, 188, 0.66)';
+    context.lineWidth = 1.5;
+    roundRect(context, {
+      x: renderPanelRect.x + 8,
+      y: renderPanelRect.y + 8,
+      width: renderPanelRect.width - 16,
+      height: renderPanelRect.height - 16,
+    }, compact ? 32 : 36);
+    context.stroke();
+    context.restore();
+    context.restore();
+
+    if (landingAssets.levelPanelCloudLeft) {
+      drawSticker(context, landingAssets.levelPanelCloudLeft, {
+        x: renderPanelRect.x - 18,
+        y: renderPanelRect.y + renderPanelRect.height - (compact ? 52 : 58),
+        width: compact ? 60 : 66,
+        height: compact ? 46 : 52,
+      }, { shadowBlur: 6, alpha: 0.98 });
+    }
+    if (landingAssets.levelPanelCloudRight) {
+      drawSticker(context, landingAssets.levelPanelCloudRight, {
+        x: renderPanelRect.x + renderPanelRect.width - (compact ? 52 : 58),
+        y: renderPanelRect.y + renderPanelRect.height - (compact ? 50 : 56),
+        width: compact ? 58 : 64,
+        height: compact ? 50 : 56,
+      }, { shadowBlur: 6, alpha: 0.98 });
+    }
+    if (landingAssets.levelPanelStarBigYellow) {
+      drawSticker(context, landingAssets.levelPanelStarBigYellow, {
+        x: renderPanelRect.x - 26,
+        y: renderPanelRect.y + 12,
+        width: compact ? 50 : 56,
+        height: compact ? 50 : 56,
+      }, { shadowBlur: 4, alpha: 0.92 });
+    }
+    if (landingAssets.levelPanelStarPink) {
+      drawSticker(context, landingAssets.levelPanelStarPink, {
+        x: renderPanelRect.x + renderPanelRect.width - (compact ? 34 : 38),
+        y: renderPanelRect.y + 82,
+        width: compact ? 28 : 32,
+        height: compact ? 28 : 32,
+      }, { shadowBlur: 4, alpha: 0.94 });
+    }
+    if (landingAssets.levelPanelSparkleWhite) {
+      drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+        x: renderPanelRect.x + 18,
+        y: renderPanelRect.y + 58,
+        width: 16,
+        height: 16,
+      }, { shadowBlur: 3, alpha: 0.88 });
+    }
+
+    const ribbonRect = {
+      x: renderPanelRect.x + 28,
+      y: renderPanelRect.y - (compact ? 24 : 28),
+      width: renderPanelRect.width - 56,
+      height: compact ? 68 : 72,
+    };
+    if (landingAssets.levelPanelRibbonPink) {
+      drawSticker(context, landingAssets.levelPanelRibbonPink, ribbonRect, {
+        shadowBlur: 10,
+        shadowOffsetY: 4,
+        alpha: 0.98,
+      });
+    } else {
+      const ribbonGradient = context.createLinearGradient(ribbonRect.x, ribbonRect.y, ribbonRect.x, ribbonRect.y + ribbonRect.height);
+      ribbonGradient.addColorStop(0, '#ffa6c7');
+      ribbonGradient.addColorStop(1, '#ff7fb1');
+      context.save();
+      context.fillStyle = ribbonGradient;
+      context.strokeStyle = 'rgba(255,255,255,0.92)';
+      context.lineWidth = 1.4;
+      context.shadowColor = 'rgba(186, 88, 132, 0.25)';
+      context.shadowBlur = 14;
+      context.shadowOffsetY = 5;
+      roundRect(context, ribbonRect, ribbonRect.height / 2);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.beginPath();
+      context.moveTo(ribbonRect.x + 14, ribbonRect.y + 8);
+      context.lineTo(ribbonRect.x - 18, ribbonRect.y + ribbonRect.height / 2);
+      context.lineTo(ribbonRect.x + 14, ribbonRect.y + ribbonRect.height - 8);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.beginPath();
+      context.moveTo(ribbonRect.x + ribbonRect.width - 14, ribbonRect.y + 8);
+      context.lineTo(ribbonRect.x + ribbonRect.width + 18, ribbonRect.y + ribbonRect.height / 2);
+      context.lineTo(ribbonRect.x + ribbonRect.width - 14, ribbonRect.y + ribbonRect.height - 8);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    }
+
+    drawRuleBunnyPeek(context, {
+      x: ribbonRect.x + ribbonRect.width - (compact ? 82 : 92),
+      y: ribbonRect.y - (compact ? 8 : 10),
+      width: compact ? 78 : 88,
+      height: compact ? 78 : 88,
+    });
+
+    context.save();
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.lineWidth = 6;
+    context.strokeStyle = '#ffffff';
+    context.fillStyle = '#ff5fa3';
+    context.font = `${compact ? '900 31px' : '900 34px'} sans-serif`;
+    const titleText = mode === 'help' ? t(locale, 'landing.helpTitle') : t(locale, 'landing.goalTitle');
+    context.strokeText(titleText, ribbonRect.x + ribbonRect.width / 2 - 8, ribbonRect.y + ribbonRect.height / 2 + 2);
+    context.fillText(titleText, ribbonRect.x + ribbonRect.width / 2 - 8, ribbonRect.y + ribbonRect.height / 2 + 2);
+    context.restore();
+
+    const sectionTop = renderPanelRect.y + (compact ? 76 : 82);
+    const sectionTitleRect = {
+      x: renderPanelRect.x + 16,
+      y: sectionTop,
+      width: compact ? 160 : 172,
+      height: ruleHeaderHeight,
+    };
+    drawPillLabel(
+      sectionTitleRect,
+      mode === 'help' ? '#ffe7ee' : '#efe4ff',
+      mode === 'help' ? '#ffd0df' : '#dac8ff',
+      mode === 'help' ? t(locale, 'landing.ruleSection') : t(locale, 'landing.goalSection'),
+      mode === 'help' ? '#ff5fa3' : '#8b67df',
+      mode === 'help' ? '#ff9dbc' : '#b79aff',
+    );
+
     const ruleCardRect = {
-      x: panelRect.x + 18,
-      y: panelRect.y + 104,
-      width: panelRect.width - 36,
-      height: mode === 'help' ? 152 : 132,
+      x: renderPanelRect.x + 16,
+      y: sectionTitleRect.y + (compact ? 36 : 40),
+      width: renderPanelRect.width - 32,
+      height: ruleCardHeight,
     };
     drawTextFrame(context, ruleCardRect, {
-      radius: 16,
+      radius: 18,
       fill: 'rgba(255,255,255,0.72)',
       stroke: 'rgba(236, 226, 246, 0.95)',
     });
 
-    context.fillStyle = THEME.textPrimary;
-    context.font = '13px sans-serif';
-    bodyLines.forEach((line, index) => {
-      const rowY = ruleCardRect.y + 16 + index * 34;
-      context.fillStyle = '#7b8cff';
-      context.font = '700 13px sans-serif';
-      context.fillText(`${index + 1}.`, ruleCardRect.x + 14, rowY);
+    const maxRules = mode === 'help' ? 4 : 3;
+    const ruleRowStep = mode === 'help' ? (compact ? 42 : 46) : (compact ? 50 : 54);
+    const ruleRowTop = compact ? 24 : 26;
+    bodyLines.slice(0, maxRules).forEach((line, index) => {
+      const rowY = ruleCardRect.y + ruleRowTop + index * ruleRowStep;
+      drawNumberBadge(ruleCardRect.x + 20, rowY + 11, index + 1);
       drawWrappedText(
         context,
         line,
         {
-          x: ruleCardRect.x + 34,
+          x: ruleCardRect.x + 42,
           y: rowY,
-          width: ruleCardRect.width - 50,
-          height: 28,
+          width: ruleCardRect.width - 58,
+          height: ruleRowStep - 6,
         },
         {
-          font: '13px sans-serif',
+          font: `${compact ? '12px' : '13px'} sans-serif`,
           color: THEME.textPrimary,
-          lineHeight: 17,
+          lineHeight: compact ? 15 : 16,
           maxLines: 2,
         },
       );
     });
 
-    const toolsTop = ruleCardRect.y + ruleCardRect.height + 18;
     if (mode === 'help') {
-      context.fillStyle = '#4f63c6';
-      context.font = '700 18px sans-serif';
-      context.fillText(t(locale, 'landing.toolSection'), panelRect.x + 20, toolsTop);
+      const toolHeaderRect = {
+        x: renderPanelRect.x + 16,
+        y: ruleCardRect.y + ruleCardRect.height + (compact ? 24 : 26),
+        width: compact ? 166 : 178,
+        height: toolHeaderHeight,
+      };
+      drawPillLabel(
+        toolHeaderRect,
+        '#f1e7ff',
+        '#e4d3ff',
+        t(locale, 'landing.toolSection'),
+        '#8f61df',
+        '#b892ff',
+      );
 
       const toolCardRect = {
-        x: panelRect.x + 18,
-        y: toolsTop + 26,
-        width: panelRect.width - 36,
-        height: 102,
+        x: renderPanelRect.x + 16,
+        y: toolHeaderRect.y + (compact ? 36 : 38),
+        width: renderPanelRect.width - 32,
+        height: toolCardHeight,
       };
       drawTextFrame(context, toolCardRect, {
-        radius: 16,
+        radius: 18,
         fill: 'rgba(255,255,255,0.72)',
         stroke: 'rgba(236, 226, 246, 0.95)',
       });
 
       const toolRows = [
-        { colorStart: '#7cc8ff', colorEnd: '#4ba4ea', text: t(locale, 'landing.toolHint') },
-        { colorStart: '#ffc878', colorEnd: '#ff9e34', text: t(locale, 'landing.toolUndo') },
-        { colorStart: '#ffb2d4', colorEnd: '#ef7bb0', text: t(locale, 'landing.toolRestart') },
+        { fillStart: '#7cc8ff', fillEnd: '#4ba4ea', glyph: '?', text: t(locale, 'landing.toolHint') },
+        { fillStart: '#ffc878', fillEnd: '#ff9e34', glyph: '↶', text: t(locale, 'landing.toolUndo') },
+        { fillStart: '#ffb2d4', fillEnd: '#ef7bb0', glyph: '↺', text: t(locale, 'landing.toolRestart') },
       ];
 
       toolRows.forEach((tool, index) => {
+        const rowTop = toolCardRect.y + (compact ? 16 : 18) + index * (compact ? 36 : 38);
         const iconRect = {
           x: toolCardRect.x + 14,
-          y: toolCardRect.y + 14 + index * 28,
-          width: 20,
-          height: 20,
+          y: rowTop,
+          width: compact ? 24 : 26,
+          height: compact ? 24 : 26,
         };
-        const iconGradient = context.createLinearGradient(
-          iconRect.x,
-          iconRect.y,
-          iconRect.x,
-          iconRect.y + iconRect.height,
-        );
-        iconGradient.addColorStop(0, tool.colorStart);
-        iconGradient.addColorStop(1, tool.colorEnd);
-        context.fillStyle = iconGradient;
-        roundRect(context, iconRect, 6);
-        context.fill();
-        context.fillStyle = '#ffffff';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = '700 13px sans-serif';
-        context.fillText(index === 0 ? '?' : index === 1 ? '↶' : '↺', iconRect.x + 10, iconRect.y + 10.5);
-        context.textAlign = 'left';
-        context.textBaseline = 'top';
+        drawFeatureBadge(iconRect, tool.fillStart, tool.fillEnd, tool.glyph);
         drawWrappedText(
           context,
           tool.text,
           {
-            x: iconRect.x + 30,
-            y: iconRect.y + 1,
-            width: toolCardRect.width - 50,
-            height: 24,
+            x: iconRect.x + (compact ? 34 : 38),
+            y: rowTop - 1,
+            width: toolCardRect.width - (compact ? 52 : 56),
+            height: 26,
           },
           {
-            font: '12px sans-serif',
+            font: `${compact ? '12px' : '13px'} sans-serif`,
             color: THEME.textPrimary,
-            lineHeight: 16,
+            lineHeight: compact ? 15 : 16,
             maxLines: 1,
           },
         );
       });
     }
 
-    const buttonGradient = context.createLinearGradient(
-      actionRect.x,
-      actionRect.y,
-      actionRect.x,
-      actionRect.y + actionRect.height,
+    const closeGradient = context.createLinearGradient(
+      closeButtonRect.x,
+      closeButtonRect.y,
+      closeButtonRect.x,
+      closeButtonRect.y + closeButtonRect.height,
     );
-    buttonGradient.addColorStop(0, '#57b9ff');
-    buttonGradient.addColorStop(1, '#2c89f3');
-    context.fillStyle = buttonGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    closeGradient.addColorStop(0, '#5fbaf6');
+    closeGradient.addColorStop(1, '#2c89f3');
+    context.save();
+    context.fillStyle = closeGradient;
+    context.strokeStyle = 'rgba(255,255,255,0.95)';
     context.lineWidth = 1.2;
-    roundRect(context, actionRect, 14);
+    context.shadowColor = 'rgba(83, 143, 232, 0.24)';
+    context.shadowBlur = 14;
+    context.shadowOffsetY = 6;
+    roundRect(context, closeButtonRect, closeButtonRect.height / 2);
     context.fill();
+    context.shadowColor = 'transparent';
     context.stroke();
-
+    context.save();
+    context.setLineDash([5, 4]);
+    context.strokeStyle = 'rgba(255,255,255,0.85)';
+    context.lineWidth = 1.1;
+    roundRect(context, {
+      x: closeButtonRect.x + 6,
+      y: closeButtonRect.y + 6,
+      width: closeButtonRect.width - 12,
+      height: closeButtonRect.height - 12,
+    }, closeButtonRect.height / 2 - 5);
+    context.stroke();
+    context.restore();
     context.fillStyle = '#ffffff';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = '700 16px sans-serif';
-    context.fillText(t(locale, 'landing.gotIt'), actionRect.x + actionRect.width / 2, actionRect.y + actionRect.height / 2 + 1);
+    context.fillText(
+      t(locale, 'landing.gotIt'),
+      closeButtonRect.x + closeButtonRect.width / 2,
+      closeButtonRect.y + closeButtonRect.height / 2 + 1,
+    );
     context.restore();
   }
 
   function drawSettingsDialog(): void {
     const context = surface.getContext2D();
+    const panelWidth = Math.min(metrics.width - 32, 286);
+    const panelHeight = Math.min(metrics.height - 88, 430);
     const panelRect = {
-      x: (metrics.width - 248) / 2,
-      y: Math.max(metrics.safeTop + 54, (metrics.height - 244) / 2),
-      width: 248,
-      height: 244,
+      x: (metrics.width - panelWidth) / 2,
+      y: Math.max(metrics.safeTop + 42, (metrics.height - panelHeight) / 2 + 2),
+      width: panelWidth,
+      height: panelHeight,
     };
     settingsDialogPanelRect = panelRect;
+
+    const rowX = panelRect.x + 16;
+    const rowWidth = panelRect.width - 32;
+    const rowHeight = 72;
+    const rowGap = 10;
+    const row1Rect = {
+      x: rowX,
+      y: panelRect.y + 96,
+      width: rowWidth,
+      height: rowHeight,
+    };
+    const row2Rect = {
+      x: rowX,
+      y: row1Rect.y + rowHeight + rowGap,
+      width: rowWidth,
+      height: rowHeight,
+    };
+    const buttonY = panelRect.y + panelRect.height - 62;
+    const buttonWidth = 107;
+    const buttonGap = 14;
+    const buttonX = panelRect.x + (panelRect.width - buttonWidth * 2 - buttonGap) / 2;
     soundToggleRect = {
-      x: panelRect.x + panelRect.width - 62,
-      y: panelRect.y + 70,
-      width: 40,
-      height: 22,
+      x: row1Rect.x + row1Rect.width - 72,
+      y: row1Rect.y + 22,
+      width: 54,
+      height: 28,
     };
     vibrationToggleRect = {
-      x: panelRect.x + panelRect.width - 62,
-      y: panelRect.y + 112,
-      width: 40,
-      height: 22,
+      x: row2Rect.x + row2Rect.width - 72,
+      y: row2Rect.y + 22,
+      width: 54,
+      height: 28,
     };
     settingsBackButtonRect = {
-      x: panelRect.x + 22,
-      y: panelRect.y + panelRect.height - 52,
-      width: 92,
-      height: 34,
+      x: buttonX,
+      y: buttonY,
+      width: buttonWidth,
+      height: 42,
     };
     settingsContinueButtonRect = {
-      x: panelRect.x + panelRect.width - 114,
-      y: panelRect.y + panelRect.height - 52,
-      width: 92,
-      height: 34,
+      x: buttonX + buttonWidth + buttonGap,
+      y: buttonY,
+      width: buttonWidth,
+      height: 42,
     };
 
     const drawToggleRow = (
-      y: number,
-      iconColorStart: string,
-      iconColorEnd: string,
+      rowRect: Rect,
       label: string,
       enabled: boolean,
       toggleRect: Rect,
-      glyph: string,
+      icon: WechatImage | null,
     ): void => {
-      const iconRect = {
-        x: panelRect.x + 24,
-        y,
-        width: 22,
-        height: 22,
-      };
-      const iconGradient = context.createLinearGradient(
-        iconRect.x,
-        iconRect.y,
-        iconRect.x,
-        iconRect.y + iconRect.height,
+      const cardGradient = context.createLinearGradient(
+        rowRect.x,
+        rowRect.y,
+        rowRect.x,
+        rowRect.y + rowRect.height,
       );
-      iconGradient.addColorStop(0, iconColorStart);
-      iconGradient.addColorStop(1, iconColorEnd);
-      context.fillStyle = iconGradient;
-      roundRect(context, iconRect, 7);
+      cardGradient.addColorStop(0, 'rgba(255, 255, 255, 0.82)');
+      cardGradient.addColorStop(1, 'rgba(255, 247, 250, 0.72)');
+      context.save();
+      context.fillStyle = cardGradient;
+      context.strokeStyle = 'rgba(255, 224, 232, 0.96)';
+      context.lineWidth = 1.1;
+      context.shadowColor = 'rgba(194, 126, 165, 0.16)';
+      context.shadowBlur = 14;
+      context.shadowOffsetY = 6;
+      roundRect(context, rowRect, 18);
       context.fill();
-      context.fillStyle = '#ffffff';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.font = '700 13px sans-serif';
-      context.fillText(glyph, iconRect.x + 11, iconRect.y + 11.5);
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.save();
+      context.setLineDash([5, 4]);
+      context.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+      context.lineWidth = 1;
+      roundRect(context, {
+        x: rowRect.x + 6,
+        y: rowRect.y + 6,
+        width: rowRect.width - 12,
+        height: rowRect.height - 12,
+      }, 14);
+      context.stroke();
+      context.restore();
 
+      if (icon) {
+        drawSticker(context, icon, {
+          x: rowRect.x + 10,
+          y: rowRect.y + 10,
+          width: 42,
+          height: 42,
+        }, { shadowBlur: 10, shadowOffsetY: 3 });
+      }
+
+      context.fillStyle = THEME.textPrimary;
       context.textAlign = 'left';
       context.textBaseline = 'middle';
-      context.fillStyle = THEME.textPrimary;
-      context.font = '700 15px sans-serif';
-      context.fillText(label, iconRect.x + 32, iconRect.y + 11);
+      context.font = '700 18px sans-serif';
+      context.fillText(label, rowRect.x + 60, rowRect.y + rowRect.height / 2 + 0.5);
 
       const toggleGradient = context.createLinearGradient(
         toggleRect.x,
@@ -1880,421 +2941,1205 @@ async function bootstrapWechatGame(): Promise<void> {
         toggleRect.y + toggleRect.height,
       );
       if (enabled) {
-        toggleGradient.addColorStop(0, '#6dd66c');
+        toggleGradient.addColorStop(0, '#88df78');
         toggleGradient.addColorStop(1, '#3eaf47');
       } else {
-        toggleGradient.addColorStop(0, '#e9e3ea');
-        toggleGradient.addColorStop(1, '#cfc3d1');
+        toggleGradient.addColorStop(0, '#ebe4eb');
+        toggleGradient.addColorStop(1, '#d1c7d2');
       }
+      context.save();
       context.fillStyle = toggleGradient;
-      context.strokeStyle = 'rgba(255,255,255,0.92)';
+      context.strokeStyle = 'rgba(255,255,255,0.96)';
       context.lineWidth = 1;
+      context.shadowColor = enabled ? 'rgba(69, 169, 76, 0.18)' : 'rgba(160, 148, 161, 0.14)';
+      context.shadowBlur = 10;
+      context.shadowOffsetY = 4;
       roundRect(context, toggleRect, toggleRect.height / 2);
       context.fill();
+      context.shadowColor = 'transparent';
       context.stroke();
 
       const knobX = enabled
-        ? toggleRect.x + toggleRect.width - 11
-        : toggleRect.x + 11;
+        ? toggleRect.x + toggleRect.width - 12
+        : toggleRect.x + 12;
       context.fillStyle = '#ffffff';
       context.beginPath();
-      context.arc(knobX, toggleRect.y + toggleRect.height / 2, 8.5, 0, Math.PI * 2);
+      context.arc(knobX, toggleRect.y + toggleRect.height / 2, 9, 0, Math.PI * 2);
       context.fill();
+      context.restore();
+
+      drawSticker(context, landingAssets.settingsHeartSmall, {
+        x: rowRect.x + rowRect.width - 14,
+        y: rowRect.y + 20,
+        width: 18,
+        height: 18,
+      }, { shadowBlur: 4, alpha: 0.95 });
+    };
+
+    const drawSettingsButton = (
+      rect: Rect,
+      kind: 'back' | 'continue',
+      label: string,
+    ): void => {
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      if (kind === 'back') {
+        gradient.addColorStop(0, 'rgba(245, 236, 246, 0.98)');
+        gradient.addColorStop(1, 'rgba(223, 208, 236, 0.98)');
+      } else {
+        gradient.addColorStop(0, '#7cc7ff');
+        gradient.addColorStop(1, '#4c97f0');
+      }
+
+      context.save();
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255,255,255,0.96)';
+      context.lineWidth = 1.2;
+      context.shadowColor = kind === 'back' ? 'rgba(170, 141, 182, 0.18)' : 'rgba(84, 145, 230, 0.24)';
+      context.shadowBlur = 14;
+      context.shadowOffsetY = 6;
+      roundRect(context, rect, 16);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+
+      context.save();
+      context.setLineDash([5, 4]);
+      context.strokeStyle = kind === 'back' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.92)';
+      context.lineWidth = 1.1;
+      roundRect(context, {
+        x: rect.x + 6,
+        y: rect.y + 6,
+        width: rect.width - 12,
+        height: rect.height - 12,
+      }, 12);
+      context.stroke();
+      context.restore();
+
+      context.fillStyle = kind === 'back' ? '#8a7797' : '#ffffff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.font = '700 15px sans-serif';
+      context.fillText(label, rect.x + rect.width / 2, rect.y + rect.height / 2 + 0.5);
+      context.restore();
+    };
+
+    const drawSimpleSparkle = (image: WechatImage | null, x: number, y: number, width: number, height: number, alpha = 1): void => {
+      drawSticker(context, image, { x, y, width, height }, { shadowBlur: 5, alpha });
+    };
+
+    const drawPanelShell = (): void => {
+      const overlayGradient = context.createLinearGradient(0, 0, 0, metrics.height);
+      overlayGradient.addColorStop(0, 'rgba(255, 188, 214, 0.38)');
+      overlayGradient.addColorStop(0.6, 'rgba(247, 219, 233, 0.30)');
+      overlayGradient.addColorStop(1, 'rgba(255, 245, 249, 0.24)');
+      context.fillStyle = overlayGradient;
+      context.fillRect(0, 0, metrics.width, metrics.height);
+
+      const panelGradient = context.createLinearGradient(
+        panelRect.x,
+        panelRect.y,
+        panelRect.x,
+        panelRect.y + panelRect.height,
+      );
+      panelGradient.addColorStop(0, 'rgba(255, 253, 252, 0.98)');
+      panelGradient.addColorStop(1, 'rgba(255, 241, 245, 0.95)');
+      context.fillStyle = panelGradient;
+      context.strokeStyle = 'rgba(255, 213, 225, 0.98)';
+      context.lineWidth = 2;
+      context.shadowColor = 'rgba(226, 142, 175, 0.26)';
+      context.shadowBlur = 28;
+      context.shadowOffsetY = 12;
+      roundRect(context, panelRect, 28);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+
+      context.save();
+      context.setLineDash([6, 5]);
+      context.strokeStyle = 'rgba(255,255,255,0.92)';
+      context.lineWidth = 1.3;
+      roundRect(context, {
+        x: panelRect.x + 8,
+        y: panelRect.y + 8,
+        width: panelRect.width - 16,
+        height: panelRect.height - 16,
+      }, 22);
+      context.stroke();
+      context.restore();
+
+      drawSimpleSparkle(landingAssets.settingsCloudSmileHeart, panelRect.x - 36, panelRect.y - 28, 96, 74, 0.98);
+      drawSimpleSparkle(landingAssets.settingsStarPinkBig, panelRect.x + panelRect.width - 76, panelRect.y - 18, 58, 58, 0.96);
+      drawSimpleSparkle(landingAssets.settingsCloudClusterLeft, panelRect.x - 22, panelRect.y + panelRect.height - 78, 84, 66, 0.94);
+      drawSimpleSparkle(landingAssets.settingsHeartCorner, panelRect.x + panelRect.width - 32, panelRect.y + panelRect.height - 38, 38, 38, 0.98);
+      drawSimpleSparkle(landingAssets.settingsSparkleWhite, panelRect.x + 18, panelRect.y + 74, 18, 18, 0.92);
+      drawSimpleSparkle(landingAssets.settingsSparkleWhite, panelRect.x + panelRect.width - 34, panelRect.y + 94, 14, 14, 0.84);
+      drawSimpleSparkle(landingAssets.settingsSparkleWhite, panelRect.x + 38, panelRect.y + panelRect.height - 84, 12, 12, 0.76);
     };
 
     context.save();
-    context.fillStyle = 'rgba(77, 60, 89, 0.22)';
-    context.fillRect(0, 0, metrics.width, metrics.height);
-
-    const panelGradient = context.createLinearGradient(
-      panelRect.x,
-      panelRect.y,
-      panelRect.x,
-      panelRect.y + panelRect.height,
-    );
-    panelGradient.addColorStop(0, 'rgba(255,255,255,0.98)');
-    panelGradient.addColorStop(1, 'rgba(248,244,255,0.95)');
-    context.fillStyle = panelGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.96)';
-    context.lineWidth = 1.2;
-    context.shadowColor = 'rgba(123, 97, 147, 0.2)';
-    context.shadowBlur = 24;
-    context.shadowOffsetY = 10;
-    roundRect(context, panelRect, 22);
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.stroke();
+    drawPanelShell();
 
     context.textAlign = 'center';
     context.textBaseline = 'top';
-    context.fillStyle = '#4f63c6';
-    context.font = '700 22px sans-serif';
-    context.fillText(t(locale, 'settings.title'), panelRect.x + panelRect.width / 2, panelRect.y + 20);
+    context.lineWidth = 5;
+    context.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    context.fillStyle = '#6a63d8';
+    context.font = '700 28px sans-serif';
+    context.shadowColor = 'rgba(255, 194, 220, 0.56)';
+    context.shadowBlur = 6;
+    context.strokeText(t(locale, 'settings.title'), panelRect.x + panelRect.width / 2, panelRect.y + 18);
+    context.fillText(t(locale, 'settings.title'), panelRect.x + panelRect.width / 2, panelRect.y + 18);
 
     drawToggleRow(
-      panelRect.y + 66,
-      '#82db78',
-      '#46b957',
+      row1Rect,
       t(locale, 'settings.sound'),
       userSettings.soundEnabled,
       soundToggleRect,
-      '♪',
+      landingAssets.settingsMusicBadge,
     );
     drawToggleRow(
-      panelRect.y + 108,
-      '#c57fff',
-      '#9b5ce5',
+      row2Rect,
       t(locale, 'settings.vibration'),
       userSettings.vibrationEnabled,
       vibrationToggleRect,
-      '≈',
+      landingAssets.settingsVibrationBadge,
     );
 
-    const backGradient = context.createLinearGradient(
-      settingsBackButtonRect.x,
-      settingsBackButtonRect.y,
-      settingsBackButtonRect.x,
-      settingsBackButtonRect.y + settingsBackButtonRect.height,
-    );
-    backGradient.addColorStop(0, '#f7f7f7');
-    backGradient.addColorStop(1, '#dddddd');
-    context.fillStyle = backGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.95)';
-    roundRect(context, settingsBackButtonRect, 12);
-    context.fill();
+    context.save();
+    context.strokeStyle = 'rgba(245, 205, 148, 0.88)';
+    context.lineWidth = 1;
+    context.setLineDash([4, 4]);
+    context.beginPath();
+    context.moveTo(panelRect.x + 22, panelRect.y + 252);
+    context.lineTo(panelRect.x + panelRect.width - 22, panelRect.y + 252);
     context.stroke();
-    context.fillStyle = '#7c727f';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = '700 14px sans-serif';
-    context.fillText(
-      t(locale, 'settings.backHome'),
-      settingsBackButtonRect.x + settingsBackButtonRect.width / 2,
-      settingsBackButtonRect.y + settingsBackButtonRect.height / 2 + 1,
+    context.restore();
+
+    drawSimpleSparkle(
+      landingAssets.settingsStarYellowSmall,
+      panelRect.x + panelRect.width / 2 - 8,
+      panelRect.y + 242,
+      16,
+      16,
+      1,
     );
 
-    const continueGradient = context.createLinearGradient(
-      settingsContinueButtonRect.x,
-      settingsContinueButtonRect.y,
-      settingsContinueButtonRect.x,
-      settingsContinueButtonRect.y + settingsContinueButtonRect.height,
-    );
-    continueGradient.addColorStop(0, '#58bcff');
-    continueGradient.addColorStop(1, '#2d89f4');
-    context.fillStyle = continueGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.95)';
-    roundRect(context, settingsContinueButtonRect, 12);
-    context.fill();
-    context.stroke();
-    context.fillStyle = '#ffffff';
-    context.fillText(
-      t(locale, 'settings.continue'),
-      settingsContinueButtonRect.x + settingsContinueButtonRect.width / 2,
-      settingsContinueButtonRect.y + settingsContinueButtonRect.height / 2 + 1,
-    );
+    drawSettingsButton(settingsBackButtonRect, 'back', t(locale, 'settings.backHome'));
+    drawSettingsButton(settingsContinueButtonRect, 'continue', t(locale, 'settings.continue'));
 
     context.restore();
   }
 
   function drawLeaderboardPanel(): void {
     const context = surface.getContext2D();
-    const panelWidth = Math.min(metrics.width - 30, 340);
-    const panelHeight = Math.min(metrics.height - 110, 446);
+    const compact = metrics.height < 780;
+    const panelWidth = Math.min(metrics.width - (compact ? 36 : 48), compact ? 336 : 360);
+    const panelHeight = Math.min(metrics.height - (compact ? 108 : 128), compact ? 548 : 590);
+    const modalTopExtra = compact ? 48 : 52;
+    const modalBottomExtra = compact ? 12 : 16;
+    const modalVisualHeight = panelHeight + modalTopExtra + modalBottomExtra;
     const panelRect = {
       x: (metrics.width - panelWidth) / 2,
-      y: Math.max(metrics.safeTop + 36, (metrics.height - panelHeight) / 2),
+      y: Math.max(
+        layout.topInset + modalTopExtra - (compact ? 6 : 8),
+        (metrics.height - modalVisualHeight) / 2 + modalTopExtra,
+      ),
       width: panelWidth,
       height: panelHeight,
     };
-    leaderboardPanelRect = panelRect;
+    leaderboardPanelRect = {
+      x: panelRect.x - 18,
+      y: panelRect.y - modalTopExtra,
+      width: panelRect.width + 36,
+      height: panelRect.height + modalTopExtra + modalBottomExtra,
+    };
 
     context.save();
-    context.fillStyle = 'rgba(71, 49, 82, 0.22)';
+    const overlayGradient = context.createLinearGradient(0, 0, 0, metrics.height);
+    overlayGradient.addColorStop(0, 'rgba(255, 179, 210, 0.38)');
+    overlayGradient.addColorStop(0.55, 'rgba(255, 232, 240, 0.28)');
+    overlayGradient.addColorStop(1, 'rgba(255, 245, 250, 0.20)');
+    context.fillStyle = overlayGradient;
     context.fillRect(0, 0, metrics.width, metrics.height);
+    context.restore();
 
-    const panelGradient = context.createLinearGradient(
-      panelRect.x,
-      panelRect.y,
-      panelRect.x,
-      panelRect.y + panelRect.height,
-    );
-    panelGradient.addColorStop(0, 'rgba(255,255,255,0.96)');
-    panelGradient.addColorStop(1, 'rgba(249,239,255,0.92)');
+    const panelGradient = context.createLinearGradient(panelRect.x, panelRect.y, panelRect.x, panelRect.y + panelRect.height);
+    panelGradient.addColorStop(0, 'rgba(255, 252, 247, 0.98)');
+    panelGradient.addColorStop(1, 'rgba(255, 241, 247, 0.95)');
+    context.save();
     context.fillStyle = panelGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.92)';
-    context.lineWidth = 1.4;
-    context.shadowColor = 'rgba(116, 77, 143, 0.26)';
-    context.shadowBlur = 28;
+    context.strokeStyle = 'rgba(255, 210, 224, 0.98)';
+    context.lineWidth = 2.2;
+    context.shadowColor = 'rgba(226, 142, 175, 0.26)';
+    context.shadowBlur = 30;
     context.shadowOffsetY = 12;
-    roundRect(context, panelRect, 24);
+    roundRect(context, panelRect, compact ? 30 : 34);
     context.fill();
     context.shadowColor = 'transparent';
     context.stroke();
-
-    const headerChipRect = {
-      x: panelRect.x + 72,
-      y: panelRect.y + 16,
-      width: panelRect.width - 144,
-      height: 38,
-    };
-    const headerChipGradient = context.createLinearGradient(
-      headerChipRect.x,
-      headerChipRect.y,
-      headerChipRect.x,
-      headerChipRect.y + headerChipRect.height,
-    );
-    headerChipGradient.addColorStop(0, '#f7ecff');
-    headerChipGradient.addColorStop(1, '#eddcff');
-    context.fillStyle = headerChipGradient;
-    context.strokeStyle = 'rgba(255,255,255,0.95)';
-    context.lineWidth = 1;
-    roundRect(context, headerChipRect, 18);
-    context.fill();
+    context.save();
+    context.setLineDash([6, 5]);
+    context.strokeStyle = 'rgba(255,255,255,0.94)';
+    context.lineWidth = 1.3;
+    roundRect(context, {
+      x: panelRect.x + 8,
+      y: panelRect.y + 8,
+      width: panelRect.width - 16,
+      height: panelRect.height - 16,
+    }, compact ? 24 : 28);
     context.stroke();
+    context.restore();
+    context.restore();
 
-    context.textAlign = 'left';
-    context.textBaseline = 'top';
-    context.fillStyle = '#9b61db';
-    context.font = '700 20px sans-serif';
-    context.textAlign = 'center';
-    context.fillText(
-      t(locale, 'landing.weeklyLeaderboard'),
-      panelRect.x + panelRect.width / 2,
-      panelRect.y + 22,
-    );
+    const drawRibbon = (rect: Rect): void => {
+      if (landingAssets.leaderboardRibbonPurple) {
+        drawSticker(context, landingAssets.leaderboardRibbonPurple, rect, {
+          shadowColor: 'rgba(167, 118, 214, 0.22)',
+          shadowBlur: 18,
+          shadowOffsetY: 6,
+          alpha: 0.98,
+        });
+        return;
+      }
 
-    drawWrappedText(
-      context,
-      t(locale, 'landing.localWeeklyNote'),
-      {
-        x: panelRect.x + 22,
-        y: panelRect.y + 66,
-        width: panelRect.width - 44,
-        height: 36,
-      },
-      {
-        font: '11px sans-serif',
-        color: THEME.textSecondary,
-        lineHeight: 14,
-        maxLines: 2,
-      },
-    );
+      const gradient = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+      gradient.addColorStop(0, '#dca8ff');
+      gradient.addColorStop(1, '#b77bf2');
+      context.save();
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255,255,255,0.96)';
+      context.lineWidth = 1.4;
+      context.shadowColor = 'rgba(167, 118, 214, 0.24)';
+      context.shadowBlur = 18;
+      context.shadowOffsetY = 6;
+      roundRect(context, rect, rect.height / 2);
+      context.fill();
+      context.shadowColor = 'transparent';
+      context.stroke();
+      context.beginPath();
+      context.moveTo(rect.x + 16, rect.y + 10);
+      context.lineTo(rect.x - 20, rect.y + rect.height * 0.46);
+      context.lineTo(rect.x + 16, rect.y + rect.height - 10);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.beginPath();
+      context.moveTo(rect.x + rect.width - 16, rect.y + 10);
+      context.lineTo(rect.x + rect.width + 20, rect.y + rect.height * 0.46);
+      context.lineTo(rect.x + rect.width - 16, rect.y + rect.height - 10);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.save();
+      context.setLineDash([7, 5]);
+      context.strokeStyle = 'rgba(255,255,255,0.46)';
+      context.lineWidth = 1;
+      roundRect(context, {
+        x: rect.x + 8,
+        y: rect.y + 8,
+        width: rect.width - 16,
+        height: rect.height - 16,
+      }, rect.height / 2 - 8);
+      context.stroke();
+      context.restore();
+      context.restore();
+    };
 
-    const listTop = panelRect.y + 110;
-    const listLeft = panelRect.x + 18;
-    const rowWidth = panelRect.width - 36;
-    const rowHeight = 56;
-    const rowGap = 10;
-    const entries = weeklyLeaderboard.slice(0, 6);
+    const drawEmptyTrophy = (centerX: number, topY: number, scale: number): void => {
+      const cupW = 96 * scale;
+      const cupH = 90 * scale;
+      const cupX = centerX - cupW / 2;
+      const cupY = topY;
+      const gradient = context.createLinearGradient(cupX, cupY, cupX, cupY + cupH);
+      gradient.addColorStop(0, '#fff3aa');
+      gradient.addColorStop(0.55, '#ffd85c');
+      gradient.addColorStop(1, '#f4ab12');
 
-    if (entries.length === 0) {
-      drawHudShell(context, {
-        x: listLeft,
-        y: listTop + 18,
-        width: rowWidth,
-        height: 104,
+      context.save();
+      context.shadowColor = 'rgba(255, 193, 72, 0.24)';
+      context.shadowBlur = 16;
+      context.shadowOffsetY = 6;
+      context.fillStyle = gradient;
+      context.strokeStyle = 'rgba(255,255,255,0.82)';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(cupX + 14 * scale, cupY + 10 * scale);
+      context.lineTo(cupX + cupW - 14 * scale, cupY + 10 * scale);
+      context.quadraticCurveTo(cupX + cupW - 6 * scale, cupY + 34 * scale, cupX + cupW - 22 * scale, cupY + 46 * scale);
+      context.lineTo(cupX + cupW - 28 * scale, cupY + 60 * scale);
+      context.lineTo(cupX + cupW - 40 * scale, cupY + 70 * scale);
+      context.lineTo(cupX + cupW - 56 * scale, cupY + 70 * scale);
+      context.lineTo(cupX + cupW - 58 * scale, cupY + 62 * scale);
+      context.lineTo(cupX + cupW - 34 * scale, cupY + 58 * scale);
+      context.quadraticCurveTo(cupX + cupW - 10 * scale, cupY + 46 * scale, cupX + cupW - 12 * scale, cupY + 28 * scale);
+      context.lineTo(cupX + cupW - 12 * scale, cupY + 16 * scale);
+      context.lineTo(cupX + 12 * scale, cupY + 16 * scale);
+      context.lineTo(cupX + 12 * scale, cupY + 28 * scale);
+      context.quadraticCurveTo(cupX + 10 * scale, cupY + 46 * scale, cupX + 34 * scale, cupY + 58 * scale);
+      context.lineTo(cupX + 58 * scale, cupY + 62 * scale);
+      context.lineTo(cupX + 56 * scale, cupY + 70 * scale);
+      context.lineTo(cupX + 40 * scale, cupY + 70 * scale);
+      context.lineTo(cupX + 28 * scale, cupY + 60 * scale);
+      context.lineTo(cupX + 22 * scale, cupY + 46 * scale);
+      context.quadraticCurveTo(cupX + 6 * scale, cupY + 34 * scale, cupX + 14 * scale, cupY + 10 * scale);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      context.lineWidth = 10 * scale;
+      context.strokeStyle = 'rgba(255, 226, 118, 0.88)';
+      context.beginPath();
+      context.moveTo(cupX + 16 * scale, cupY + 18 * scale);
+      context.lineTo(cupX + cupW - 16 * scale, cupY + 18 * scale);
+      context.stroke();
+
+      context.lineWidth = 2.5 * scale;
+      context.strokeStyle = '#f3a61a';
+      context.beginPath();
+      context.arc(cupX - 8 * scale, cupY + 34 * scale, 16 * scale, -Math.PI * 0.18, Math.PI * 0.75);
+      context.stroke();
+      context.beginPath();
+      context.arc(cupX + cupW + 8 * scale, cupY + 34 * scale, 16 * scale, Math.PI * 0.25, Math.PI * 1.18);
+      context.stroke();
+
+      const baseRect = {
+        x: centerX - 22 * scale,
+        y: cupY + cupH + 6 * scale,
+        width: 44 * scale,
+        height: 14 * scale,
+      };
+      const baseGradient = context.createLinearGradient(baseRect.x, baseRect.y, baseRect.x, baseRect.y + baseRect.height);
+      baseGradient.addColorStop(0, '#c07cff');
+      baseGradient.addColorStop(1, '#8a56ef');
+      context.fillStyle = baseGradient;
+      context.strokeStyle = 'rgba(255,255,255,0.84)';
+      context.lineWidth = 2;
+      roundRect(context, baseRect, 6 * scale);
+      context.fill();
+      context.stroke();
+      context.restore();
+    };
+
+    const drawEmptyState = (rect: Rect): void => {
+      const illustrationRect = {
+        x: rect.x + 16,
+        y: rect.y + 12,
+        width: rect.width - 32,
+        height: rect.height * 0.56,
+      };
+      if (landingAssets.leaderboardEmptyTrophyBunny) {
+        const sourceWidth = landingAssets.leaderboardEmptyTrophyBunny.width ?? 1710;
+        const sourceHeight = landingAssets.leaderboardEmptyTrophyBunny.height ?? 611;
+        const sourceRatio = sourceWidth / sourceHeight;
+        const maxWidth = illustrationRect.width - (compact ? 8 : 12);
+        const maxHeight = illustrationRect.height * 0.82;
+        let drawWidth = maxWidth;
+        let drawHeight = drawWidth / sourceRatio;
+        if (drawHeight > maxHeight) {
+          drawHeight = maxHeight;
+          drawWidth = drawHeight * sourceRatio;
+        }
+        drawSticker(context, landingAssets.leaderboardEmptyTrophyBunny, {
+          x: illustrationRect.x + (illustrationRect.width - drawWidth) / 2,
+          y: illustrationRect.y + 4,
+          width: drawWidth,
+          height: drawHeight,
+        }, { shadowBlur: 8, alpha: 0.98 });
+      } else {
+        if (landingAssets.levelPanelCloudSmileHeart) {
+          drawSticker(context, landingAssets.levelPanelCloudSmileHeart, {
+            x: illustrationRect.x + illustrationRect.width * 0.10,
+            y: illustrationRect.y + 14,
+            width: 64,
+            height: 48,
+          }, { shadowBlur: 8, alpha: 0.94 });
+        }
+        if (landingAssets.levelPanelCloudLeft) {
+          drawSticker(context, landingAssets.levelPanelCloudLeft, {
+            x: illustrationRect.x + illustrationRect.width * 0.04,
+            y: illustrationRect.y + illustrationRect.height * 0.50,
+            width: 54,
+            height: 42,
+          }, { shadowBlur: 6, alpha: 0.86 });
+        }
+        if (landingAssets.levelPanelCloudRight) {
+          drawSticker(context, landingAssets.levelPanelCloudRight, {
+            x: illustrationRect.x + illustrationRect.width - 58,
+            y: illustrationRect.y + illustrationRect.height * 0.48,
+            width: 54,
+            height: 42,
+          }, { shadowBlur: 6, alpha: 0.86 });
+        }
+
+        drawEmptyTrophy(illustrationRect.x + illustrationRect.width / 2 - 8, illustrationRect.y + 10, compact ? 1.0 : 1.04);
+        drawRuleBunnyPeek(context, {
+          x: illustrationRect.x + illustrationRect.width * 0.54,
+          y: illustrationRect.y + illustrationRect.height * 0.25,
+          width: compact ? 84 : 92,
+          height: compact ? 84 : 92,
+        });
+      }
+      if (landingAssets.levelPanelSparkleWhite) {
+        drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+          x: illustrationRect.x + 10,
+          y: illustrationRect.y + 28,
+          width: 14,
+          height: 14,
+        }, { shadowBlur: 2, alpha: 0.92 });
+        drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+          x: illustrationRect.x + illustrationRect.width - 26,
+          y: illustrationRect.y + 34,
+          width: 12,
+          height: 12,
+        }, { shadowBlur: 2, alpha: 0.84 });
+      }
+
+      context.save();
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#7f5c69';
+      context.font = `${compact ? '700 18px' : '700 20px'} sans-serif`;
+      const emptyMessage = t(locale, 'landing.emptyLeaderboard');
+      const lines = measureWrappedText(context, emptyMessage, rect.width - 44).slice(0, 2);
+      const lineHeight = compact ? 24 : 27;
+      const startY = rect.y + rect.height * 0.62;
+      lines.forEach((line, index) => {
+        context.fillText(line, rect.x + rect.width / 2, startY + index * lineHeight);
       });
-      drawWrappedText(
-        context,
-        t(locale, 'landing.emptyLeaderboard'),
-        {
-          x: listLeft + 18,
-          y: listTop + 48,
-          width: rowWidth - 36,
-          height: 40,
-        },
-        {
-          font: '13px sans-serif',
-          color: THEME.textPrimary,
-          lineHeight: 18,
-          maxLines: 2,
-        },
-      );
+      context.restore();
+    };
+
+    const drawCenteredNote = (text: string, x: number, y: number, width: number): void => {
+      context.save();
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillStyle = 'rgba(156, 105, 124, 0.76)';
+      context.font = `${compact ? '600 12px' : '600 13px'} sans-serif`;
+      const lines = measureWrappedText(context, text, width).slice(0, 2);
+      const lineHeight = compact ? 15 : 16;
+      lines.forEach((line, index) => {
+        context.fillText(line, x, y + index * lineHeight);
+      });
+      context.restore();
+    };
+
+    const drawCurvedTitle = (text: string, centerX: number, centerY: number): void => {
+      const chars = Array.from(text);
+      context.save();
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.lineWidth = compact ? 6 : 6.5;
+      context.strokeStyle = 'rgba(255,255,255,0.98)';
+      context.fillStyle = '#8457ee';
+      context.shadowColor = 'rgba(143, 101, 229, 0.30)';
+      context.shadowBlur = compact ? 8 : 10;
+      context.shadowOffsetY = compact ? 2 : 3;
+      context.font = `${compact ? '900 28px' : '900 31px'} sans-serif`;
+
+      const charWidths = chars.map((char) => context.measureText(char).width);
+      const totalTextWidth = charWidths.reduce((sum, value) => sum + value, 0);
+      const letterSpacing = compact ? 0.5 : 0.8;
+      const totalWidth = totalTextWidth + letterSpacing * Math.max(0, chars.length - 1);
+      const arcStrength = compact ? 7.2 : 8.4;
+      const startX = centerX - totalWidth / 2;
+
+      let cursorX = startX;
+      chars.forEach((char, index) => {
+        const width = charWidths[index];
+        const progress = chars.length <= 1 ? 0 : index / (chars.length - 1);
+        const curve = Math.sin(progress * Math.PI) * arcStrength;
+        const charX = cursorX + width / 2;
+        context.save();
+        context.translate(charX, centerY - curve);
+        context.rotate((progress - 0.5) * 0.05);
+        context.strokeText(char, 0, 0);
+        context.fillText(char, 0, 0);
+        context.restore();
+        cursorX += width + letterSpacing;
+      });
+
+      context.restore();
+    };
+
+    const titleRibbonWidth = panelRect.width - (compact ? 26 : 32);
+    const titleRibbonRect = {
+      x: panelRect.x + (panelRect.width - titleRibbonWidth) / 2,
+      y: panelRect.y - (compact ? 22 : 24),
+      width: titleRibbonWidth,
+      height: Math.round(titleRibbonWidth / (2074 / 571)),
+    };
+    const titleAreaHeight = compact ? 152 : 166;
+    const contentRect = {
+      x: panelRect.x + (compact ? 16 : 18),
+      y: panelRect.y + titleAreaHeight,
+      width: panelRect.width - (compact ? 32 : 36),
+      height: panelRect.height - titleAreaHeight - (compact ? 56 : 60),
+    };
+
+    drawSticker(context, landingAssets.levelPanelStarBigYellow, {
+      x: panelRect.x - (compact ? 16 : 20),
+      y: panelRect.y + (compact ? 14 : 18),
+      width: compact ? 44 : 50,
+      height: compact ? 44 : 50,
+    }, { shadowBlur: 4, alpha: 0.94 });
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + 18,
+      y: panelRect.y + 92,
+      width: 16,
+      height: 16,
+    }, { shadowBlur: 3, alpha: 0.9 });
+    drawSticker(context, landingAssets.levelPanelHeartPink, {
+      x: panelRect.x + panelRect.width - (compact ? 38 : 42),
+      y: panelRect.y + 72,
+      width: compact ? 24 : 28,
+      height: compact ? 24 : 28,
+    }, { shadowBlur: 4, alpha: 0.96 });
+    drawSticker(context, landingAssets.settingsCloudClusterLeft, {
+      x: panelRect.x - (compact ? 8 : 10),
+      y: panelRect.y + panelRect.height - (compact ? 46 : 54),
+      width: compact ? 70 : 78,
+      height: compact ? 56 : 62,
+    }, { shadowBlur: 6, alpha: 0.94 });
+    if (landingAssets.levelPanelCloudRight) {
+      drawSticker(context, landingAssets.levelPanelCloudRight, {
+        x: panelRect.x + panelRect.width - (compact ? 58 : 66),
+        y: panelRect.y + panelRect.height - (compact ? 58 : 64),
+        width: compact ? 58 : 66,
+        height: compact ? 58 : 66,
+      }, { shadowBlur: 6, alpha: 0.92 });
+    }
+
+    drawRibbon(titleRibbonRect);
+    if (landingAssets.leaderboardBunnyPeekLeft) {
+      drawSticker(context, landingAssets.leaderboardBunnyPeekLeft, {
+        x: titleRibbonRect.x - (compact ? 6 : 8),
+        y: titleRibbonRect.y - (compact ? 26 : 30),
+        width: compact ? 90 : 98,
+        height: compact ? 94 : 102,
+      }, { shadowBlur: 8, alpha: 0.98 });
     } else {
+      drawRuleBunnyPeek(context, {
+        x: titleRibbonRect.x + (compact ? 4 : 6),
+        y: titleRibbonRect.y - (compact ? 10 : 12),
+        width: compact ? 84 : 92,
+        height: compact ? 84 : 92,
+      });
+    }
+    if (landingAssets.leaderboardRainbowCloud) {
+      drawSticker(context, landingAssets.leaderboardRainbowCloud, {
+        x: titleRibbonRect.x + titleRibbonRect.width - (compact ? 54 : 64),
+        y: titleRibbonRect.y + titleRibbonRect.height - (compact ? 18 : 22),
+        width: compact ? 72 : 82,
+        height: compact ? 40 : 46,
+      }, { shadowBlur: 6, alpha: 0.96 });
+    }
+    drawSticker(context, landingAssets.levelPanelHeartPink, {
+      x: titleRibbonRect.x + titleRibbonRect.width - (compact ? 34 : 38),
+      y: titleRibbonRect.y + (compact ? 20 : 24),
+      width: compact ? 22 : 24,
+      height: compact ? 22 : 24,
+    }, { shadowBlur: 4, alpha: 0.96 });
+
+    context.save();
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.lineWidth = 5;
+    context.strokeStyle = '#ffffff';
+    context.fillStyle = '#7d5ae6';
+    context.font = `${compact ? '900 27px' : '900 30px'} sans-serif`;
+    const leaderboardTitle = t(locale, 'landing.weeklyLeaderboard');
+    if (/^[\u4e00-\u9fff]+$/.test(leaderboardTitle) && leaderboardTitle.length <= 8) {
+      drawCurvedTitle(leaderboardTitle, titleRibbonRect.x + titleRibbonRect.width / 2, titleRibbonRect.y + titleRibbonRect.height / 2 + 1);
+    } else {
+      context.strokeText(leaderboardTitle, titleRibbonRect.x + titleRibbonRect.width / 2, titleRibbonRect.y + titleRibbonRect.height / 2 + 1);
+      context.fillText(leaderboardTitle, titleRibbonRect.x + titleRibbonRect.width / 2, titleRibbonRect.y + titleRibbonRect.height / 2 + 1);
+    }
+    context.restore();
+
+    drawCenteredNote(
+      t(locale, 'landing.localWeeklyNote'),
+      panelRect.x + panelRect.width / 2,
+      panelRect.y + (compact ? 108 : 114),
+      panelRect.width - (compact ? 68 : 80),
+    );
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + (compact ? 44 : 52),
+      y: panelRect.y + (compact ? 112 : 118),
+      width: 10,
+      height: 10,
+    }, { shadowBlur: 2, alpha: 0.82 });
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + panelRect.width - (compact ? 54 : 62),
+      y: panelRect.y + (compact ? 112 : 118),
+      width: 10,
+      height: 10,
+    }, { shadowBlur: 2, alpha: 0.82 });
+
+    drawTextFrame(context, contentRect, {
+      radius: compact ? 24 : 26,
+      fill: 'rgba(255,255,255,0.82)',
+      stroke: 'rgba(255, 206, 221, 0.95)',
+    });
+    context.save();
+    context.setLineDash([7, 6]);
+    context.strokeStyle = 'rgba(255, 168, 194, 0.52)';
+    context.lineWidth = 1.2;
+    roundRect(context, {
+      x: contentRect.x + 8,
+      y: contentRect.y + 8,
+      width: contentRect.width - 16,
+      height: contentRect.height - 16,
+    }, (compact ? 24 : 26) - 6);
+    context.stroke();
+    context.restore();
+
+    const entries = weeklyLeaderboard.slice(0, 6);
+    if (entries.length === 0) {
+      drawEmptyState(contentRect);
+    } else {
+      const rowCount = entries.length;
+      const rowGap = compact ? 8 : 10;
+      const rowArea = {
+        x: contentRect.x + (compact ? 10 : 12),
+        y: contentRect.y + (compact ? 12 : 14),
+        width: contentRect.width - (compact ? 20 : 24),
+        height: contentRect.height - (compact ? 24 : 28),
+      };
+      const rowHeight = Math.max(
+        compact ? 40 : 44,
+        Math.min(
+          compact ? 48 : 52,
+          Math.floor((rowArea.height - rowGap * (rowCount - 1)) / rowCount),
+        ),
+      );
+      const totalRowsHeight = rowCount * rowHeight + rowGap * (rowCount - 1);
+      const rowStartY = rowArea.y + Math.max(0, (rowArea.height - totalRowsHeight) / 2);
+
       entries.forEach((entry, index) => {
         const rowRect = {
-          x: listLeft,
-          y: listTop + index * (rowHeight + rowGap),
-          width: rowWidth,
+          x: rowArea.x,
+          y: rowStartY + index * (rowHeight + rowGap),
+          width: rowArea.width,
           height: rowHeight,
         };
+        const topThree = index < 3;
+        const rowGradient = context.createLinearGradient(rowRect.x, rowRect.y, rowRect.x, rowRect.y + rowRect.height);
+        if (index === 0) {
+          rowGradient.addColorStop(0, 'rgba(255, 248, 220, 0.96)');
+          rowGradient.addColorStop(1, 'rgba(255, 233, 181, 0.92)');
+        } else if (index === 1) {
+          rowGradient.addColorStop(0, 'rgba(245, 236, 255, 0.96)');
+          rowGradient.addColorStop(1, 'rgba(229, 216, 255, 0.92)');
+        } else if (index === 2) {
+          rowGradient.addColorStop(0, 'rgba(236, 247, 255, 0.96)');
+          rowGradient.addColorStop(1, 'rgba(211, 236, 255, 0.92)');
+        } else {
+          rowGradient.addColorStop(0, 'rgba(255,255,255,0.74)');
+          rowGradient.addColorStop(1, 'rgba(255,247,250,0.58)');
+        }
 
-        drawHudShell(context, rowRect);
+        context.save();
+        context.fillStyle = rowGradient;
+        context.strokeStyle = topThree ? 'rgba(255, 208, 221, 0.96)' : 'rgba(255, 225, 233, 0.94)';
+        context.lineWidth = 1.2;
+        context.shadowColor = topThree ? 'rgba(180, 128, 158, 0.16)' : 'rgba(180, 128, 158, 0.10)';
+        context.shadowBlur = topThree ? 10 : 8;
+        context.shadowOffsetY = 4;
+        roundRect(context, rowRect, compact ? 15 : 16);
+        context.fill();
+        context.shadowColor = 'transparent';
+        context.stroke();
+        context.save();
+        context.setLineDash([5, 4]);
+        context.strokeStyle = 'rgba(255,255,255,0.88)';
+        context.lineWidth = 1;
+        roundRect(context, {
+          x: rowRect.x + 6,
+          y: rowRect.y + 6,
+          width: rowRect.width - 12,
+          height: rowRect.height - 12,
+        }, (compact ? 15 : 16) - 5);
+        context.stroke();
+        context.restore();
+
+        if (index < rowCount - 1) {
+          context.save();
+          context.setLineDash([4, 5]);
+          context.strokeStyle = 'rgba(250, 194, 213, 0.74)';
+          context.lineWidth = 1;
+          context.beginPath();
+          context.moveTo(rowRect.x + 18, rowRect.y + rowRect.height + 4);
+          context.lineTo(rowRect.x + rowRect.width - 18, rowRect.y + rowRect.height + 4);
+          context.stroke();
+          context.restore();
+        }
+
+        const badgeSize = compact ? 30 : 32;
         const badgeRect = {
           x: rowRect.x + 14,
-          y: rowRect.y + 12,
-          width: 26,
-          height: 26,
+          y: rowRect.y + (rowRect.height - badgeSize) / 2,
+          width: badgeSize,
+          height: badgeSize,
         };
-        const badgeGradient = context.createLinearGradient(
-          badgeRect.x,
-          badgeRect.y,
-          badgeRect.x,
-          badgeRect.y + badgeRect.height,
-        );
+        const badgeGradient = context.createLinearGradient(badgeRect.x, badgeRect.y, badgeRect.x, badgeRect.y + badgeRect.height);
         if (index === 0) {
-          badgeGradient.addColorStop(0, '#ffd56d');
-          badgeGradient.addColorStop(1, '#ff9e1a');
+          badgeGradient.addColorStop(0, '#ffd86e');
+          badgeGradient.addColorStop(1, '#ffae19');
         } else if (index === 1) {
-          badgeGradient.addColorStop(0, '#d9c9ff');
-          badgeGradient.addColorStop(1, '#8a77ff');
+          badgeGradient.addColorStop(0, '#d9c8ff');
+          badgeGradient.addColorStop(1, '#a278ff');
+        } else if (index === 2) {
+          badgeGradient.addColorStop(0, '#c9eeff');
+          badgeGradient.addColorStop(1, '#66bfff');
         } else {
-          badgeGradient.addColorStop(0, '#a8e0ff');
-          badgeGradient.addColorStop(1, '#53b7ff');
+          badgeGradient.addColorStop(0, '#fff6f3');
+          badgeGradient.addColorStop(1, '#ffe4eb');
         }
+        context.save();
         context.fillStyle = badgeGradient;
-        roundRect(context, badgeRect, 9);
+        context.strokeStyle = topThree ? 'rgba(255,255,255,0.95)' : 'rgba(255, 216, 227, 0.95)';
+        context.lineWidth = 1.4;
+        context.shadowColor = topThree ? 'rgba(178, 117, 146, 0.20)' : 'rgba(178, 117, 146, 0.10)';
+        context.shadowBlur = 8;
+        context.shadowOffsetY = 3;
+        roundRect(context, badgeRect, badgeRect.height / 2 - 2);
         context.fill();
-        context.fillStyle = '#ffffff';
+        context.shadowColor = 'transparent';
+        context.stroke();
+        context.fillStyle = index < 3 ? '#ffffff' : '#7b5364';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.font = '700 15px sans-serif';
+        context.font = `700 ${compact ? 15 : 16}px sans-serif`;
         context.fillText(String(index + 1), badgeRect.x + badgeRect.width / 2, badgeRect.y + badgeRect.height / 2 + 0.5);
+        context.restore();
 
-        context.fillStyle = THEME.textPrimary;
+        context.save();
         context.textAlign = 'left';
-        context.textBaseline = 'top';
-        context.font = '700 14px sans-serif';
+        context.textBaseline = 'middle';
+        context.fillStyle = topThree ? '#7a4b61' : '#8a6573';
+        context.font = `${compact ? '700 16px' : '700 18px'} sans-serif`;
         context.fillText(
-          t(locale, 'landing.bestTime', { duration: formatDuration(entry.durationMs) }),
-          rowRect.x + 52,
-          rowRect.y + 10,
+          formatDuration(entry.durationMs),
+          badgeRect.x + badgeRect.width + (compact ? 12 : 14),
+          rowRect.y + rowRect.height / 2 + 0.5,
         );
-        context.fillStyle = THEME.textSecondary;
-        context.font = '11px sans-serif';
-        context.fillText(
-          t(locale, 'landing.completedAt', {
-            completedAt: formatCompletedAt(locale, entry.completedAt),
-          }),
-          rowRect.x + 52,
-          rowRect.y + 32,
-        );
+        context.restore();
       });
     }
 
-    context.fillStyle = THEME.textMuted;
-    context.font = '10px sans-serif';
+    if (landingAssets.levelPanelSparkleWhite) {
+      drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+        x: panelRect.x + 14,
+        y: panelRect.y + panelRect.height - (compact ? 30 : 32),
+        width: 12,
+        height: 12,
+      }, { shadowBlur: 2, alpha: 0.82 });
+      drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+        x: panelRect.x + panelRect.width - 26,
+        y: panelRect.y + panelRect.height - (compact ? 32 : 34),
+        width: 12,
+        height: 12,
+      }, { shadowBlur: 2, alpha: 0.82 });
+    }
+
+    context.save();
     context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = 'rgba(185, 140, 159, 0.62)';
+    context.font = `${compact ? '600 12px' : '600 13px'} sans-serif`;
     context.fillText(
       t(locale, 'landing.close'),
       panelRect.x + panelRect.width / 2,
-      panelRect.y + panelRect.height - 24,
+      panelRect.y + panelRect.height - (compact ? 24 : 26),
     );
     context.restore();
   }
 
   function drawLevelPanel(snapshot: ReturnType<GameController['getSnapshot']>): void {
     const context = surface.getContext2D();
-    const panelMargin = 18;
-    const panelWidth = metrics.width - panelMargin * 2;
-    const panelHeight = Math.min(metrics.height - layout.topInset - 28, 440);
-    const panelX = panelMargin;
-    const panelY = Math.max(layout.topInset - 8, (metrics.height - panelHeight) / 2);
-    const innerPadding = 16;
+    const totalLevels = levels.length;
     const columns = 6;
-    const rows = 6;
-    const gap = 6;
-    const gridWidth = panelWidth - innerPadding * 2;
-    const tileSize = Math.floor((gridWidth - gap * (columns - 1)) / columns);
-    const gridStartX = panelX + innerPadding;
-    const gridStartY = panelY + 56;
+    const rows = Math.ceil(totalLevels / columns);
+    const completedCount = Object.keys(snapshot.records).length;
+    const unlockedCount = Math.min(totalLevels, Math.max(1, completedCount + 1));
+    const gap = Math.max(8, Math.round(Math.min(metrics.width, metrics.height) * 0.018));
+    const panelWidth = Math.min(metrics.width - 20, 388);
+    const tileSizeByWidth = Math.floor((panelWidth - 32 - gap * (columns - 1)) / columns);
+    const tileSizeByHeight = Math.floor(
+      (metrics.height - layout.safeTop - layout.safeBottom - 190 - gap * (rows - 1)) / rows,
+    );
+    const tileSize = Math.max(40, Math.min(tileSizeByWidth, tileSizeByHeight));
+    const gridWidth = columns * tileSize + gap * (columns - 1);
+    const gridHeight = rows * tileSize + gap * (rows - 1);
+    const titleAreaHeight = 92;
+    const panelHeight = titleAreaHeight + gridHeight + 28;
+    const panelX = (metrics.width - panelWidth) / 2;
+    const panelY = Math.max(layout.topInset + 18, (metrics.height - panelHeight) / 2 - 4);
+    const panelRect = {
+      x: panelX,
+      y: panelY,
+      width: panelWidth,
+      height: panelHeight,
+    };
+    const gridShellRect = {
+      x: panelX + 12,
+      y: panelY + titleAreaHeight - 4,
+      width: panelWidth - 24,
+      height: gridHeight + 24,
+    };
+    const gridStartX = gridShellRect.x + Math.max(0, (gridShellRect.width - gridWidth) / 2);
+    const gridStartY = gridShellRect.y + 10;
 
     levelTiles = [];
 
     context.save();
-    context.fillStyle = THEME.overlay;
+    const overlayGradient = context.createLinearGradient(0, 0, 0, metrics.height);
+    overlayGradient.addColorStop(0, 'rgba(255, 185, 211, 0.42)');
+    overlayGradient.addColorStop(0.52, 'rgba(255, 214, 228, 0.30)');
+    overlayGradient.addColorStop(1, 'rgba(255, 243, 249, 0.24)');
+    context.fillStyle = overlayGradient;
+    context.fillRect(0, 0, metrics.width, metrics.height);
+    const glow = context.createRadialGradient(
+      metrics.width / 2,
+      panelRect.y + panelRect.height * 0.45,
+      24,
+      metrics.width / 2,
+      panelRect.y + panelRect.height * 0.45,
+      metrics.width * 0.72,
+    );
+    glow.addColorStop(0, 'rgba(255,255,255,0.18)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = glow;
     context.fillRect(0, 0, metrics.width, metrics.height);
 
     const panelGradient = context.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
-    panelGradient.addColorStop(0, 'rgba(255,255,255,0.95)');
-    panelGradient.addColorStop(1, 'rgba(255,255,255,0.84)');
+    panelGradient.addColorStop(0, 'rgba(255, 252, 250, 0.98)');
+    panelGradient.addColorStop(0.6, 'rgba(255, 244, 247, 0.96)');
+    panelGradient.addColorStop(1, 'rgba(255, 239, 245, 0.94)');
     context.fillStyle = panelGradient;
-    context.strokeStyle = THEME.border;
-    context.lineWidth = 1.2;
-    roundRect(context, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, 20);
+    context.strokeStyle = 'rgba(255, 208, 221, 0.98)';
+    context.lineWidth = 2;
+    context.shadowColor = 'rgba(228, 132, 172, 0.24)';
+    context.shadowBlur = 30;
+    context.shadowOffsetY = 12;
+    roundRect(context, panelRect, 30);
     context.fill();
     context.stroke();
+    context.shadowColor = 'transparent';
 
-    context.fillStyle = THEME.textPrimary;
-    context.textAlign = 'left';
+    context.save();
+    context.setLineDash([6, 5]);
+    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    context.lineWidth = 1.4;
+    roundRect(context, {
+      x: panelRect.x + 8,
+      y: panelRect.y + 8,
+      width: panelRect.width - 16,
+      height: panelRect.height - 16,
+    }, 22);
+    context.stroke();
+    context.restore();
+
+    context.textAlign = 'center';
     context.textBaseline = 'top';
-    context.font = '700 17px sans-serif';
-    context.fillText(t(locale, 'section.levels'), panelX + innerPadding, panelY + 16);
-    context.font = '500 12px sans-serif';
-    context.fillStyle = THEME.textSecondary;
-    context.fillText(
-      t(locale, 'level.collectionMeta', {
-        completed: Object.keys(snapshot.records).length,
-        total: levels.length,
-      }),
-      panelX + innerPadding,
-      panelY + 36,
+    context.fillStyle = '#dc4b79';
+    context.font = '700 28px sans-serif';
+    context.shadowColor = 'rgba(255,255,255,0.52)';
+    context.shadowBlur = 2;
+    context.fillText(t(locale, 'section.levels'), panelRect.x + panelRect.width / 2, panelRect.y + 24);
+    const subtitleText = t(locale, 'level.collectionMeta', {
+      completed: completedCount,
+      total: totalLevels,
+    });
+    drawWrappedText(
+      context,
+      subtitleText,
+      {
+        x: panelRect.x + 30,
+        y: panelRect.y + 58,
+        width: panelRect.width - 60,
+        height: 28,
+      },
+      {
+        font: '500 12px sans-serif',
+        color: THEME.textSecondary,
+        lineHeight: 15,
+        maxLines: 2,
+      },
     );
+    context.shadowColor = 'transparent';
 
-    for (let slot = 0; slot < rows * columns; slot += 1) {
+    context.save();
+    const gridShellGradient = context.createLinearGradient(
+      gridShellRect.x,
+      gridShellRect.y,
+      gridShellRect.x,
+      gridShellRect.y + gridShellRect.height,
+    );
+    gridShellGradient.addColorStop(0, 'rgba(255, 255, 255, 0.93)');
+    gridShellGradient.addColorStop(1, 'rgba(255, 244, 247, 0.90)');
+    context.fillStyle = gridShellGradient;
+    context.strokeStyle = 'rgba(255, 211, 223, 0.96)';
+    context.lineWidth = 1.8;
+    context.shadowColor = 'rgba(224, 133, 168, 0.18)';
+    context.shadowBlur = 20;
+    context.shadowOffsetY = 8;
+    roundRect(context, gridShellRect, 24);
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.stroke();
+    context.save();
+    context.setLineDash([6, 6]);
+    context.strokeStyle = 'rgba(255,255,255,0.92)';
+    context.lineWidth = 1.2;
+    roundRect(context, {
+      x: gridShellRect.x + 8,
+      y: gridShellRect.y + 8,
+      width: gridShellRect.width - 16,
+      height: gridShellRect.height - 16,
+    }, 18);
+    context.stroke();
+    context.restore();
+    context.restore();
+
+    for (let slot = 0; slot < totalLevels; slot += 1) {
       const col = slot % columns;
       const row = Math.floor(slot / columns);
       const x = gridStartX + col * (tileSize + gap);
       const y = gridStartY + row * (tileSize + gap);
 
-      if (slot >= levels.length) {
-        context.fillStyle = 'rgba(255,255,255,0.42)';
-        roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
-        context.fill();
-        continue;
-      }
-
       const level = levels[slot];
-      const completed = Boolean(snapshot.records[level.id]);
+      const record = snapshot.records[level.id] ?? null;
+      const completed = Boolean(record);
       const isCurrent = snapshot.levelIndex === slot;
       const isViewing = isCurrent && snapshot.mode === 'record';
-
-      context.fillStyle = completed ? 'rgba(204,255,212,0.92)' : 'rgba(255,255,255,0.94)';
+      const isLocked = !completed && slot >= unlockedCount && !isCurrent;
+      const tileRect = { x, y, width: tileSize, height: tileSize };
+      const tileRadius = 14;
+      const tileGradient = context.createLinearGradient(x, y, x, y + tileSize);
       if (isCurrent) {
-        context.fillStyle = isViewing ? THEME.infoSoft : 'rgba(255, 238, 183, 0.98)';
+        if (isViewing) {
+          tileGradient.addColorStop(0, '#e8f8ff');
+          tileGradient.addColorStop(1, '#c9eeff');
+        } else {
+          tileGradient.addColorStop(0, '#fff2a5');
+          tileGradient.addColorStop(1, '#ffc84e');
+        }
+      } else if (completed) {
+        tileGradient.addColorStop(0, '#fffdf9');
+        tileGradient.addColorStop(1, '#fff1e8');
+      } else if (isLocked) {
+        tileGradient.addColorStop(0, 'rgba(255,255,255,0.58)');
+        tileGradient.addColorStop(1, 'rgba(245, 239, 243, 0.44)');
+      } else {
+        tileGradient.addColorStop(0, '#fffdf9');
+        tileGradient.addColorStop(1, '#fff8f1');
       }
-      context.strokeStyle = isCurrent ? THEME.borderAccent : THEME.border;
-      context.lineWidth = isCurrent ? 2 : 1;
-      roundRect(context, { x, y, width: tileSize, height: tileSize }, 10);
+
+      context.save();
+      context.fillStyle = tileGradient;
+      context.strokeStyle = isCurrent
+        ? (isViewing ? 'rgba(121, 191, 255, 0.98)' : 'rgba(255, 211, 102, 0.98)')
+        : completed
+          ? 'rgba(244, 208, 182, 0.92)'
+          : isLocked
+            ? 'rgba(222, 211, 219, 0.78)'
+            : 'rgba(248, 211, 204, 0.92)';
+      context.lineWidth = isCurrent ? 2.4 : 1.5;
+      context.shadowColor = isCurrent
+        ? (isViewing ? 'rgba(113, 184, 255, 0.28)' : 'rgba(255, 198, 81, 0.50)')
+        : completed
+          ? 'rgba(221, 156, 119, 0.18)'
+          : isLocked
+            ? 'rgba(0,0,0,0.04)'
+            : 'rgba(226, 133, 158, 0.14)';
+      context.shadowBlur = isCurrent ? 18 : 10;
+      context.shadowOffsetY = 4;
+      roundRect(context, tileRect, tileRadius);
       context.fill();
+      context.shadowColor = 'transparent';
       context.stroke();
+      context.restore();
+
+      context.save();
+      context.setLineDash([4, 4]);
+      context.strokeStyle = isCurrent
+        ? (isViewing ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.96)')
+        : isLocked
+          ? 'rgba(255,255,255,0.54)'
+          : 'rgba(255,255,255,0.86)';
+      context.lineWidth = 1.2;
+      roundRect(context, {
+        x: x + 4,
+        y: y + 4,
+        width: tileSize - 8,
+        height: tileSize - 8,
+      }, Math.max(8, tileRadius - 4));
+      context.stroke();
+      context.restore();
+
+      context.save();
+      context.fillStyle = 'rgba(255,255,255,0.26)';
+      roundRect(context, { x: x + 4, y: y + 4, width: tileSize - 8, height: Math.max(4, tileSize * 0.16) }, 8);
+      context.fill();
+      context.restore();
 
       if (isCurrent) {
-        context.fillStyle = isViewing ? THEME.info : THEME.accentFill;
-        roundRect(context, { x: x + 6, y: y + 4, width: tileSize - 12, height: 5 }, 3);
+        context.save();
+        context.fillStyle = isViewing ? 'rgba(121, 191, 255, 0.28)' : 'rgba(255, 244, 180, 0.44)';
+        roundRect(context, { x: x + 5, y: y + 5, width: tileSize - 10, height: 7 }, 4);
         context.fill();
+        context.restore();
       }
 
-      context.fillStyle = isCurrent ? THEME.accentStrong : THEME.textPrimary;
-      if (isViewing) {
-        context.fillStyle = THEME.info;
+      context.save();
+      if (isLocked) {
+        context.globalAlpha = 0.62;
       }
+      context.fillStyle = isCurrent
+        ? (isViewing ? '#5aa9ef' : '#9a5b00')
+        : completed
+          ? '#5d4351'
+          : isLocked
+            ? '#b49ea6'
+            : THEME.textPrimary;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.font = '700 15px sans-serif';
-      context.fillText(String(slot + 1), x + tileSize / 2, y + tileSize / 2 + 3);
+      context.font = isCurrent ? '800 18px sans-serif' : '700 17px sans-serif';
+      context.fillText(String(slot + 1), x + tileSize / 2, y + tileSize / 2 + 1);
+      context.restore();
 
       if (completed) {
-        context.fillStyle = THEME.success;
+        context.save();
+        context.fillStyle = 'rgba(122, 205, 90, 0.98)';
         context.beginPath();
-        context.arc(x + tileSize - 10, y + 10, 8, 0, Math.PI * 2);
+        context.arc(x + tileSize - 11, y + 11, 8, 0, Math.PI * 2);
         context.fill();
         context.fillStyle = THEME.white;
         context.font = '700 10px sans-serif';
-        context.fillText('✓', x + tileSize - 10, y + 10.5);
+        context.fillText('✓', x + tileSize - 11, y + 11.5);
+        context.restore();
       }
 
       if (isViewing) {
+        context.save();
         context.fillStyle = THEME.infoSoft;
         roundRect(context, { x: x + 6, y: y + tileSize - 14, width: tileSize - 12, height: 8 }, 4);
         context.fill();
+        context.restore();
+      }
+
+      if (isCurrent && !isViewing) {
+        drawSticker(context, landingAssets.levelPanelStarFaceYellow, {
+          x: x - 12,
+          y: y - 12,
+          width: Math.min(32, tileSize * 0.44),
+          height: Math.min(32, tileSize * 0.44),
+        }, { rotation: -8, shadowBlur: 8 });
+      }
+
+      if (isLocked) {
+        context.save();
+        const lockW = Math.max(9, Math.round(tileSize * 0.18));
+        const lockH = Math.max(10, Math.round(tileSize * 0.18));
+        const lockX = x + tileSize - lockW - 10;
+        const lockY = y + 8;
+        context.fillStyle = 'rgba(255,255,255,0.78)';
+        context.strokeStyle = 'rgba(182, 164, 176, 0.70)';
+        context.lineWidth = 1.1;
+        roundRect(context, {
+          x: lockX,
+          y: lockY + 4,
+          width: lockW,
+          height: lockH,
+        }, 3);
+        context.fill();
+        context.stroke();
+        context.beginPath();
+        context.arc(lockX + lockW / 2, lockY + 4, lockW / 3.2, Math.PI, 0);
+        context.stroke();
+        context.restore();
       }
 
       levelTiles.push({
         index: slot,
-        rect: { x, y, width: tileSize, height: tileSize },
+        rect: tileRect,
       });
     }
+
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + 14,
+      y: panelRect.y + panelRect.height - 44,
+      width: 16,
+      height: 16,
+    }, { shadowBlur: 6, alpha: 0.92 });
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + panelRect.width - 28,
+      y: panelRect.y + panelRect.height - 42,
+      width: 14,
+      height: 14,
+    }, { shadowBlur: 6, alpha: 0.86 });
+
+    drawSticker(context, landingAssets.levelPanelStarBigYellow, {
+      x: panelRect.x - 8,
+      y: panelRect.y - 18,
+      width: 56,
+      height: 56,
+    }, { rotation: -10, shadowBlur: 12 });
+    drawSticker(context, landingAssets.levelPanelRibbonPink, {
+      x: panelRect.x + 52,
+      y: panelRect.y - 14,
+      width: 56,
+      height: 68,
+    }, { rotation: 4, shadowBlur: 12 });
+    drawSticker(context, landingAssets.levelPanelCloudSmileHeart, {
+      x: panelRect.x + panelRect.width - 112,
+      y: panelRect.y - 18,
+      width: 110,
+      height: 84,
+    }, { rotation: 0, shadowBlur: 14 });
+    drawSticker(context, landingAssets.levelPanelCloudLeft, {
+      x: panelRect.x - 16,
+      y: panelRect.y + panelRect.height - 62,
+      width: 88,
+      height: 66,
+    }, { rotation: -4, shadowBlur: 10 });
+    drawSticker(context, landingAssets.levelPanelCloudRight, {
+      x: panelRect.x + panelRect.width - 82,
+      y: panelRect.y + panelRect.height - 58,
+      width: 96,
+      height: 64,
+    }, { rotation: 2, shadowBlur: 10 });
+    drawSticker(context, landingAssets.levelPanelStarPink, {
+      x: panelRect.x - 4,
+      y: panelRect.y + panelRect.height - 104,
+      width: 28,
+      height: 28,
+    }, { rotation: -10, shadowBlur: 8 });
+    drawSticker(context, landingAssets.levelPanelStarBlue, {
+      x: panelRect.x + panelRect.width - 22,
+      y: panelRect.y + 162,
+      width: 26,
+      height: 26,
+    }, { rotation: 8, shadowBlur: 8 });
+    drawSticker(context, landingAssets.levelPanelHeartPink, {
+      x: panelRect.x + panelRect.width - 30,
+      y: panelRect.y + panelRect.height / 2 + 8,
+      width: 34,
+      height: 34,
+    }, { rotation: 10, shadowBlur: 8 });
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + 22,
+      y: panelRect.y + 82,
+      width: 18,
+      height: 18,
+    }, { shadowBlur: 6, alpha: 0.95 });
+    drawSticker(context, landingAssets.levelPanelSparkleWhite, {
+      x: panelRect.x + panelRect.width - 42,
+      y: panelRect.y + 86,
+      width: 16,
+      height: 16,
+    }, { shadowBlur: 6, alpha: 0.88 });
 
     context.restore();
   }
@@ -2316,6 +4161,7 @@ async function bootstrapWechatGame(): Promise<void> {
 
     drawHeader(snapshot);
     drawInfoCards(snapshot);
+    drawBoardDecorations();
     drawButtons(snapshot);
     drawAutoAdvanceBanner(snapshot);
 
@@ -2338,6 +4184,17 @@ async function bootstrapWechatGame(): Promise<void> {
         labels: {
           solvedBadge: t(locale, 'renderer.badgeSolved'),
           recordBadge: t(locale, 'renderer.badgeRecord'),
+        },
+        backdropImage: (landingAssets.gameplayBackground ?? landingAssets.background) as unknown as CanvasImageSource | null,
+        theme: 'kawaii',
+        selectionAssets: {
+          strawberry: landingAssets.selectionStrawberry as unknown as CanvasImageSource | null,
+          heartPink: landingAssets.selectionHeartPink as unknown as CanvasImageSource | null,
+          starYellow: landingAssets.selectionStarYellow as unknown as CanvasImageSource | null,
+          sparkleWhite: landingAssets.selectionSparkleWhite as unknown as CanvasImageSource | null,
+          bubblePink: landingAssets.selectionBubblePink as unknown as CanvasImageSource | null,
+          bubbleYellow: landingAssets.selectionBubbleYellow as unknown as CanvasImageSource | null,
+          dripYellow: landingAssets.selectionDripYellow as unknown as CanvasImageSource | null,
         },
         insets: {
           top: layout.topInset,
@@ -2515,15 +4372,64 @@ async function bootstrapWechatGame(): Promise<void> {
     if (uiState.homeOpen) {
       uiState.pressedUiId = null;
       if (uiState.helpOpen || uiState.goalOpen) {
-        const closeButtonHit = infoDialogButtonRect
-          ? isPointInsideRect(x, y, infoDialogButtonRect)
-          : false;
         const insidePanel = infoDialogPanelRect
           ? isPointInsideRect(x, y, infoDialogPanelRect)
           : false;
+        const topButton = infoDialogTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+        if (topButton) {
+          infoDialogOpenAt = Date.now();
+          uiState.helpOpen = topButton.id === 'help';
+          uiState.goalOpen = topButton.id === 'goal';
+          render();
+          return true;
+        }
+
+        if (infoDialogMenuRect && isPointInsideRect(x, y, infoDialogMenuRect)) {
+          uiState.helpOpen = false;
+          uiState.goalOpen = false;
+          infoDialogPanelRect = null;
+          infoDialogButtonRect = null;
+          infoDialogLeaderboardButtonRect = null;
+          infoDialogMenuRect = null;
+          infoDialogTopButtons = [];
+          render();
+          return true;
+        }
+
+        const closeButtonHit = infoDialogButtonRect
+          ? isPointInsideRect(x, y, infoDialogButtonRect)
+          : false;
+        if (closeButtonHit) {
+          uiState.helpOpen = false;
+          uiState.goalOpen = false;
+          infoDialogPanelRect = null;
+          infoDialogButtonRect = null;
+          infoDialogLeaderboardButtonRect = null;
+          infoDialogMenuRect = null;
+          infoDialogTopButtons = [];
+          render();
+          return true;
+        }
+
+        if (infoDialogLeaderboardButtonRect && isPointInsideRect(x, y, infoDialogLeaderboardButtonRect)) {
+          uiState.helpOpen = false;
+          uiState.goalOpen = false;
+          infoDialogPanelRect = null;
+          infoDialogButtonRect = null;
+          infoDialogLeaderboardButtonRect = null;
+          infoDialogMenuRect = null;
+          infoDialogTopButtons = [];
+          uiState.leaderboardOpen = true;
+        }
+
         if (closeButtonHit || !insidePanel) {
           uiState.helpOpen = false;
           uiState.goalOpen = false;
+          infoDialogPanelRect = null;
+          infoDialogButtonRect = null;
+          infoDialogLeaderboardButtonRect = null;
+          infoDialogMenuRect = null;
+          infoDialogTopButtons = [];
         }
         render();
         return true;
@@ -2546,6 +4452,7 @@ async function bootstrapWechatGame(): Promise<void> {
           uiState.goalOpen = true;
           uiState.helpOpen = false;
         }
+        infoDialogOpenAt = Date.now();
         render();
         return true;
       }
@@ -2656,12 +4563,23 @@ async function bootstrapWechatGame(): Promise<void> {
       if (tile) {
         const snapshot = game.getSnapshot();
         const level = levels[tile.index];
-        if (snapshot.records[level.id]) {
+        const completed = Boolean(snapshot.records[level.id]);
+        const unlockedCount = Math.min(levels.length, Math.max(1, Object.keys(snapshot.records).length + 1));
+        const isLocked = !completed && tile.index >= unlockedCount && snapshot.levelIndex !== tile.index;
+        if (completed) {
           game.viewRecordedLevel(tile.index);
-        } else {
-          game.setLevel(tile.index);
+          uiState.levelPanelOpen = false;
+          render();
+          return true;
         }
-        uiState.levelPanelOpen = false;
+
+        if (!isLocked) {
+          game.setLevel(tile.index);
+          uiState.levelPanelOpen = false;
+          render();
+          return true;
+        }
+
         render();
         return true;
       }
@@ -2700,7 +4618,24 @@ async function bootstrapWechatGame(): Promise<void> {
 
   function updatePressedUi(x: number, y: number): void {
     if (uiState.homeOpen) {
-      if (uiState.leaderboardOpen || uiState.helpOpen || uiState.goalOpen) {
+      if (uiState.helpOpen || uiState.goalOpen) {
+        const topButton = infoDialogTopButtons.find((item) => isPointInsideRect(x, y, item.rect));
+        if (topButton) {
+          uiState.pressedUiId = `icon:${topButton.id}`;
+        } else if (infoDialogMenuRect && isPointInsideRect(x, y, infoDialogMenuRect)) {
+          uiState.pressedUiId = 'dialog:menu';
+        } else if (infoDialogButtonRect && isPointInsideRect(x, y, infoDialogButtonRect)) {
+          uiState.pressedUiId = 'dialog:close';
+        } else if (infoDialogLeaderboardButtonRect && isPointInsideRect(x, y, infoDialogLeaderboardButtonRect)) {
+          uiState.pressedUiId = 'dialog:leaderboard';
+        } else {
+          uiState.pressedUiId = null;
+        }
+        render();
+        return;
+      }
+
+      if (uiState.leaderboardOpen) {
         uiState.pressedUiId = null;
         render();
         return;

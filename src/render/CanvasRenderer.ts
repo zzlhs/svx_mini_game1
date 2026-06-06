@@ -47,6 +47,10 @@ interface RenderInsets {
 interface RenderOptions {
   labels: RenderLabels;
   insets?: Partial<RenderInsets>;
+  backdropImage?: CanvasImageSource | null;
+  theme?: 'default' | 'kawaii';
+  showPlacementFills?: boolean;
+  selectionAssets?: Partial<SelectionDecorAssets> | null;
 }
 
 interface SurfaceRect {
@@ -54,6 +58,30 @@ interface SurfaceRect {
   y: number;
   width: number;
   height: number;
+}
+
+interface SelectionDecorAssets {
+  strawberry: CanvasImageSource | null;
+  heartPink: CanvasImageSource | null;
+  starYellow: CanvasImageSource | null;
+  sparkleWhite: CanvasImageSource | null;
+  bubblePink: CanvasImageSource | null;
+  bubbleYellow: CanvasImageSource | null;
+  dripYellow: CanvasImageSource | null;
+}
+
+type KawaiiSelectionTheme = 'pink' | 'yellow' | 'green' | 'blue' | 'purple';
+
+type DecorationAnchor = 'tl' | 'tr' | 'bl' | 'br' | 'top' | 'bottom' | 'center';
+
+type DecorationImageKind = keyof SelectionDecorAssets;
+
+interface DecorationSpec {
+  kind: DecorationImageKind;
+  anchor: DecorationAnchor;
+  size: number;
+  alpha: number;
+  filter?: string;
 }
 
 const PLACEMENT_COLORS = [
@@ -65,6 +93,79 @@ const PLACEMENT_COLORS = [
   '#cbc4ff',
   '#ffd1ea',
 ];
+
+const KAWAII_SELECTION_THEMES: readonly KawaiiSelectionTheme[] = [
+  'pink',
+  'yellow',
+  'green',
+  'blue',
+  'purple',
+];
+
+const KAWAII_SELECTION_PALETTE: Record<
+  KawaiiSelectionTheme,
+  {
+    start: string;
+    mid: string;
+    end: string;
+    border: string;
+    shadow: string;
+    checkerA: string;
+    checkerB: string;
+    vector: string;
+  }
+> = {
+  pink: {
+    start: 'rgba(255, 214, 230, 0.70)',
+    mid: 'rgba(255, 181, 209, 0.56)',
+    end: 'rgba(255, 157, 193, 0.52)',
+    border: 'rgba(255, 236, 243, 0.98)',
+    shadow: 'rgba(232, 130, 172, 0.28)',
+    checkerA: 'rgba(255, 255, 255, 0.12)',
+    checkerB: 'rgba(255, 182, 211, 0.08)',
+    vector: '#ff9fc8',
+  },
+  yellow: {
+    start: 'rgba(255, 239, 176, 0.70)',
+    mid: 'rgba(255, 220, 122, 0.58)',
+    end: 'rgba(255, 200, 94, 0.52)',
+    border: 'rgba(255, 247, 221, 0.98)',
+    shadow: 'rgba(222, 172, 80, 0.30)',
+    checkerA: 'rgba(255, 255, 255, 0.12)',
+    checkerB: 'rgba(255, 217, 135, 0.08)',
+    vector: '#ffcc62',
+  },
+  green: {
+    start: 'rgba(205, 248, 212, 0.66)',
+    mid: 'rgba(165, 232, 179, 0.52)',
+    end: 'rgba(130, 216, 155, 0.48)',
+    border: 'rgba(239, 255, 241, 0.98)',
+    shadow: 'rgba(104, 188, 125, 0.28)',
+    checkerA: 'rgba(255, 255, 255, 0.11)',
+    checkerB: 'rgba(170, 233, 185, 0.08)',
+    vector: '#8ad79c',
+  },
+  blue: {
+    start: 'rgba(201, 235, 255, 0.66)',
+    mid: 'rgba(157, 214, 250, 0.52)',
+    end: 'rgba(120, 189, 240, 0.48)',
+    border: 'rgba(239, 249, 255, 0.98)',
+    shadow: 'rgba(112, 162, 224, 0.28)',
+    checkerA: 'rgba(255, 255, 255, 0.11)',
+    checkerB: 'rgba(166, 214, 247, 0.08)',
+    vector: '#88c9ff',
+  },
+  purple: {
+    start: 'rgba(229, 218, 255, 0.66)',
+    mid: 'rgba(203, 181, 249, 0.52)',
+    end: 'rgba(176, 149, 235, 0.48)',
+    border: 'rgba(247, 241, 255, 0.98)',
+    shadow: 'rgba(158, 127, 219, 0.30)',
+    checkerA: 'rgba(255, 255, 255, 0.11)',
+    checkerB: 'rgba(208, 191, 251, 0.08)',
+    vector: '#c4adff',
+  },
+};
 
 function getNow(): number {
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -106,6 +207,12 @@ export class CanvasRenderer {
     left: 0,
   };
 
+  private backdropImage: CanvasImageSource | null = null;
+
+  private theme: 'default' | 'kawaii' = 'default';
+
+  private selectionAssets: Partial<SelectionDecorAssets> | null = null;
+
   constructor(surface: CanvasSurface) {
     this.surface = surface;
     this.context = surface.getContext2D();
@@ -120,6 +227,9 @@ export class CanvasRenderer {
       bottom: options.insets?.bottom ?? 0,
       left: options.insets?.left ?? 0,
     };
+    this.backdropImage = options.backdropImage ?? null;
+    this.theme = options.theme ?? 'default';
+    this.selectionAssets = options.selectionAssets ?? null;
     this.metrics = this.computeMetrics(snapshot.level, surfaceSize.width, surfaceSize.height);
     this.consumeEffects(snapshot.effects, now);
     this.pruneEffects(now);
@@ -136,7 +246,10 @@ export class CanvasRenderer {
     context.translate(shakeOffset, 0);
 
     this.drawBoardSurface();
-    this.drawPlacements(placements, now);
+    this.drawGrid(level);
+    if (options.showPlacementFills !== false) {
+      this.drawPlacements(placements, now);
+    }
 
     if (hintSuggestion) {
       this.drawHint(hintSuggestion.rect);
@@ -146,7 +259,6 @@ export class CanvasRenderer {
       this.drawPreview(preview.rect, preview.validation.ok, preview.validation.clue);
     }
 
-    this.drawGrid(level);
     this.drawClues(level, placements);
 
     const selectedPlacement = placements.find((placement) => placement.id === selectedPlacementId) ?? null;
@@ -170,6 +282,19 @@ export class CanvasRenderer {
       this.shakeStartedAt >= 0 ||
       this.celebrationStartedAt >= 0
     );
+  }
+
+  getBoardSurfaceRect(): SurfaceRect {
+    return {
+      x: this.metrics.offsetX,
+      y: this.metrics.offsetY,
+      width: this.metrics.boardWidth,
+      height: this.metrics.boardHeight,
+    };
+  }
+
+  getSurfaceRectForGridRect(rect: GridRect): SurfaceRect {
+    return this.getSurfaceRect(rect);
   }
 
   getCellFromSurfacePoint(point: { x: number; y: number }, clamp = false): Cell | null {
@@ -220,7 +345,10 @@ export class CanvasRenderer {
   }
 
   private computeMetrics(level: Level, width: number, height: number): BoardMetrics {
-    const basePadding = Math.max(18, Math.min(width, height) * 0.05);
+    const basePadding =
+      this.theme === 'kawaii'
+        ? Math.max(10, Math.min(width, height) * 0.03)
+        : Math.max(18, Math.min(width, height) * 0.05);
     const availableLeft = basePadding + this.insets.left;
     const availableRight = width - basePadding - this.insets.right;
     const availableTop = basePadding + this.insets.top;
@@ -243,6 +371,19 @@ export class CanvasRenderer {
   }
 
   private drawBackdrop(width: number, height: number): void {
+    if (this.backdropImage) {
+      this.drawImageCover(this.backdropImage, 0, 0, width, height);
+      this.context.save();
+      const veil = this.context.createLinearGradient(0, 0, 0, height);
+      veil.addColorStop(0, 'rgba(255, 210, 230, 0.08)');
+      veil.addColorStop(0.5, 'rgba(255, 255, 255, 0.02)');
+      veil.addColorStop(1, 'rgba(196, 231, 255, 0.08)');
+      this.context.fillStyle = veil;
+      this.context.fillRect(0, 0, width, height);
+      this.context.restore();
+      return;
+    }
+
     const gradient = this.context.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#ff968f');
     gradient.addColorStop(0.48, '#f29ac8');
@@ -259,33 +400,47 @@ export class CanvasRenderer {
 
   private drawBoardSurface(): void {
     const { context, metrics } = this;
-    const frameInset = 14;
+    const frameInset = this.theme === 'kawaii' ? 18 : 14;
 
     context.save();
-    const gradient = context.createLinearGradient(
-      metrics.offsetX,
-      metrics.offsetY - frameInset,
-      metrics.offsetX,
-      metrics.offsetY + metrics.boardHeight + frameInset,
-    );
-    gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
-    gradient.addColorStop(1, 'rgba(234, 249, 255, 0.86)');
+    const frameX = metrics.offsetX - frameInset;
+    const frameY = metrics.offsetY - frameInset;
+    const frameWidth = metrics.boardWidth + frameInset * 2;
+    const frameHeight = metrics.boardHeight + frameInset * 2;
+
+    const gradient = context.createLinearGradient(frameX, frameY, frameX, frameY + frameHeight);
+    if (this.theme === 'kawaii') {
+      gradient.addColorStop(0, 'rgba(255, 252, 248, 0.97)');
+      gradient.addColorStop(1, 'rgba(255, 245, 238, 0.92)');
+      context.strokeStyle = 'rgba(255, 192, 204, 0.92)';
+      context.lineWidth = 3;
+      context.shadowColor = 'rgba(162, 111, 148, 0.26)';
+      context.shadowBlur = 28;
+      context.shadowOffsetY = 12;
+    } else {
+      gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+      gradient.addColorStop(1, 'rgba(234, 249, 255, 0.86)');
+      context.strokeStyle = 'rgba(255,255,255,0.88)';
+      context.lineWidth = 2.8;
+      context.shadowColor = 'rgba(167, 123, 165, 0.24)';
+      context.shadowBlur = 24;
+      context.shadowOffsetY = 10;
+    }
     context.fillStyle = gradient;
-    context.strokeStyle = 'rgba(255,255,255,0.88)';
-    context.lineWidth = 2.8;
-    context.shadowColor = 'rgba(167, 123, 165, 0.24)';
-    context.shadowBlur = 24;
-    context.shadowOffsetY = 10;
-    this.roundRect(
-      metrics.offsetX - frameInset,
-      metrics.offsetY - frameInset,
-      metrics.boardWidth + frameInset * 2,
-      metrics.boardHeight + frameInset * 2,
-      20,
-    );
+    this.roundRect(frameX, frameY, frameWidth, frameHeight, this.theme === 'kawaii' ? 26 : 20);
     context.fill();
     context.shadowColor = 'transparent';
     context.stroke();
+
+    if (this.theme === 'kawaii') {
+      context.save();
+      context.setLineDash([6, 5]);
+      context.strokeStyle = 'rgba(255, 170, 188, 0.88)';
+      context.lineWidth = 1.8;
+      this.roundRect(frameX + 8, frameY + 8, frameWidth - 16, frameHeight - 16, 22);
+      context.stroke();
+      context.restore();
+    }
     context.restore();
   }
 
@@ -327,6 +482,11 @@ export class CanvasRenderer {
 
   private drawPlacements(placements: Placement[], now: number): void {
     placements.forEach((placement, index) => {
+      if (this.theme === 'kawaii') {
+        this.drawKawaiiPlacement(placement, index, now);
+        return;
+      }
+
       const color = PLACEMENT_COLORS[index % PLACEMENT_COLORS.length];
       const animation = this.placementAnimations.find(
         (candidate) => candidate.placementId === placement.id,
@@ -343,6 +503,256 @@ export class CanvasRenderer {
       const alpha = 0.35 + eased * 0.57;
       this.fillRectAnimated(placement.rect, color, '#5a4c3a', alpha, scale);
     });
+  }
+
+  private drawKawaiiPlacement(placement: Placement, index: number, now: number): void {
+    const theme = KAWAII_SELECTION_THEMES[index % KAWAII_SELECTION_THEMES.length];
+    const animation = this.placementAnimations.find(
+      (candidate) => candidate.placementId === placement.id,
+    );
+    const progress = animation ? Math.min(1, (now - animation.startedAt) / 220) : 1;
+    const eased = 1 - (1 - progress) * (1 - progress);
+    const scale = animation ? 0.94 + eased * 0.06 : 1;
+    const alpha = animation ? 0.42 + eased * 0.5 : 0.92;
+    const surfaceRect = this.getSurfaceRect(placement.rect);
+    const inset = Math.max(4, this.metrics.cellSize * 0.035);
+    const rect: SurfaceRect = {
+      x: surfaceRect.x + inset,
+      y: surfaceRect.y + inset,
+      width: surfaceRect.width - inset * 2,
+      height: surfaceRect.height - inset * 2,
+    };
+    const centerX = rect.x + rect.width / 2;
+    const centerY = rect.y + rect.height / 2;
+
+    this.context.save();
+    this.context.globalAlpha = alpha;
+    this.context.translate(centerX, centerY);
+    this.context.scale(scale, scale);
+    this.context.translate(-centerX, -centerY);
+    this.drawKawaiiPlacementSurface(rect, theme, placement);
+    this.context.restore();
+  }
+
+  private drawKawaiiPlacementSurface(
+    rect: SurfaceRect,
+    theme: KawaiiSelectionTheme,
+    placement: Placement,
+  ): void {
+    const palette = KAWAII_SELECTION_PALETTE[theme];
+    const radius = Math.max(18, this.metrics.cellSize * 0.22);
+    const innerInset = Math.max(6, this.metrics.cellSize * 0.09);
+    const checkerSize = Math.max(16, this.metrics.cellSize * 0.48);
+    const highlightHeight = Math.max(20, Math.min(rect.height * 0.32, this.metrics.cellSize * 0.9));
+
+    this.context.save();
+    this.context.shadowColor = palette.shadow;
+    this.context.shadowBlur = Math.max(18, this.metrics.cellSize * 0.46);
+    this.context.shadowOffsetY = Math.max(4, this.metrics.cellSize * 0.06);
+    const fill = this.context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
+    fill.addColorStop(0, palette.start);
+    fill.addColorStop(0.52, palette.mid);
+    fill.addColorStop(1, palette.end);
+    this.context.fillStyle = fill;
+    this.roundRect(rect.x, rect.y, rect.width, rect.height, radius);
+    this.context.fill();
+    this.context.restore();
+
+    this.context.save();
+    this.roundRect(rect.x, rect.y, rect.width, rect.height, radius);
+    this.context.clip();
+    for (let y = rect.y; y < rect.y + rect.height; y += checkerSize) {
+      for (let x = rect.x; x < rect.x + rect.width; x += checkerSize) {
+        const offsetIndex = Math.floor((x - rect.x) / checkerSize) + Math.floor((y - rect.y) / checkerSize);
+        this.context.fillStyle = offsetIndex % 2 === 0 ? palette.checkerA : palette.checkerB;
+        this.context.fillRect(x, y, checkerSize, checkerSize);
+      }
+    }
+
+    const topGlow = this.context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + highlightHeight);
+    topGlow.addColorStop(0, 'rgba(255,255,255,0.34)');
+    topGlow.addColorStop(1, 'rgba(255,255,255,0)');
+    this.context.fillStyle = topGlow;
+    this.context.fillRect(rect.x, rect.y, rect.width, highlightHeight);
+
+    this.context.globalAlpha = 0.74;
+    this.context.fillStyle = 'rgba(255,255,255,0.84)';
+    this.roundRect(
+      rect.x + innerInset * 0.8,
+      rect.y + innerInset * 0.65,
+      Math.max(28, rect.width * 0.34),
+      Math.max(12, highlightHeight * 0.52),
+      Math.max(10, highlightHeight * 0.28),
+    );
+    this.context.fill();
+    this.context.restore();
+
+    this.context.save();
+    this.context.strokeStyle = palette.border;
+    this.context.lineWidth = 2.6;
+    this.roundRect(rect.x, rect.y, rect.width, rect.height, radius);
+    this.context.stroke();
+    this.context.restore();
+
+    this.context.save();
+    this.context.setLineDash([8, 6]);
+    this.context.strokeStyle = 'rgba(255,255,255,0.92)';
+    this.context.lineWidth = 1.8;
+    this.roundRect(
+      rect.x + innerInset,
+      rect.y + innerInset,
+      rect.width - innerInset * 2,
+      rect.height - innerInset * 2,
+      Math.max(14, radius - innerInset * 0.6),
+    );
+    this.context.stroke();
+    this.context.restore();
+
+    if (
+      theme === 'yellow' &&
+      placement.rect.width >= 2 &&
+      placement.rect.width * placement.rect.height >= 4 &&
+      this.selectionAssets?.dripYellow
+    ) {
+      const dripHeight = Math.min(rect.height * 0.23, this.metrics.cellSize * 0.75);
+      this.drawImageClipped(
+        this.selectionAssets.dripYellow,
+        rect.x,
+        rect.y + 1,
+        rect.width,
+        dripHeight,
+        radius,
+      );
+    }
+
+    this.drawKawaiiPlacementDecorations(rect, theme, placement);
+  }
+
+  private drawKawaiiPlacementDecorations(
+    rect: SurfaceRect,
+    theme: KawaiiSelectionTheme,
+    placement: Placement,
+  ): void {
+    const minSide = Math.min(rect.width, rect.height);
+    const baseSize = Math.max(12, Math.min(28, minSide * 0.18));
+    const area = placement.rect.width * placement.rect.height;
+    const random = this.createPlacementRandom(`${placement.id}:${theme}:${placement.rect.width}x${placement.rect.height}`);
+    const specs: DecorationSpec[] = [];
+    const themeFilter = this.getSelectionImageFilter(theme);
+
+    if (theme === 'pink') {
+      if (area >= 4) {
+        specs.push({ kind: 'strawberry', anchor: 'tl', size: baseSize * 1.05, alpha: 0.96 });
+      }
+      specs.push({ kind: 'heartPink', anchor: 'tr', size: baseSize * 0.9, alpha: 0.88 });
+      specs.push({ kind: 'bubblePink', anchor: 'bl', size: baseSize * 0.9, alpha: 0.84 });
+      specs.push({ kind: 'sparkleWhite', anchor: 'br', size: baseSize * 0.68, alpha: 0.82 });
+    } else if (theme === 'yellow') {
+      specs.push({ kind: 'starYellow', anchor: 'tl', size: baseSize * 0.95, alpha: 0.9 });
+      specs.push({ kind: 'heartPink', anchor: 'tr', size: baseSize * 0.78, alpha: 0.74 });
+      specs.push({ kind: 'bubbleYellow', anchor: 'br', size: baseSize * 0.84, alpha: 0.78 });
+      specs.push({ kind: 'sparkleWhite', anchor: 'bl', size: baseSize * 0.66, alpha: 0.8 });
+    } else {
+      specs.push({ kind: 'starYellow', anchor: 'tl', size: baseSize * 0.88, alpha: 0.76, filter: themeFilter });
+      specs.push({ kind: 'heartPink', anchor: 'tr', size: baseSize * 0.8, alpha: 0.72, filter: themeFilter });
+      specs.push({ kind: 'bubblePink', anchor: 'br', size: baseSize * 0.78, alpha: 0.7, filter: themeFilter });
+      specs.push({ kind: 'sparkleWhite', anchor: 'bl', size: baseSize * 0.62, alpha: 0.76 });
+      if (area >= 4 && random() > 0.4) {
+        specs.push({ kind: 'bubbleYellow', anchor: 'center', size: baseSize * 0.62, alpha: 0.58, filter: themeFilter });
+      }
+    }
+
+    specs.forEach((spec) => this.drawKawaiiDecoration(rect, spec, random));
+  }
+
+  private drawKawaiiDecoration(rect: SurfaceRect, spec: DecorationSpec, random: () => number): void {
+    const point = this.getDecorationPoint(rect, spec.anchor, spec.size, random);
+    const image = this.selectionAssets?.[spec.kind];
+    if (!image) {
+      return;
+    }
+
+    this.context.save();
+    this.context.globalAlpha = spec.alpha;
+    if (spec.filter) {
+      this.context.filter = spec.filter;
+    }
+    this.context.drawImage(image, point.x, point.y, spec.size, spec.size);
+    this.context.filter = 'none';
+    this.context.restore();
+  }
+
+  private getSelectionImageFilter(theme: KawaiiSelectionTheme): string {
+    switch (theme) {
+      case 'green':
+        return 'hue-rotate(86deg) saturate(1.08) brightness(0.96)';
+      case 'blue':
+        return 'hue-rotate(188deg) saturate(1.08) brightness(0.98)';
+      case 'purple':
+        return 'hue-rotate(250deg) saturate(1.05) brightness(0.98)';
+      default:
+        return '';
+    }
+  }
+
+  private getDecorationPoint(
+    rect: SurfaceRect,
+    anchor: DecorationAnchor,
+    size: number,
+    random: () => number,
+  ): { x: number; y: number } {
+    const insetX = Math.max(12, size * 0.32);
+    const insetY = Math.max(10, size * 0.3);
+    const jitterX = (random() - 0.5) * Math.min(size * 0.35, rect.width * 0.08);
+    const jitterY = (random() - 0.5) * Math.min(size * 0.35, rect.height * 0.08);
+
+    switch (anchor) {
+      case 'tl':
+        return { x: rect.x + insetX + jitterX, y: rect.y + insetY + jitterY };
+      case 'tr':
+        return { x: rect.x + rect.width - size - insetX + jitterX, y: rect.y + insetY + jitterY };
+      case 'bl':
+        return { x: rect.x + insetX + jitterX, y: rect.y + rect.height - size - insetY + jitterY };
+      case 'br':
+        return { x: rect.x + rect.width - size - insetX + jitterX, y: rect.y + rect.height - size - insetY + jitterY };
+      case 'top':
+        return { x: rect.x + rect.width * 0.48 - size / 2 + jitterX, y: rect.y + insetY + jitterY };
+      case 'bottom':
+        return { x: rect.x + rect.width * 0.28 - size / 2 + jitterX, y: rect.y + rect.height - size - insetY + jitterY };
+      case 'center':
+      default:
+        return { x: rect.x + rect.width * 0.56 - size / 2 + jitterX, y: rect.y + rect.height * 0.56 - size / 2 + jitterY };
+    }
+  }
+
+  private createPlacementRandom(seedText: string): () => number {
+    let seed = 2166136261;
+    for (let index = 0; index < seedText.length; index += 1) {
+      seed ^= seedText.charCodeAt(index);
+      seed = Math.imul(seed, 16777619);
+    }
+    let state = seed >>> 0;
+    return () => {
+      state = Math.imul(state ^ (state >>> 15), 2246822519);
+      state = Math.imul(state ^ (state >>> 13), 3266489917);
+      state ^= state >>> 16;
+      return (state >>> 0) / 4294967295;
+    };
+  }
+
+  private drawImageClipped(
+    image: CanvasImageSource,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+  ): void {
+    this.context.save();
+    this.roundRect(x, y, width, height + radius, radius);
+    this.context.clip();
+    this.context.drawImage(image, x, y, width, height);
+    this.context.restore();
   }
 
   private drawPreview(rect: GridRect, valid: boolean, clue: Clue | null): void {
@@ -526,6 +936,11 @@ export class CanvasRenderer {
   }
 
   private drawGrid(level: Level): void {
+    if (this.theme === 'kawaii') {
+      this.drawKawaiiGrid(level);
+      return;
+    }
+
     const { context, metrics } = this;
     context.save();
     context.strokeStyle = 'rgba(255, 244, 252, 0.98)';
@@ -552,8 +967,37 @@ export class CanvasRenderer {
     context.restore();
   }
 
+  private drawKawaiiGrid(level: Level): void {
+    const { context, metrics } = this;
+    const gap = Math.max(4, Math.round(metrics.cellSize * 0.05));
+    const radius = Math.max(12, Math.round(metrics.cellSize * 0.14));
+
+    context.save();
+    for (let y = 0; y < level.height; y += 1) {
+      for (let x = 0; x < level.width; x += 1) {
+        const cellX = metrics.offsetX + x * metrics.cellSize + gap / 2;
+        const cellY = metrics.offsetY + y * metrics.cellSize + gap / 2;
+        const cellSize = metrics.cellSize - gap;
+        const fill = context.createLinearGradient(cellX, cellY, cellX, cellY + cellSize);
+        fill.addColorStop(0, 'rgba(255, 249, 241, 0.98)');
+        fill.addColorStop(1, 'rgba(255, 241, 229, 0.96)');
+        context.fillStyle = fill;
+        context.strokeStyle = 'rgba(255, 206, 196, 0.92)';
+        context.lineWidth = 1.4;
+        context.shadowColor = 'rgba(255, 255, 255, 0.85)';
+        context.shadowBlur = 6;
+        this.roundRect(cellX, cellY, cellSize, cellSize, radius);
+        context.fill();
+        context.shadowColor = 'transparent';
+        context.stroke();
+      }
+    }
+    context.restore();
+  }
+
   private drawClues(level: Level, placements: Placement[]): void {
     const coveredClues = new Set(placements.map((placement) => `${placement.clue.x},${placement.clue.y}`));
+    const kawaiiColors = ['#ffaec4', '#acdfff', '#c9a5ff', '#ffd16a', '#b5e58a'];
 
     this.context.save();
     this.context.textAlign = 'center';
@@ -564,15 +1008,28 @@ export class CanvasRenderer {
       const centerX = this.metrics.offsetX + (clue.x + 0.5) * this.metrics.cellSize;
       const centerY = this.metrics.offsetY + (clue.y + 0.5) * this.metrics.cellSize;
       const covered = coveredClues.has(`${clue.x},${clue.y}`);
-
-      this.context.fillStyle = covered ? '#6b4258' : '#7a5c69';
       this.context.beginPath();
-      this.context.arc(centerX, centerY, this.metrics.cellSize * 0.24, 0, Math.PI * 2);
+      this.context.arc(centerX, centerY, this.metrics.cellSize * (this.theme === 'kawaii' ? 0.255 : 0.24), 0, Math.PI * 2);
       this.context.fillStyle = covered ? 'rgba(255, 250, 252, 0.96)' : 'rgba(255, 255, 255, 0.94)';
       this.context.fill();
-      this.context.strokeStyle = covered ? '#d997b6' : '#ffe17a';
-      this.context.lineWidth = 2;
+      this.context.strokeStyle = this.theme === 'kawaii'
+        ? kawaiiColors[Math.abs((clue.x + clue.y + clue.value) % kawaiiColors.length)]
+        : covered
+          ? '#d997b6'
+          : '#ffe17a';
+      this.context.lineWidth = this.theme === 'kawaii' ? 3 : 2;
       this.context.stroke();
+
+      if (this.theme === 'kawaii') {
+        this.context.save();
+        this.context.setLineDash([4, 3]);
+        this.context.strokeStyle = 'rgba(137, 87, 103, 0.25)';
+        this.context.lineWidth = 1.2;
+        this.context.beginPath();
+        this.context.arc(centerX, centerY, this.metrics.cellSize * 0.19, 0, Math.PI * 2);
+        this.context.stroke();
+        this.context.restore();
+      }
 
       this.context.fillStyle = covered ? '#6b4258' : '#6a4f5d';
       this.context.fillText(String(clue.value), centerX, centerY + 1);
@@ -590,11 +1047,21 @@ export class CanvasRenderer {
 
     context.save();
     const gradient = context.createLinearGradient(x, y, x, y + badgeHeight);
-    gradient.addColorStop(0, '#a9ef77');
-    gradient.addColorStop(1, '#64c949');
+    if (this.theme === 'kawaii') {
+      gradient.addColorStop(0, '#ffe78e');
+      gradient.addColorStop(1, '#ffc94b');
+      context.strokeStyle = 'rgba(255,255,255,0.94)';
+      context.lineWidth = 2;
+    } else {
+      gradient.addColorStop(0, '#a9ef77');
+      gradient.addColorStop(1, '#64c949');
+    }
     context.fillStyle = gradient;
     this.roundRect(x, y, badgeWidth, badgeHeight, 16);
     context.fill();
+    if (this.theme === 'kawaii') {
+      context.stroke();
+    }
 
     context.fillStyle = '#ffffff';
     context.textAlign = 'center';
@@ -723,5 +1190,37 @@ export class CanvasRenderer {
       this.context.stroke();
     }
     this.context.restore();
+  }
+
+  private drawImageCover(
+    image: CanvasImageSource,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    const source = image as { width?: number; height?: number };
+    const sourceWidth = source.width ?? width;
+    const sourceHeight = source.height ?? height;
+    if (sourceWidth <= 0 || sourceHeight <= 0) {
+      return;
+    }
+
+    const sourceRatio = sourceWidth / sourceHeight;
+    const targetRatio = width / height;
+    let sx = 0;
+    let sy = 0;
+    let sw = sourceWidth;
+    let sh = sourceHeight;
+
+    if (sourceRatio > targetRatio) {
+      sw = sourceHeight * targetRatio;
+      sx = (sourceWidth - sw) / 2;
+    } else {
+      sh = sourceWidth / targetRatio;
+      sy = (sourceHeight - sh) / 2;
+    }
+
+    this.context.drawImage(image, sx, sy, sw, sh, x, y, width, height);
   }
 }
