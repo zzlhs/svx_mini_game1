@@ -23,6 +23,30 @@ import { CanvasRenderer } from './render/CanvasRenderer';
 import { BrowserGameStorage } from './storage/BrowserGameStorage';
 import { BrowserLocalStorageAdapter } from './storage/BrowserLocalStorageAdapter';
 
+interface VisualAssets {
+  background: HTMLImageElement;
+  gameplayBackground: HTMLImageElement;
+  selectionStrawberry: HTMLImageElement;
+  selectionHeartPink: HTMLImageElement;
+  selectionStarYellow: HTMLImageElement;
+  selectionSparkleWhite: HTMLImageElement;
+  selectionBubblePink: HTMLImageElement;
+  selectionBubbleYellow: HTMLImageElement;
+  selectionDripYellow: HTMLImageElement;
+}
+
+const WECHAT_ASSET_URLS = {
+  background: new URL('../assets/wechat/bg.jpg', import.meta.url).href,
+  gameplayBackground: new URL('../assets/wechat/bg_kawaii.png', import.meta.url).href,
+  selectionStrawberry: new URL('../assets/wechat/selection/selection_decor_strawberry.png', import.meta.url).href,
+  selectionHeartPink: new URL('../assets/wechat/selection/selection_decor_heart_pink.png', import.meta.url).href,
+  selectionStarYellow: new URL('../assets/wechat/selection/selection_decor_star_yellow.png', import.meta.url).href,
+  selectionSparkleWhite: new URL('../assets/wechat/selection/selection_decor_sparkle_white.png', import.meta.url).href,
+  selectionBubblePink: new URL('../assets/wechat/selection/selection_decor_bubble_pink.png', import.meta.url).href,
+  selectionBubbleYellow: new URL('../assets/wechat/selection/selection_decor_bubble_yellow.png', import.meta.url).href,
+  selectionDripYellow: new URL('../assets/wechat/selection/selection_top_drip_yellow.png', import.meta.url).href,
+} as const;
+
 const app = document.querySelector<HTMLDivElement>('#app');
 
 if (!app) {
@@ -180,8 +204,20 @@ if (
   throw new Error('UI bootstrapping failed');
 }
 
-type SelectionTheme = 'pink' | 'yellow' | 'green' | 'blue' | 'purple';
-const selectionThemes: readonly SelectionTheme[] = ['pink', 'yellow', 'green', 'blue', 'purple'];
+function createImage(url: string, onReady: () => void): HTMLImageElement {
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = url;
+  if (!image.complete) {
+    image.addEventListener('load', onReady, { once: true });
+  }
+
+  return image;
+}
+
+function getCanvasImage(image: HTMLImageElement): CanvasImageSource | null {
+  return image.complete && image.naturalWidth > 0 ? image : null;
+}
 
 let locale: Locale = loadLocale() ?? detectLocale();
 const gameStorage = new BrowserGameStorage(new BrowserLocalStorageAdapter());
@@ -201,6 +237,23 @@ const renderer = new CanvasRenderer(surface);
 const audio = new FeedbackAudio();
 const pointerInputSource = new BrowserPointerInputSource(canvas);
 new PointerController(pointerInputSource, surface, renderer, game);
+
+const visualAssets: VisualAssets = {
+  background: createImage(WECHAT_ASSET_URLS.background, () => renderBoard(game.getSnapshot())),
+  gameplayBackground: createImage(WECHAT_ASSET_URLS.gameplayBackground, () => renderBoard(game.getSnapshot())),
+  selectionStrawberry: createImage(WECHAT_ASSET_URLS.selectionStrawberry, () => renderBoard(game.getSnapshot())),
+  selectionHeartPink: createImage(WECHAT_ASSET_URLS.selectionHeartPink, () => renderBoard(game.getSnapshot())),
+  selectionStarYellow: createImage(WECHAT_ASSET_URLS.selectionStarYellow, () => renderBoard(game.getSnapshot())),
+  selectionSparkleWhite: createImage(WECHAT_ASSET_URLS.selectionSparkleWhite, () => renderBoard(game.getSnapshot())),
+  selectionBubblePink: createImage(WECHAT_ASSET_URLS.selectionBubblePink, () => renderBoard(game.getSnapshot())),
+  selectionBubbleYellow: createImage(WECHAT_ASSET_URLS.selectionBubbleYellow, () => renderBoard(game.getSnapshot())),
+  selectionDripYellow: createImage(WECHAT_ASSET_URLS.selectionDripYellow, () => renderBoard(game.getSnapshot())),
+};
+
+document.documentElement.style.setProperty(
+  '--wechat-gameplay-background',
+  `url("${WECHAT_ASSET_URLS.gameplayBackground}")`,
+);
 
 const primeAudio = (): void => {
   audio.prime();
@@ -269,69 +322,6 @@ function formatDuration(durationMs: number): string {
 
 function formatCompletedAt(isoString: string): string {
   return formatLocaleDate(locale, isoString) ?? t(locale, 'fallback.unknownTime');
-}
-
-let lastSelectionLayerKey = '';
-
-function getSelectionTheme(index: number): SelectionTheme {
-  return selectionThemes[index % selectionThemes.length];
-}
-
-function renderSelectionRegions(snapshot: GameSnapshot): void {
-  const boardRect = renderer.getBoardSurfaceRect();
-  const layerKey = [
-    boardRect.x,
-    boardRect.y,
-    boardRect.width,
-    boardRect.height,
-    snapshot.selectedPlacementId ?? '',
-    ...snapshot.placements.map((placement) =>
-      [
-        placement.id,
-        placement.rect.x,
-        placement.rect.y,
-        placement.rect.width,
-        placement.rect.height,
-      ].join(','),
-    ),
-  ].join('|');
-
-  if (lastSelectionLayerKey === layerKey) {
-    return;
-  }
-
-  lastSelectionLayerKey = layerKey;
-  selectionLayer!.replaceChildren();
-
-  const nodes = snapshot.placements.map((placement, index) => {
-    const region = document.createElement('div');
-    const theme = getSelectionTheme(index);
-    const surfaceRect = renderer.getSurfaceRectForGridRect(placement.rect);
-    const cellSize = surfaceRect.width / Math.max(1, placement.rect.width);
-
-    region.className = `selection-region selection-region--${theme}`;
-    if (snapshot.selectedPlacementId === placement.id) {
-      region.classList.add('selection-region--selected');
-    }
-
-    region.style.left = `${surfaceRect.x}px`;
-    region.style.top = `${surfaceRect.y}px`;
-    region.style.width = `${surfaceRect.width}px`;
-    region.style.height = `${surfaceRect.height}px`;
-    region.style.setProperty('--selection-grid-size', `${cellSize}px`);
-    region.dataset.row = String(placement.rect.y);
-    region.dataset.col = String(placement.rect.x);
-    region.dataset.rows = String(placement.rect.height);
-    region.dataset.cols = String(placement.rect.width);
-
-    const surface = document.createElement('div');
-    surface.className = 'selection-region__surface';
-    region.append(surface);
-
-    return region;
-  });
-
-  selectionLayer!.append(...nodes);
 }
 
 function renderRecord(record: LevelRecord | null, mode: GameSnapshot['mode']): void {
@@ -466,14 +456,25 @@ const render = (snapshot: GameSnapshot): void => {
 };
 
 function renderBoard(snapshot: GameSnapshot): void {
+  selectionLayer!.replaceChildren();
   renderer.render(snapshot, {
     labels: {
       solvedBadge: t(locale, 'renderer.badgeSolved'),
       recordBadge: t(locale, 'renderer.badgeRecord'),
     },
-    showPlacementFills: false,
+    backdropImage:
+      getCanvasImage(visualAssets.gameplayBackground) ?? getCanvasImage(visualAssets.background),
+    theme: 'kawaii',
+    selectionAssets: {
+      strawberry: getCanvasImage(visualAssets.selectionStrawberry),
+      heartPink: getCanvasImage(visualAssets.selectionHeartPink),
+      starYellow: getCanvasImage(visualAssets.selectionStarYellow),
+      sparkleWhite: getCanvasImage(visualAssets.selectionSparkleWhite),
+      bubblePink: getCanvasImage(visualAssets.selectionBubblePink),
+      bubbleYellow: getCanvasImage(visualAssets.selectionBubbleYellow),
+      dripYellow: getCanvasImage(visualAssets.selectionDripYellow),
+    },
   });
-  renderSelectionRegions(snapshot);
 }
 
 function syncFeedbackAudio(snapshot: GameSnapshot): void {
@@ -588,7 +589,6 @@ window.addEventListener('keydown', (event) => {
 
 window.addEventListener('resize', () => {
   currentSnapshot = game.getSnapshot();
-  lastSelectionLayerKey = '';
   renderBoard(currentSnapshot);
   ensureAnimationLoop();
 });
@@ -596,7 +596,6 @@ window.addEventListener('resize', () => {
 if ('ResizeObserver' in window) {
   const observer = new ResizeObserver(() => {
     currentSnapshot = game.getSnapshot();
-    lastSelectionLayerKey = '';
     renderBoard(currentSnapshot);
     ensureAnimationLoop();
   });

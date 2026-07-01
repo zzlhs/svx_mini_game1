@@ -1,4 +1,5 @@
 import { FeedbackAudio } from '../audio/FeedbackAudio';
+import { BackgroundMusic } from '../audio/BackgroundMusic';
 import { GameController } from '../game/GameController';
 import { levels } from '../game/levels';
 import { getCoveredCellCount } from '../game/logic';
@@ -186,6 +187,7 @@ let cachedCanvas: WechatCanvasLike | null = null;
 const WECHAT_ASSET_PATHS = {
   background: 'dist-wechat/assets/wechat/bg.jpg',
   gameplayBackground: 'dist-wechat/assets/wechat/bg_kawaii.png',
+  backgroundMusic: 'dist-wechat/assets/wechat/audio/perfect_match_bloom.mp3',
   newGameButton: 'dist-wechat/assets/wechat/new_game2.png',
   leaderboardButton: 'dist-wechat/assets/wechat/rank_cutout.png',
   checkIcon: 'dist-wechat/assets/wechat/check_icon.png',
@@ -1593,7 +1595,9 @@ async function bootstrapWechatGame(): Promise<void> {
   });
   const renderer = new CanvasRenderer(surface);
   const audio = new FeedbackAudio();
+  const backgroundMusic = new BackgroundMusic(WECHAT_ASSET_PATHS.backgroundMusic);
   audio.setEnabled(userSettings.soundEnabled);
+  backgroundMusic.setEnabled(userSettings.soundEnabled);
   const inputSource = new WechatPointerInputSource();
   const uiState = {
     levelPanelOpen: false,
@@ -4494,6 +4498,7 @@ async function bootstrapWechatGame(): Promise<void> {
           soundEnabled: !userSettings.soundEnabled,
         };
         audio.setEnabled(userSettings.soundEnabled);
+        backgroundMusic.setEnabled(userSettings.soundEnabled);
         saveUserSettings(storageAdapter, userSettings);
         render();
         return true;
@@ -4680,6 +4685,7 @@ async function bootstrapWechatGame(): Promise<void> {
 
   wx.onTouchStart((event) => {
     audio.prime();
+    backgroundMusic.prime();
 
     const touch = event.changedTouches?.[0] ?? event.touches?.[0];
     if (!touch) {

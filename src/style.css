@@ -18,6 +18,7 @@
   --accent-soft: #f2d6c3;
   --success: #2f8f62;
   --canvas-border: rgba(89, 72, 47, 0.12);
+  --wechat-gameplay-background: none;
 }
 
 * {
@@ -228,7 +229,9 @@ button:disabled {
   border-radius: 22px;
   overflow: hidden;
   border: 2px solid var(--canvas-border);
-  background: rgba(255, 249, 240, 0.78);
+  background:
+    var(--wechat-gameplay-background) center/cover no-repeat,
+    rgba(255, 249, 240, 0.78);
 }
 
 #game-canvas {

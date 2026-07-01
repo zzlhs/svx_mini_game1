@@ -470,6 +470,110 @@ var FeedbackAudio = class {
   }
 };
 
+// src/audio/BackgroundMusic.ts
+function getWechatAudioApi2() {
+  var _a;
+  const root = globalThis;
+  return (_a = root.wx) != null ? _a : null;
+}
+var BackgroundMusic = class {
+  constructor(source) {
+    __publicField(this, "source");
+    __publicField(this, "context", null);
+    __publicField(this, "enabled", true);
+    __publicField(this, "shouldPlay", true);
+    __publicField(this, "primed", false);
+    this.source = source;
+  }
+  prime() {
+    var _a, _b, _c;
+    if (this.primed) {
+      return;
+    }
+    const wxAudio = getWechatAudioApi2();
+    if (!(wxAudio == null ? void 0 : wxAudio.createInnerAudioContext)) {
+      return;
+    }
+    const audio = wxAudio.createInnerAudioContext();
+    audio.autoplay = false;
+    audio.src = this.source;
+    audio.volume = 0.48;
+    if ("obeyMuteSwitch" in audio) {
+      audio.obeyMuteSwitch = false;
+    }
+    (_a = audio.onEnded) == null ? void 0 : _a.call(audio, () => {
+      var _a2;
+      if (!this.enabled || !this.shouldPlay) {
+        return;
+      }
+      try {
+        (_a2 = this.context) == null ? void 0 : _a2.play();
+      } catch (e) {
+      }
+    });
+    (_b = audio.onStop) == null ? void 0 : _b.call(audio, () => {
+      if (this.enabled && this.shouldPlay) {
+        return;
+      }
+    });
+    (_c = audio.onError) == null ? void 0 : _c.call(audio, () => {
+      if (this.enabled && this.shouldPlay) {
+        return;
+      }
+    });
+    this.context = audio;
+    this.primed = true;
+    this.sync();
+  }
+  setEnabled(enabled) {
+    this.enabled = enabled;
+    this.shouldPlay = enabled;
+    if (!enabled) {
+      this.stop();
+      return;
+    }
+    this.sync();
+  }
+  stop() {
+    var _a, _b;
+    this.shouldPlay = false;
+    if (!this.context) {
+      return;
+    }
+    try {
+      (_b = (_a = this.context).stop) == null ? void 0 : _b.call(_a);
+    } catch (e) {
+    }
+  }
+  dispose() {
+    var _a, _b, _c, _d;
+    this.shouldPlay = false;
+    this.enabled = false;
+    if (!this.context) {
+      return;
+    }
+    try {
+      (_b = (_a = this.context).stop) == null ? void 0 : _b.call(_a);
+    } catch (e) {
+    }
+    try {
+      (_d = (_c = this.context).destroy) == null ? void 0 : _d.call(_c);
+    } catch (e) {
+    }
+    this.context = null;
+    this.primed = false;
+  }
+  sync() {
+    if (!this.enabled || !this.shouldPlay || !this.context) {
+      return;
+    }
+    try {
+      this.context.play();
+    } catch (e) {
+    }
+  }
+};
+
 // src/game/logic.ts
 function normalizeRect(start, end) {
   const left = Math.min(start.x, end.x);
@@ -3072,6 +3176,7 @@ var cachedCanvas = null;
 var WECHAT_ASSET_PATHS = {
   background: "dist-wechat/assets/wechat/bg.jpg",
   gameplayBackground: "dist-wechat/assets/wechat/bg_kawaii.png",
+  backgroundMusic: "dist-wechat/assets/wechat/audio/perfect_match_bloom.mp3",
   newGameButton: "dist-wechat/assets/wechat/new_game2.png",
   leaderboardButton: "dist-wechat/assets/wechat/rank_cutout.png",
   checkIcon: "dist-wechat/assets/wechat/check_icon.png",
@@ -4270,7 +4375,9 @@ async function bootstrapWechatGame() {
   });
   const renderer = new CanvasRenderer(surface);
   const audio = new FeedbackAudio();
+  const backgroundMusic = new BackgroundMusic(WECHAT_ASSET_PATHS.backgroundMusic);
   audio.setEnabled(userSettings.soundEnabled);
+  backgroundMusic.setEnabled(userSettings.soundEnabled);
   const inputSource = new WechatPointerInputSource();
   const uiState = {
     levelPanelOpen: false,
@@ -6894,6 +7001,7 @@ async function bootstrapWechatGame() {
           soundEnabled: !userSettings.soundEnabled
         };
         audio.setEnabled(userSettings.soundEnabled);
+        backgroundMusic.setEnabled(userSettings.soundEnabled);
         saveUserSettings(storageAdapter, userSettings);
         render();
         return true;
@@ -7059,6 +7167,7 @@ async function bootstrapWechatGame() {
   wx.onTouchStart((event) => {
     var _a, _b, _c, _d, _e, _f, _g;
     audio.prime();
+    backgroundMusic.prime();
     const touch = (_c = (_a = event.changedTouches) == null ? void 0 : _a[0]) != null ? _c : (_b = event.touches) == null ? void 0 : _b[0];
     if (!touch) {
       return;

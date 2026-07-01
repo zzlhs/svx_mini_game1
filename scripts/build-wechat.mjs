@@ -30,6 +30,30 @@ async function copyWechatEmbeddedPngSvg(source, target, maxSize = null) {
   }
 }
 
+async function copyWechatAudioClip(source, target, clipSeconds = 10) {
+  await mkdir(dirname(target), { recursive: true });
+  execFileSync(
+    'ffmpeg',
+    [
+      '-y',
+      '-i',
+      source,
+      '-t',
+      String(clipSeconds),
+      '-ac',
+      '1',
+      '-ar',
+      '22050',
+      '-c:a',
+      'libmp3lame',
+      '-b:a',
+      '24k',
+      target,
+    ],
+    { stdio: 'ignore' },
+  );
+}
+
 await rm(outdir, { recursive: true, force: true });
 await mkdir(outdir, { recursive: true });
 
@@ -51,6 +75,12 @@ await writeFile(`${outdir}/game.json`, `${JSON.stringify(gameConfig, null, 2)}\n
 await mkdir(`${outdir}/assets/wechat`, { recursive: true });
 await copyFile('assets/wechat/bg.jpg', `${outdir}/assets/wechat/bg.jpg`);
 await copyFile('assets/wechat/bg_kawaii.png', `${outdir}/assets/wechat/bg_kawaii.png`);
+await mkdir(`${outdir}/assets/wechat/audio`, { recursive: true });
+await copyWechatAudioClip(
+  'assets/wechat/audio/Perfect_Match_Bloom.mp3',
+  `${outdir}/assets/wechat/audio/perfect_match_bloom.mp3`,
+  10,
+);
 await copyFile('assets/wechat/check_icon.png', `${outdir}/assets/wechat/check_icon.png`);
 await copyFile('assets/wechat/help_icon.png', `${outdir}/assets/wechat/help_icon.png`);
 await copyFile('assets/wechat/new_game2.png', `${outdir}/assets/wechat/new_game2.png`);
