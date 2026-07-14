@@ -76,6 +76,7 @@ export interface GameEffects {
   placement: PlacementEffectEvent | null;
   invalidId: number;
   celebrationId: number;
+  comboVoice: string | null;
 }
 
 export type LevelRecordMap = Record<string, LevelRecord>;
@@ -108,6 +109,7 @@ export interface GameSnapshot {
   currentRecord: LevelRecord | null;
   records: LevelRecordMap;
   effects: GameEffects;
+  comboCount: number;
   status: MessageDescriptor;
   solved: boolean;
   canUndo: boolean;

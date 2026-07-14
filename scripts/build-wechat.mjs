@@ -81,6 +81,20 @@ await copyWechatAudioClip(
   `${outdir}/assets/wechat/audio/perfect_match_bloom.mp3`,
   10,
 );
+await mkdir(`${outdir}/assets/wechat/audio/combo`, { recursive: true });
+const comboFiles = [
+  'combo_good.mp3',
+  'combo_great.mp3',
+  'combo_nice.mp3',
+  'combo_amazing.mp3',
+  'combo_prefect.mp3',
+];
+for (const file of comboFiles) {
+  await copyFile(
+    `assets/wechat/audio/combo/${file}`,
+    `${outdir}/assets/wechat/audio/combo/${file}`,
+  );
+}
 await copyFile('assets/wechat/check_icon.png', `${outdir}/assets/wechat/check_icon.png`);
 await copyFile('assets/wechat/help_icon.png', `${outdir}/assets/wechat/help_icon.png`);
 await copyFile('assets/wechat/new_game2.png', `${outdir}/assets/wechat/new_game2.png`);

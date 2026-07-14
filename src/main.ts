@@ -234,7 +234,15 @@ const game = new GameController(levels, {
 });
 const surface = new BrowserCanvasSurface(canvas);
 const renderer = new CanvasRenderer(surface);
-const audio = new FeedbackAudio();
+const COMBO_VOICE_URLS: Record<string, string> = {
+  good: new URL('../assets/wechat/audio/combo/combo_good.mp3', import.meta.url).href,
+  great: new URL('../assets/wechat/audio/combo/combo_great.mp3', import.meta.url).href,
+  nice: new URL('../assets/wechat/audio/combo/combo_nice.mp3', import.meta.url).href,
+  amazing: new URL('../assets/wechat/audio/combo/combo_amazing.mp3', import.meta.url).href,
+  prefect: new URL('../assets/wechat/audio/combo/combo_prefect.mp3', import.meta.url).href,
+};
+
+const audio = new FeedbackAudio(COMBO_VOICE_URLS);
 const pointerInputSource = new BrowserPointerInputSource(canvas);
 new PointerController(pointerInputSource, surface, renderer, game);
 
@@ -264,6 +272,7 @@ let animationFrameId = 0;
 let lastPlacementEffectId = 0;
 let lastInvalidEffectId = 0;
 let lastCelebrationEffectId = 0;
+let lastComboVoice: string | null = null;
 let autoAdvanceTimeoutId = 0;
 let lastAutoAdvanceCelebrationId = 0;
 
@@ -478,10 +487,14 @@ function renderBoard(snapshot: GameSnapshot): void {
 }
 
 function syncFeedbackAudio(snapshot: GameSnapshot): void {
+  const celebrationEffectId = snapshot.effects.celebrationId;
+  const celebrationChanged = celebrationEffectId !== lastCelebrationEffectId;
+  const suppressPlacement = celebrationChanged && celebrationEffectId > 0;
+
   const placementEffectId = snapshot.effects.placement?.id ?? 0;
   if (placementEffectId !== lastPlacementEffectId) {
     lastPlacementEffectId = placementEffectId;
-    if (placementEffectId > 0) {
+    if (placementEffectId > 0 && !suppressPlacement) {
       audio.playPlacement();
     }
   }
@@ -493,11 +506,21 @@ function syncFeedbackAudio(snapshot: GameSnapshot): void {
     }
   }
 
-  if (snapshot.effects.celebrationId !== lastCelebrationEffectId) {
-    lastCelebrationEffectId = snapshot.effects.celebrationId;
-    if (snapshot.effects.celebrationId > 0) {
+  if (celebrationChanged) {
+    lastCelebrationEffectId = celebrationEffectId;
+    if (celebrationEffectId > 0) {
       audio.playCelebration();
     }
+  }
+
+  const comboVoice = snapshot.effects.comboVoice;
+  if (comboVoice && comboVoice !== lastComboVoice) {
+    lastComboVoice = comboVoice;
+    audio.playComboVoice(comboVoice);
+  }
+
+  if (!comboVoice) {
+    lastComboVoice = null;
   }
 }
 

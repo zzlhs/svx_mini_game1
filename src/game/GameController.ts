@@ -5,6 +5,12 @@ import {
   normalizeRect,
   validatePlacement,
 } from './logic';
+import {
+  COMBO_AMAZING_THRESHOLD,
+  COMBO_GOOD_THRESHOLD,
+  COMBO_GREAT_THRESHOLD,
+  COMBO_NICE_THRESHOLD,
+} from './game-controller.constants';
 import type { MessageDescriptor } from '../i18n';
 import type {
   Cell,
@@ -57,10 +63,13 @@ export class GameController {
 
   private mode: 'play' | 'record' = 'play';
 
+  private comboCount = 0;
+
   private effects: GameEffects = {
     placement: null,
     invalidId: 0,
     celebrationId: 0,
+    comboVoice: null,
   };
 
   private status: MessageDescriptor = { key: 'status.baseInstruction' };
@@ -101,6 +110,7 @@ export class GameController {
       currentRecord: this.records[this.level.id] ?? null,
       records: this.records,
       effects: this.effects,
+      comboCount: this.comboCount,
       status: this.status,
       solved: this.solved,
       canUndo: this.history.length > 0,
@@ -166,36 +176,50 @@ export class GameController {
       ];
       const latestPlacementId = `placement-${this.placementSequence}`;
       this.placementSequence += 1;
-      this.effects = {
-        ...this.effects,
-        placement: {
-          id: this.effects.placement ? this.effects.placement.id + 1 : 1,
-          placementId: latestPlacementId,
-        },
-      };
+      this.comboCount += 1;
 
-      const covered = getCoveredCellCount(this.level, this.placements);
-      this.solved = isBoardSolved(this.level, this.placements);
-      if (this.solved) {
+      const solved = isBoardSolved(this.level, this.placements);
+      if (solved) {
+        this.solved = true;
         const record = this.saveCompletionRecord();
+        const comboVoice = this.resolveComboVoice(this.comboCount);
         this.effects = {
-          ...this.effects,
+          placement: {
+            id: this.effects.placement ? this.effects.placement.id + 1 : 1,
+            placementId: latestPlacementId,
+          },
+          invalidId: this.effects.invalidId,
           celebrationId: this.effects.celebrationId + 1,
+          comboVoice: comboVoice === 'amazing' || comboVoice === 'prefect' ? null : comboVoice,
         };
+        this.comboCount = 0;
         this.status = {
           key: 'status.solvedWithDuration',
           values: { duration: this.formatDuration(record.durationMs) },
         };
       } else {
+        const comboVoice = this.resolveComboVoice(this.comboCount);
+        this.effects = {
+          placement: {
+            id: this.effects.placement ? this.effects.placement.id + 1 : 1,
+            placementId: latestPlacementId,
+          },
+          invalidId: this.effects.invalidId,
+          celebrationId: this.effects.celebrationId,
+          comboVoice,
+        };
+        const covered = getCoveredCellCount(this.level, this.placements);
         this.status = {
           key: 'status.coveredProgress',
           values: { covered, total: this.level.width * this.level.height },
         };
       }
     } else {
+      this.comboCount = 0;
       this.effects = {
         ...this.effects,
         invalidId: this.effects.invalidId + 1,
+        comboVoice: null,
       };
       this.status = this.preview.validation.reason ?? { key: 'status.invalidGeneric' };
     }
@@ -240,6 +264,7 @@ export class GameController {
     this.preview = null;
     this.dragOrigin = null;
     this.clearHintSuggestion();
+    this.comboCount = 0;
     this.solved = isBoardSolved(this.level, this.placements);
     this.status = this.solved ? { key: 'status.solvedBoardCovered' } : { key: 'status.undo' };
     this.emit();
@@ -316,6 +341,7 @@ export class GameController {
     this.selectedPlacementId = null;
     this.preview = null;
     this.dragOrigin = null;
+    this.comboCount = 0;
     this.clearHintSuggestion();
     this.solved = isBoardSolved(this.level, this.placements);
     this.status = { key: 'status.removedPlacement' };
@@ -440,7 +466,12 @@ export class GameController {
     this.dragOrigin = null;
     this.clearHintSuggestion();
     this.mode = 'record';
+    this.comboCount = 0;
     this.solved = true;
+    this.effects = {
+      ...this.effects,
+      comboVoice: null,
+    };
     this.status = {
       key: 'status.viewingRecord',
       values: { duration: this.formatDuration(record.durationMs) },
@@ -509,10 +540,12 @@ export class GameController {
     this.mode = 'play';
     this.solved = false;
     this.placementSequence = 0;
+    this.comboCount = 0;
     this.attemptStartedAt = Date.now();
     this.effects = {
       ...this.effects,
       placement: null,
+      comboVoice: null,
     };
     this.status = status;
   }
@@ -559,6 +592,7 @@ export class GameController {
     this.hintMessage = null;
     this.mode = 'play';
     this.placementSequence = progress.placementSequence;
+    this.comboCount = 0;
     this.attemptStartedAt = progress.attemptStartedAt;
     this.solved = isBoardSolved(this.level, this.placements);
 
@@ -596,5 +630,25 @@ export class GameController {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  private resolveComboVoice(comboCount: number): string | null {
+    if (comboCount === COMBO_GOOD_THRESHOLD) {
+      return 'good';
+    }
+
+    if (comboCount === COMBO_GREAT_THRESHOLD) {
+      return 'great';
+    }
+
+    if (comboCount === COMBO_NICE_THRESHOLD) {
+      return 'nice';
+    }
+
+    if (comboCount === COMBO_AMAZING_THRESHOLD) {
+      return Math.random() < 0.5 ? 'amazing' : 'prefect';
+    }
+
+    return null;
   }
 }

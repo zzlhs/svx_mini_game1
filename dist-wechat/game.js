@@ -3,6 +3,11 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
+// src/audio/feedback-audio.constants.ts
+var INNER_AUDIO_GENERIC_CLEANUP_TIMEOUT_MS = 1500;
+var INNER_AUDIO_COMBO_CLEANUP_TIMEOUT_MS = 5e3;
+var COMBO_VOICE_VOLUME = 0.7;
+
 // src/audio/FeedbackAudio.ts
 var SAMPLE_RATE = 22050;
 var MASTER_VOLUME = 0.7;
@@ -266,6 +271,7 @@ var WebAudioBackend = class {
     __publicField(this, "context", null);
     __publicField(this, "masterGain", null);
     __publicField(this, "periodicWaveCache", /* @__PURE__ */ new Map());
+    __publicField(this, "activeComboAudio", null);
   }
   prime() {
     const context = this.ensureContext();
@@ -282,6 +288,41 @@ var WebAudioBackend = class {
   }
   playCelebration() {
     this.playSteps(CELEBRATION_STEPS);
+  }
+  playComboVoice(url) {
+    this.stopComboVoice();
+    const audio = new Audio(url);
+    audio.volume = COMBO_VOICE_VOLUME;
+    this.activeComboAudio = audio;
+    audio.onended = () => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    };
+    audio.onerror = () => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    };
+    audio.play().catch(() => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    });
+  }
+  stopComboVoice() {
+    const audio = this.activeComboAudio;
+    if (!audio) {
+      return;
+    }
+    this.activeComboAudio = null;
+    audio.onended = null;
+    audio.onerror = null;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch (e) {
+    }
   }
   playSteps(steps) {
     var _a, _b, _c, _d, _e;
@@ -366,6 +407,9 @@ var InnerAudioBackend = class {
       celebration: buildToneClipDataUri(CELEBRATION_STEPS)
     });
     __publicField(this, "primed", false);
+    __publicField(this, "activeComboAudio", null);
+    __publicField(this, "activeComboCleanupTimeoutId", null);
+    __publicField(this, "comboCleanupInProgress", false);
   }
   prime() {
     this.primed = true;
@@ -379,40 +423,112 @@ var InnerAudioBackend = class {
   playCelebration() {
     this.playClip(this.clipMap.celebration);
   }
-  playClip(source) {
-    var _a, _b, _c, _d;
-    const wxAudio = getWechatAudioApi();
-    const audio = (_a = wxAudio == null ? void 0 : wxAudio.createInnerAudioContext) == null ? void 0 : _a.call(wxAudio);
+  playComboVoice(url) {
+    var _a, _b, _c;
+    this.stopComboVoice();
+    const audio = this.createInnerAudio(url, COMBO_VOICE_VOLUME);
     if (!audio) {
       return;
     }
-    audio.autoplay = false;
-    audio.src = source;
-    audio.volume = 0.9;
-    if ("obeyMuteSwitch" in audio) {
-      audio.obeyMuteSwitch = false;
-    }
+    this.activeComboAudio = audio;
+    let cleaned = false;
     const cleanup = () => {
-      var _a2, _b2;
-      try {
-        (_a2 = audio.stop) == null ? void 0 : _a2.call(audio);
-      } catch (e) {
+      if (cleaned) {
+        return;
       }
-      (_b2 = audio.destroy) == null ? void 0 : _b2.call(audio);
+      cleaned = true;
+      this.cleanupComboVoice(audio);
     };
-    (_b = audio.onEnded) == null ? void 0 : _b.call(audio, () => cleanup());
-    (_c = audio.onStop) == null ? void 0 : _c.call(audio, () => cleanup());
-    (_d = audio.onError) == null ? void 0 : _d.call(audio, () => cleanup());
-    if (!this.primed) {
-      this.primed = true;
+    (_a = audio.onEnded) == null ? void 0 : _a.call(audio, () => cleanup());
+    (_b = audio.onStop) == null ? void 0 : _b.call(audio, () => cleanup());
+    (_c = audio.onError) == null ? void 0 : _c.call(audio, () => cleanup());
+    try {
+      audio.play();
+      this.activeComboCleanupTimeoutId = globalThis.setTimeout(() => {
+        cleanup();
+      }, INNER_AUDIO_COMBO_CLEANUP_TIMEOUT_MS);
+    } catch (e) {
+      cleanup();
     }
+  }
+  stopComboVoice() {
+    this.cleanupComboVoice();
+  }
+  playClip(source, cleanupTimeoutMs = INNER_AUDIO_GENERIC_CLEANUP_TIMEOUT_MS) {
+    var _a, _b, _c;
+    const audio = this.createInnerAudio(source, 0.9);
+    if (!audio) {
+      return;
+    }
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      this.disposeInnerAudio(audio);
+    };
+    (_a = audio.onEnded) == null ? void 0 : _a.call(audio, () => cleanup());
+    (_b = audio.onStop) == null ? void 0 : _b.call(audio, () => cleanup());
+    (_c = audio.onError) == null ? void 0 : _c.call(audio, () => cleanup());
     try {
       audio.play();
       globalThis.setTimeout(() => {
         cleanup();
-      }, 1500);
+      }, cleanupTimeoutMs);
     } catch (e) {
       cleanup();
+    }
+  }
+  createInnerAudio(source, volume) {
+    var _a;
+    const wxAudio = getWechatAudioApi();
+    const audio = (_a = wxAudio == null ? void 0 : wxAudio.createInnerAudioContext) == null ? void 0 : _a.call(wxAudio);
+    if (!audio) {
+      return null;
+    }
+    audio.autoplay = false;
+    audio.src = source;
+    audio.volume = volume;
+    if ("obeyMuteSwitch" in audio) {
+      audio.obeyMuteSwitch = false;
+    }
+    if (!this.primed) {
+      this.primed = true;
+    }
+    return audio;
+  }
+  cleanupComboVoice(expectedAudio = this.activeComboAudio) {
+    if (this.comboCleanupInProgress) {
+      return;
+    }
+    const audio = expectedAudio;
+    if (!audio) {
+      return;
+    }
+    this.comboCleanupInProgress = true;
+    try {
+      if (this.activeComboCleanupTimeoutId !== null) {
+        globalThis.clearTimeout(this.activeComboCleanupTimeoutId);
+        this.activeComboCleanupTimeoutId = null;
+      }
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+      this.disposeInnerAudio(audio);
+    } finally {
+      this.comboCleanupInProgress = false;
+    }
+  }
+  disposeInnerAudio(audio) {
+    var _a, _b;
+    try {
+      (_a = audio.stop) == null ? void 0 : _a.call(audio);
+    } catch (e) {
+    }
+    try {
+      (_b = audio.destroy) == null ? void 0 : _b.call(audio);
+    } catch (e) {
     }
   }
 };
@@ -424,6 +540,10 @@ var SilentBackend = class {
   playInvalid() {
   }
   playCelebration() {
+  }
+  playComboVoice(_url) {
+  }
+  stopComboVoice() {
   }
 };
 function createAudioBackend() {
@@ -437,9 +557,11 @@ function createAudioBackend() {
   return new SilentBackend();
 }
 var FeedbackAudio = class {
-  constructor() {
+  constructor(comboVoiceUrls = {}) {
     __publicField(this, "backend", createAudioBackend());
     __publicField(this, "enabled", true);
+    __publicField(this, "comboVoiceUrls");
+    this.comboVoiceUrls = comboVoiceUrls;
   }
   prime() {
     if (!this.enabled) {
@@ -449,6 +571,9 @@ var FeedbackAudio = class {
   }
   setEnabled(enabled) {
     this.enabled = enabled;
+    if (!enabled) {
+      this.backend.stopComboVoice();
+    }
   }
   playPlacement() {
     if (!this.enabled) {
@@ -466,7 +591,18 @@ var FeedbackAudio = class {
     if (!this.enabled) {
       return;
     }
+    this.backend.stopComboVoice();
     this.backend.playCelebration();
+  }
+  playComboVoice(name) {
+    if (!this.enabled) {
+      return;
+    }
+    const url = this.comboVoiceUrls[name];
+    if (!url) {
+      return;
+    }
+    this.backend.playComboVoice(url);
   }
 };
 
@@ -805,6 +941,12 @@ function isBoardSolved(level, placements) {
   return true;
 }
 
+// src/game/game-controller.constants.ts
+var COMBO_GOOD_THRESHOLD = 3;
+var COMBO_GREAT_THRESHOLD = 4;
+var COMBO_NICE_THRESHOLD = 5;
+var COMBO_AMAZING_THRESHOLD = 7;
+
 // src/game/GameController.ts
 var GameController = class {
   constructor(levels2, options = {}) {
@@ -822,10 +964,12 @@ var GameController = class {
     __publicField(this, "dragOrigin", null);
     __publicField(this, "records");
     __publicField(this, "mode", "play");
+    __publicField(this, "comboCount", 0);
     __publicField(this, "effects", {
       placement: null,
       invalidId: 0,
-      celebrationId: 0
+      celebrationId: 0,
+      comboVoice: null
     });
     __publicField(this, "status", { key: "status.baseInstruction" });
     __publicField(this, "solved", false);
@@ -859,6 +1003,7 @@ var GameController = class {
       currentRecord: (_a = this.records[this.level.id]) != null ? _a : null,
       records: this.records,
       effects: this.effects,
+      comboCount: this.comboCount,
       status: this.status,
       solved: this.solved,
       canUndo: this.history.length > 0,
@@ -917,35 +1062,48 @@ var GameController = class {
       ];
       const latestPlacementId = `placement-${this.placementSequence}`;
       this.placementSequence += 1;
-      this.effects = {
-        ...this.effects,
-        placement: {
-          id: this.effects.placement ? this.effects.placement.id + 1 : 1,
-          placementId: latestPlacementId
-        }
-      };
-      const covered = getCoveredCellCount(this.level, this.placements);
-      this.solved = isBoardSolved(this.level, this.placements);
-      if (this.solved) {
+      this.comboCount += 1;
+      const solved = isBoardSolved(this.level, this.placements);
+      if (solved) {
+        this.solved = true;
         const record = this.saveCompletionRecord();
         this.effects = {
-          ...this.effects,
-          celebrationId: this.effects.celebrationId + 1
+          placement: {
+            id: this.effects.placement ? this.effects.placement.id + 1 : 1,
+            placementId: latestPlacementId
+          },
+          invalidId: this.effects.invalidId,
+          celebrationId: this.effects.celebrationId + 1,
+          comboVoice: null
         };
+        this.comboCount = 0;
         this.status = {
           key: "status.solvedWithDuration",
           values: { duration: this.formatDuration(record.durationMs) }
         };
       } else {
+        const comboVoice = this.resolveComboVoice(this.comboCount);
+        this.effects = {
+          placement: {
+            id: this.effects.placement ? this.effects.placement.id + 1 : 1,
+            placementId: latestPlacementId
+          },
+          invalidId: this.effects.invalidId,
+          celebrationId: this.effects.celebrationId,
+          comboVoice
+        };
+        const covered = getCoveredCellCount(this.level, this.placements);
         this.status = {
           key: "status.coveredProgress",
           values: { covered, total: this.level.width * this.level.height }
         };
       }
     } else {
+      this.comboCount = 0;
       this.effects = {
         ...this.effects,
-        invalidId: this.effects.invalidId + 1
+        invalidId: this.effects.invalidId + 1,
+        comboVoice: null
       };
       this.status = (_a = this.preview.validation.reason) != null ? _a : { key: "status.invalidGeneric" };
     }
@@ -981,6 +1139,7 @@ var GameController = class {
     this.preview = null;
     this.dragOrigin = null;
     this.clearHintSuggestion();
+    this.comboCount = 0;
     this.solved = isBoardSolved(this.level, this.placements);
     this.status = this.solved ? { key: "status.solvedBoardCovered" } : { key: "status.undo" };
     this.emit();
@@ -1040,6 +1199,7 @@ var GameController = class {
     this.selectedPlacementId = null;
     this.preview = null;
     this.dragOrigin = null;
+    this.comboCount = 0;
     this.clearHintSuggestion();
     this.solved = isBoardSolved(this.level, this.placements);
     this.status = { key: "status.removedPlacement" };
@@ -1143,7 +1303,12 @@ var GameController = class {
     this.dragOrigin = null;
     this.clearHintSuggestion();
     this.mode = "record";
+    this.comboCount = 0;
     this.solved = true;
+    this.effects = {
+      ...this.effects,
+      comboVoice: null
+    };
     this.status = {
       key: "status.viewingRecord",
       values: { duration: this.formatDuration(record.durationMs) }
@@ -1204,10 +1369,12 @@ var GameController = class {
     this.mode = "play";
     this.solved = false;
     this.placementSequence = 0;
+    this.comboCount = 0;
     this.attemptStartedAt = Date.now();
     this.effects = {
       ...this.effects,
-      placement: null
+      placement: null,
+      comboVoice: null
     };
     this.status = status;
   }
@@ -1248,6 +1415,7 @@ var GameController = class {
     this.hintMessage = null;
     this.mode = "play";
     this.placementSequence = progress.placementSequence;
+    this.comboCount = 0;
     this.attemptStartedAt = progress.attemptStartedAt;
     this.solved = isBoardSolved(this.level, this.placements);
     const covered = getCoveredCellCount(this.level, this.placements);
@@ -1277,6 +1445,21 @@ var GameController = class {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+  resolveComboVoice(comboCount) {
+    if (comboCount === COMBO_GOOD_THRESHOLD) {
+      return "good";
+    }
+    if (comboCount === COMBO_GREAT_THRESHOLD) {
+      return "great";
+    }
+    if (comboCount === COMBO_NICE_THRESHOLD) {
+      return "nice";
+    }
+    if (comboCount === COMBO_AMAZING_THRESHOLD) {
+      return Math.random() < 0.5 ? "amazing" : "prefect";
+    }
+    return null;
   }
 };
 
@@ -3177,6 +3360,11 @@ var WECHAT_ASSET_PATHS = {
   background: "dist-wechat/assets/wechat/bg.jpg",
   gameplayBackground: "dist-wechat/assets/wechat/bg_kawaii.png",
   backgroundMusic: "dist-wechat/assets/wechat/audio/perfect_match_bloom.mp3",
+  comboGood: "dist-wechat/assets/wechat/audio/combo/combo_good.mp3",
+  comboGreat: "dist-wechat/assets/wechat/audio/combo/combo_great.mp3",
+  comboNice: "dist-wechat/assets/wechat/audio/combo/combo_nice.mp3",
+  comboAmazing: "dist-wechat/assets/wechat/audio/combo/combo_amazing.mp3",
+  comboPrefect: "dist-wechat/assets/wechat/audio/combo/combo_prefect.mp3",
   newGameButton: "dist-wechat/assets/wechat/new_game2.png",
   leaderboardButton: "dist-wechat/assets/wechat/rank_cutout.png",
   checkIcon: "dist-wechat/assets/wechat/check_icon.png",
@@ -4374,7 +4562,14 @@ async function bootstrapWechatGame() {
     dpr: metrics.dpr
   });
   const renderer = new CanvasRenderer(surface);
-  const audio = new FeedbackAudio();
+  const comboVoiceUrls = {
+    good: WECHAT_ASSET_PATHS.comboGood,
+    great: WECHAT_ASSET_PATHS.comboGreat,
+    nice: WECHAT_ASSET_PATHS.comboNice,
+    amazing: WECHAT_ASSET_PATHS.comboAmazing,
+    prefect: WECHAT_ASSET_PATHS.comboPrefect
+  };
+  const audio = new FeedbackAudio(comboVoiceUrls);
   const backgroundMusic = new BackgroundMusic(WECHAT_ASSET_PATHS.backgroundMusic);
   audio.setEnabled(userSettings.soundEnabled);
   backgroundMusic.setEnabled(userSettings.soundEnabled);
@@ -4412,6 +4607,7 @@ async function bootstrapWechatGame() {
   let lastPlacementEffectId = 0;
   let lastInvalidEffectId = 0;
   let lastCelebrationEffectId = 0;
+  let lastComboVoice = null;
   let autoAdvanceTimeoutId = 0;
   let lastAutoAdvanceCelebrationId = 0;
   let autoAdvanceBannerUntil = 0;
@@ -6805,10 +7001,13 @@ async function bootstrapWechatGame() {
   }
   function syncFeedbackAudio(snapshot) {
     var _a, _b;
+    const celebrationEffectId = snapshot.effects.celebrationId;
+    const celebrationChanged = celebrationEffectId !== lastCelebrationEffectId;
+    const suppressPlacement = celebrationChanged && celebrationEffectId > 0;
     const placementEffectId = (_b = (_a = snapshot.effects.placement) == null ? void 0 : _a.id) != null ? _b : 0;
     if (placementEffectId !== lastPlacementEffectId) {
       lastPlacementEffectId = placementEffectId;
-      if (placementEffectId > 0) {
+      if (placementEffectId > 0 && !suppressPlacement) {
         audio.playPlacement();
         triggerVibration("light");
       }
@@ -6820,12 +7019,20 @@ async function bootstrapWechatGame() {
         triggerVibration("medium");
       }
     }
-    if (snapshot.effects.celebrationId !== lastCelebrationEffectId) {
-      lastCelebrationEffectId = snapshot.effects.celebrationId;
-      if (snapshot.effects.celebrationId > 0) {
+    if (celebrationChanged) {
+      lastCelebrationEffectId = celebrationEffectId;
+      if (celebrationEffectId > 0) {
         audio.playCelebration();
         triggerVibration("heavy");
       }
+    }
+    const comboVoice = snapshot.effects.comboVoice;
+    if (comboVoice && comboVoice !== lastComboVoice) {
+      lastComboVoice = comboVoice;
+      audio.playComboVoice(comboVoice);
+    }
+    if (!comboVoice) {
+      lastComboVoice = null;
     }
   }
   function scheduleAutoAdvance(snapshot) {

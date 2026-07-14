@@ -188,6 +188,11 @@ const WECHAT_ASSET_PATHS = {
   background: 'dist-wechat/assets/wechat/bg.jpg',
   gameplayBackground: 'dist-wechat/assets/wechat/bg_kawaii.png',
   backgroundMusic: 'dist-wechat/assets/wechat/audio/perfect_match_bloom.mp3',
+  comboGood: 'dist-wechat/assets/wechat/audio/combo/combo_good.mp3',
+  comboGreat: 'dist-wechat/assets/wechat/audio/combo/combo_great.mp3',
+  comboNice: 'dist-wechat/assets/wechat/audio/combo/combo_nice.mp3',
+  comboAmazing: 'dist-wechat/assets/wechat/audio/combo/combo_amazing.mp3',
+  comboPrefect: 'dist-wechat/assets/wechat/audio/combo/combo_prefect.mp3',
   newGameButton: 'dist-wechat/assets/wechat/new_game2.png',
   leaderboardButton: 'dist-wechat/assets/wechat/rank_cutout.png',
   checkIcon: 'dist-wechat/assets/wechat/check_icon.png',
@@ -1594,7 +1599,14 @@ async function bootstrapWechatGame(): Promise<void> {
     dpr: metrics.dpr,
   });
   const renderer = new CanvasRenderer(surface);
-  const audio = new FeedbackAudio();
+  const comboVoiceUrls: Record<string, string> = {
+    good: WECHAT_ASSET_PATHS.comboGood,
+    great: WECHAT_ASSET_PATHS.comboGreat,
+    nice: WECHAT_ASSET_PATHS.comboNice,
+    amazing: WECHAT_ASSET_PATHS.comboAmazing,
+    prefect: WECHAT_ASSET_PATHS.comboPrefect,
+  };
+  const audio = new FeedbackAudio(comboVoiceUrls);
   const backgroundMusic = new BackgroundMusic(WECHAT_ASSET_PATHS.backgroundMusic);
   audio.setEnabled(userSettings.soundEnabled);
   backgroundMusic.setEnabled(userSettings.soundEnabled);
@@ -1639,6 +1651,7 @@ async function bootstrapWechatGame(): Promise<void> {
   let lastPlacementEffectId = 0;
   let lastInvalidEffectId = 0;
   let lastCelebrationEffectId = 0;
+  let lastComboVoice: string | null = null;
   let autoAdvanceTimeoutId = 0;
   let lastAutoAdvanceCelebrationId = 0;
   let autoAdvanceBannerUntil = 0;
@@ -4270,10 +4283,14 @@ async function bootstrapWechatGame(): Promise<void> {
   }
 
   function syncFeedbackAudio(snapshot: GameSnapshot): void {
+    const celebrationEffectId = snapshot.effects.celebrationId;
+    const celebrationChanged = celebrationEffectId !== lastCelebrationEffectId;
+    const suppressPlacement = celebrationChanged && celebrationEffectId > 0;
+
     const placementEffectId = snapshot.effects.placement?.id ?? 0;
     if (placementEffectId !== lastPlacementEffectId) {
       lastPlacementEffectId = placementEffectId;
-      if (placementEffectId > 0) {
+      if (placementEffectId > 0 && !suppressPlacement) {
         audio.playPlacement();
         triggerVibration('light');
       }
@@ -4287,12 +4304,22 @@ async function bootstrapWechatGame(): Promise<void> {
       }
     }
 
-    if (snapshot.effects.celebrationId !== lastCelebrationEffectId) {
-      lastCelebrationEffectId = snapshot.effects.celebrationId;
-      if (snapshot.effects.celebrationId > 0) {
+    if (celebrationChanged) {
+      lastCelebrationEffectId = celebrationEffectId;
+      if (celebrationEffectId > 0) {
         audio.playCelebration();
         triggerVibration('heavy');
       }
+    }
+
+    const comboVoice = snapshot.effects.comboVoice;
+    if (comboVoice && comboVoice !== lastComboVoice) {
+      lastComboVoice = comboVoice;
+      audio.playComboVoice(comboVoice);
+    }
+
+    if (!comboVoice) {
+      lastComboVoice = null;
     }
   }
 

@@ -1,3 +1,9 @@
+import {
+  COMBO_VOICE_VOLUME,
+  INNER_AUDIO_COMBO_CLEANUP_TIMEOUT_MS,
+  INNER_AUDIO_GENERIC_CLEANUP_TIMEOUT_MS,
+} from './feedback-audio.constants';
+
 type ToneType = 'sine' | 'triangle' | 'square';
 
 type ToneTimbre = 'softPluck' | 'glass' | 'warmPulse';
@@ -38,6 +44,8 @@ interface AudioBackend {
   playPlacement(): void;
   playInvalid(): void;
   playCelebration(): void;
+  playComboVoice(url: string): void;
+  stopComboVoice(): void;
 }
 
 const SAMPLE_RATE = 22_050;
@@ -343,6 +351,8 @@ class WebAudioBackend implements AudioBackend {
 
   private periodicWaveCache = new Map<ToneTimbre, PeriodicWave>();
 
+  private activeComboAudio: HTMLAudioElement | null = null;
+
   prime(): void {
     const context = this.ensureContext();
     if (!context || context.state !== 'suspended') {
@@ -362,6 +372,46 @@ class WebAudioBackend implements AudioBackend {
 
   playCelebration(): void {
     this.playSteps(CELEBRATION_STEPS);
+  }
+
+  playComboVoice(url: string): void {
+    this.stopComboVoice();
+
+    const audio = new Audio(url);
+    audio.volume = COMBO_VOICE_VOLUME;
+    this.activeComboAudio = audio;
+    audio.onended = () => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    };
+    audio.onerror = () => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    };
+    audio.play().catch(() => {
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+    });
+  }
+
+  stopComboVoice(): void {
+    const audio = this.activeComboAudio;
+    if (!audio) {
+      return;
+    }
+
+    this.activeComboAudio = null;
+    audio.onended = null;
+    audio.onerror = null;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {
+      // Ignore pause failures during teardown.
+    }
   }
 
   private playSteps(steps: ToneStep[]): void {
@@ -461,6 +511,12 @@ class InnerAudioBackend implements AudioBackend {
 
   private primed = false;
 
+  private activeComboAudio: InnerAudioContextLike | null = null;
+
+  private activeComboCleanupTimeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+
+  private comboCleanupInProgress = false;
+
   prime(): void {
     this.primed = true;
   }
@@ -477,44 +533,129 @@ class InnerAudioBackend implements AudioBackend {
     this.playClip(this.clipMap.celebration);
   }
 
-  private playClip(source: string): void {
-    const wxAudio = getWechatAudioApi();
-    const audio = wxAudio?.createInnerAudioContext?.();
+  playComboVoice(url: string): void {
+    this.stopComboVoice();
+    const audio = this.createInnerAudio(url, COMBO_VOICE_VOLUME);
     if (!audio) {
       return;
     }
 
-    audio.autoplay = false;
-    audio.src = source;
-    audio.volume = 0.9;
-    if ('obeyMuteSwitch' in audio) {
-      audio.obeyMuteSwitch = false;
-    }
-
+    this.activeComboAudio = audio;
+    let cleaned = false;
     const cleanup = (): void => {
-      try {
-        audio.stop?.();
-      } catch {
-        // Ignore stop failures during teardown.
+      if (cleaned) {
+        return;
       }
-      audio.destroy?.();
+      cleaned = true;
+      this.cleanupComboVoice(audio);
     };
 
     audio.onEnded?.(() => cleanup());
     audio.onStop?.(() => cleanup());
     audio.onError?.(() => cleanup());
 
-    if (!this.primed) {
-      this.primed = true;
+    try {
+      audio.play();
+      this.activeComboCleanupTimeoutId = globalThis.setTimeout(() => {
+        cleanup();
+      }, INNER_AUDIO_COMBO_CLEANUP_TIMEOUT_MS);
+    } catch {
+      cleanup();
     }
+  }
+
+  stopComboVoice(): void {
+    this.cleanupComboVoice();
+  }
+
+  private playClip(source: string, cleanupTimeoutMs = INNER_AUDIO_GENERIC_CLEANUP_TIMEOUT_MS): void {
+    const audio = this.createInnerAudio(source, 0.9);
+    if (!audio) {
+      return;
+    }
+
+    let cleaned = false;
+    const cleanup = (): void => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      this.disposeInnerAudio(audio);
+    };
+
+    audio.onEnded?.(() => cleanup());
+    audio.onStop?.(() => cleanup());
+    audio.onError?.(() => cleanup());
 
     try {
       audio.play();
       globalThis.setTimeout(() => {
         cleanup();
-      }, 1500);
+      }, cleanupTimeoutMs);
     } catch {
       cleanup();
+    }
+  }
+
+  private createInnerAudio(source: string, volume: number): InnerAudioContextLike | null {
+    const wxAudio = getWechatAudioApi();
+    const audio = wxAudio?.createInnerAudioContext?.();
+    if (!audio) {
+      return null;
+    }
+
+    audio.autoplay = false;
+    audio.src = source;
+    audio.volume = volume;
+    if ('obeyMuteSwitch' in audio) {
+      audio.obeyMuteSwitch = false;
+    }
+
+    if (!this.primed) {
+      this.primed = true;
+    }
+
+    return audio;
+  }
+
+  private cleanupComboVoice(expectedAudio: InnerAudioContextLike | null = this.activeComboAudio): void {
+    if (this.comboCleanupInProgress) {
+      return;
+    }
+
+    const audio = expectedAudio;
+    if (!audio) {
+      return;
+    }
+
+    this.comboCleanupInProgress = true;
+    try {
+      if (this.activeComboCleanupTimeoutId !== null) {
+        globalThis.clearTimeout(this.activeComboCleanupTimeoutId);
+        this.activeComboCleanupTimeoutId = null;
+      }
+
+      if (this.activeComboAudio === audio) {
+        this.activeComboAudio = null;
+      }
+
+      this.disposeInnerAudio(audio);
+    } finally {
+      this.comboCleanupInProgress = false;
+    }
+  }
+
+  private disposeInnerAudio(audio: InnerAudioContextLike): void {
+    try {
+      audio.stop?.();
+    } catch {
+      // Ignore stop failures during teardown.
+    }
+
+    try {
+      audio.destroy?.();
+    } catch {
+      // Ignore destroy failures during teardown.
     }
   }
 }
@@ -527,6 +668,10 @@ class SilentBackend implements AudioBackend {
   playInvalid(): void {}
 
   playCelebration(): void {}
+
+  playComboVoice(_url: string): void {}
+
+  stopComboVoice(): void {}
 }
 
 function createAudioBackend(): AudioBackend {
@@ -547,6 +692,12 @@ export class FeedbackAudio {
 
   private enabled = true;
 
+  private readonly comboVoiceUrls: Record<string, string>;
+
+  constructor(comboVoiceUrls: Record<string, string> = {}) {
+    this.comboVoiceUrls = comboVoiceUrls;
+  }
+
   prime(): void {
     if (!this.enabled) {
       return;
@@ -556,6 +707,9 @@ export class FeedbackAudio {
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
+    if (!enabled) {
+      this.backend.stopComboVoice();
+    }
   }
 
   playPlacement(): void {
@@ -576,6 +730,20 @@ export class FeedbackAudio {
     if (!this.enabled) {
       return;
     }
+    this.backend.stopComboVoice();
     this.backend.playCelebration();
+  }
+
+  playComboVoice(name: string): void {
+    if (!this.enabled) {
+      return;
+    }
+
+    const url = this.comboVoiceUrls[name];
+    if (!url) {
+      return;
+    }
+
+    this.backend.playComboVoice(url);
   }
 }
