@@ -74,7 +74,10 @@ await writeFile('game.json', `${JSON.stringify(gameConfig, null, 2)}\n`, 'utf8')
 await writeFile(`${outdir}/game.json`, `${JSON.stringify(gameConfig, null, 2)}\n`, 'utf8');
 await mkdir(`${outdir}/assets/wechat`, { recursive: true });
 await copyFile('assets/wechat/bg.jpg', `${outdir}/assets/wechat/bg.jpg`);
-await copyFile('assets/wechat/bg_kawaii.png', `${outdir}/assets/wechat/bg_kawaii.png`);
+await copyFile(
+  'assets/wechat/bg_kawaii.png',
+  `${outdir}/assets/wechat/bg_kawaii.png`,
+);
 await mkdir(`${outdir}/assets/wechat/audio`, { recursive: true });
 await copyWechatAudioClip(
   'assets/wechat/audio/Perfect_Match_Bloom.mp3',
@@ -97,8 +100,16 @@ for (const file of comboFiles) {
 }
 await copyFile('assets/wechat/check_icon.png', `${outdir}/assets/wechat/check_icon.png`);
 await copyFile('assets/wechat/help_icon.png', `${outdir}/assets/wechat/help_icon.png`);
-await copyFile('assets/wechat/new_game2.png', `${outdir}/assets/wechat/new_game2.png`);
-await copyFile('assets/wechat/rank_cutout.png', `${outdir}/assets/wechat/rank_cutout.png`);
+await copyWechatImage(
+  'assets/wechat/new_game2.png',
+  `${outdir}/assets/wechat/new_game2.png`,
+  400,
+);
+await copyWechatImage(
+  'assets/wechat/rank_cutout.png',
+  `${outdir}/assets/wechat/rank_cutout.png`,
+  400,
+);
 await mkdir(`${outdir}/assets/wechat/kawaii`, { recursive: true });
 await copyFile('assets/wechat/kawaii/icon-sun.png', `${outdir}/assets/wechat/kawaii/icon-sun.png`);
 await copyFile('assets/wechat/kawaii/icon-trophy.png', `${outdir}/assets/wechat/kawaii/icon-trophy.png`);

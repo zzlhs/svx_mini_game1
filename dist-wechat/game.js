@@ -1067,6 +1067,7 @@ var GameController = class {
       if (solved) {
         this.solved = true;
         const record = this.saveCompletionRecord();
+        const comboVoice = this.resolveComboVoice(this.comboCount);
         this.effects = {
           placement: {
             id: this.effects.placement ? this.effects.placement.id + 1 : 1,
@@ -1074,7 +1075,7 @@ var GameController = class {
           },
           invalidId: this.effects.invalidId,
           celebrationId: this.effects.celebrationId + 1,
-          comboVoice: null
+          comboVoice: comboVoice === "amazing" || comboVoice === "prefect" ? null : comboVoice
         };
         this.comboCount = 0;
         this.status = {
@@ -1737,7 +1738,9 @@ var messages = {
     "settings.title": "设置",
     "settings.sound": "声音",
     "settings.vibration": "震动",
+    "settings.vibrationUnavailable": "当前浏览器不支持震动反馈。",
     "settings.backHome": "回到主页",
+    "settings.close": "关闭",
     "settings.continue": "继续游戏",
     "section.levels": "关卡",
     "section.hints": "提示",
@@ -1768,11 +1771,17 @@ var messages = {
     "coverage.play": "已覆盖 {covered} / {total} 格",
     "coverage.record": "记录解法覆盖 {covered} / {total} 格",
     "chip.record": "查看记录",
-    "chip.solved": "通关",
-    "chip.ready": "可放置",
+    "chip.solved": "已完成",
+    "chip.ready": "就绪",
     "chip.active": "进行中",
     "tile.completed": "{levelName}，已完成，用时 {duration}",
     "tile.incomplete": "{levelName}，未完成",
+    "tile.locked": "{levelName}，尚未解锁",
+    "aria.quickActions": "快捷操作",
+    "aria.gameInformation": "游戏信息",
+    "aria.gameBoard": "填满格子棋盘",
+    "aria.gameActions": "游戏操作",
+    "aria.closeDialog": "关闭弹层",
     "renderer.badgeSolved": "通关",
     "renderer.badgeRecord": "记录",
     "banner.nextLevel": "即将进入下一关",
@@ -1862,7 +1871,9 @@ var messages = {
     "settings.title": "Settings",
     "settings.sound": "Sound",
     "settings.vibration": "Vibration",
+    "settings.vibrationUnavailable": "Vibration feedback is not supported in this browser.",
     "settings.backHome": "Back Home",
+    "settings.close": "Close",
     "settings.continue": "Continue",
     "section.levels": "Levels",
     "section.hints": "Hint",
@@ -1898,6 +1909,12 @@ var messages = {
     "chip.active": "Active",
     "tile.completed": "{levelName}, solved in {duration}",
     "tile.incomplete": "{levelName}, not solved yet",
+    "tile.locked": "{levelName}, locked",
+    "aria.quickActions": "Quick actions",
+    "aria.gameInformation": "Game information",
+    "aria.gameBoard": "Fill Grid game board",
+    "aria.gameActions": "Game actions",
+    "aria.closeDialog": "Close dialog",
     "renderer.badgeSolved": "Solved",
     "renderer.badgeRecord": "Record",
     "banner.nextLevel": "Next level incoming",
